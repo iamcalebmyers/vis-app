@@ -1,3 +1,5 @@
+import GeoSearch from './navigation/GeoSearch'
+
 const NAV_TABS = ['Dashboard', 'Reports', 'Markets', 'Rates', 'Property Search']
 
 function GearIcon() {
@@ -62,6 +64,8 @@ export default function Nav({ page = 'dashboard', onNavigate, editMode, onToggle
 
       {/* Right controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <GeoSearch />
+
         {page === 'dashboard' && (
           <button
             onClick={onToggleEdit}
