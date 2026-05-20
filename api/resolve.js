@@ -33,9 +33,11 @@ export default function handler(req, res) {
     return res.status(200).json({ q, results: [] })
   }
 
+  // No internal limit — fuzzysort is fast enough on 45k candidates that we
+  // can re-rank with the type boost across the entire match set.
   const candidates = preparedEntries()
   const results = fuzzysort
-    .go(q, candidates, { key: '_searchKey', limit: limit * 4, threshold: -10000 })
+    .go(q, candidates, { key: '_searchKey', threshold: -10000 })
     .map(r => ({
       score: r.score + TYPE_BOOST[r.obj.type],
       entry: r.obj,
