@@ -83,8 +83,12 @@ export default function GeoSearch() {
 
   const showDropdown = open && (loading || items.length > 0 || query.trim().length >= MIN_QUERY)
 
+  // Compact by default (220px) so it fits alongside the nav tabs + buttons;
+  // expands to 320px when focused so there's room to type long queries.
+  const width = open ? 320 : 220
+
   return (
-    <div ref={wrapRef} style={{ position: 'relative', width: '320px' }}>
+    <div ref={wrapRef} style={{ position: 'relative', width, transition: 'width 0.18s ease' }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: '8px',
         background: 'var(--card)',
@@ -104,7 +108,7 @@ export default function GeoSearch() {
           onChange={e => { setQuery(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder={geoLabel ? `Search — currently: ${geoLabel}` : 'Search ZIP, city, county…'}
+          placeholder="Search ZIP, city, county…"
           style={{
             background: 'transparent',
             border: 'none',
