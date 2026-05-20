@@ -9,13 +9,12 @@ import { getGeoIndex } from './_lib/geoIndex.js'
 const DEFAULT_LIMIT = 10
 const MAX_LIMIT     = 25
 
-// Small additive tie-breakers — type as the deciding signal only when
-// fuzzy scores are close. National is excluded; users have to actually
-// type "us"/"national" to surface it (and it'll match via fuzzysort).
-const TYPE_BOOST = { national: 0, state: 50, metro: 30, county: 15, zip: 0 }
-// Threshold below which matches are dropped as too weak. fuzzysort 3.x
-// scores ~0 for perfect, -10 to -100 for good fuzzy, much lower for noise.
-const SCORE_THRESHOLD = -1000
+// fuzzysort v3 returns scores in [0, 1] — 1.0 perfect, ~0.7+ strong,
+// ~0.3 fuzzy, ~0 noise. Boosts intentionally large enough to push the
+// metro for a city above the city's own ZIPs (which all score similarly).
+const TYPE_BOOST = { national: 0.05, state: 0.20, metro: 0.15, county: 0.05, zip: 0 }
+// Drop fuzzy noise — anything below this score isn't surfaced.
+const SCORE_THRESHOLD = 0.35
 
 let _prepared = null
 

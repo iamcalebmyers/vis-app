@@ -106,11 +106,14 @@ function buildEntries() {
     if (!m) continue
     const primaryState = m[1].split('-')[0]
     if (!STATE_NAMES[primaryState]) continue
+    // Pull out the primary anchor city (before the first "-" or ",") so
+    // fuzzysort sees "austin" as a clean leading token, not "austin-round".
+    const firstCity = name.split(/[-,]/)[0].trim()
     entries.push({
       id:          `metro:${code}`,
       type:        'metro',
       label:       name,                                // "Austin-Round Rock-San Marcos, TX Metro Area"
-      searchTerms: `${name} ${STATE_NAMES[primaryState]}`.toLowerCase(),
+      searchTerms: `${firstCity} ${name} ${STATE_NAMES[primaryState]} metro`.toLowerCase(),
       parents:     { state: `state:${primaryState}` },
       typeRank:    2,
     })
