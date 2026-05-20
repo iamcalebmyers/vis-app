@@ -9,7 +9,7 @@
 //   curl -H "Authorization: Bearer $CRON_SECRET" \
 //     https://vis-app-seven.vercel.app/api/cron/rates
 
-import { fetchLatest, FRED_SERIES } from '../_lib/fred.js'
+import { fetchLatest, fetchCpiYoy, FRED_SERIES } from '../_lib/fred.js'
 import { kvSet, isKvAvailable } from '../_lib/kv.js'
 
 const KV_KEYS = {
@@ -47,11 +47,14 @@ export default async function handler(req, res) {
   const results   = {}
   const errors    = {}
 
-  // Fetch each FRED series in parallel
+  // Fetch each FRED series in parallel. CPI uses YoY computation instead
+  // of raw level since the index value is opaque to users.
   await Promise.all(
     Object.entries(FRED_SERIES).map(async ([name, seriesId]) => {
       try {
-        const latest = await fetchLatest(seriesId)
+        const latest = name === 'cpi'
+          ? await fetchCpiYoy()
+          : await fetchLatest(seriesId)
         if (latest) {
           await kvSet(KV_KEYS[name], latest)
           results[name] = latest

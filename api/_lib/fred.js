@@ -52,3 +52,19 @@ export async function fetchLatest(seriesId) {
     source:     `FRED:${seriesId}`,
   }
 }
+
+// CPI index level isn't meaningful to users; YoY % change is. Fetches 14
+// months of history and computes the current YoY rate.
+export async function fetchCpiYoy() {
+  const obs = await fetchSeries('CPIAUCSL', { limit: 14 })
+  if (obs.length < 13) return null
+  const latest = obs[0]
+  const yearAgo = obs[12]
+  const yoyPct = ((latest.value - yearAgo.value) / yearAgo.value) * 100
+  return {
+    value:  +yoyPct.toFixed(2),         // e.g. 3.21
+    asOf:   latest.date,
+    raw:    latest.value,               // raw CPI index level
+    source: 'FRED:CPIAUCSL',
+  }
+}
