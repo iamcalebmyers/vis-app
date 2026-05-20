@@ -1,6 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import { fmt } from '../../utils/formatters'
 import CompChip from './CompChip'
 
@@ -15,9 +14,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function InventoryLevel() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
 
   const current = d.inventory.current
   const yearAgo = d.inventory.yearAgo

@@ -1,6 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import CompChip from './CompChip'
 
 function CustomTooltip({ active, payload, label }) {
@@ -14,9 +13,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function SellerPriceCutTracker() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d } = useGeo()
 
   const current  = d.price_cuts.pct
   const yearAgo  = d.price_cuts.yearAgo

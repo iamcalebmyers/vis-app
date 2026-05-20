@@ -1,6 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData } from '../../data/geoData'
 import { fmt } from '../../utils/formatters'
 
 const RATE_HISTORY = [
@@ -24,8 +23,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function Rate30yr() {
-  const { activeGeo } = useGeo()
-  const d = getGeoData(activeGeo)
+  const { data: d } = useGeo()
 
   const current   = d.rate_30yr.rate
   const wkChange  = d.rate_30yr.weekChange

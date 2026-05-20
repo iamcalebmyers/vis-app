@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from 'recharts'
 import { useGeo } from '../../context/GeoContext'
-import { historicalPrices } from '../../data/geoData'
+import { historicalPrices as LOCAL_HIST } from '../../data/geoData'
 import { fmt } from '../../utils/formatters'
 
 const RANGES = ['1Y', '3Y', '5Y', '10Y', '25Y']
@@ -26,12 +26,12 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function HistoricalPriceChart() {
-  const { activeGeo } = useGeo()
+  const { historicalPrices: hist } = useGeo()
   const [range, setRange]           = useState('10Y')
   const [showNational, setNational] = useState(false)
 
-  const allData    = historicalPrices[activeGeo] ?? historicalPrices.national
-  const natData    = historicalPrices.national
+  const allData = hist ?? LOCAL_HIST.national
+  const natData = LOCAL_HIST.national
   const monthsBack = { '1Y': 12, '3Y': 36, '5Y': 60, '10Y': 120, '25Y': Infinity }[range]
 
   const chartData = useMemo(() => {

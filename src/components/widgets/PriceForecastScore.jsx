@@ -1,5 +1,4 @@
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import { gradeFromScore, scoreColor, scoreLabel } from '../../utils/formatters'
 import ArcGauge from './ArcGauge'
 
@@ -12,9 +11,7 @@ const FACTORS = [
 ]
 
 export default function PriceForecastScore() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
   const { score, factors } = d.market_score
   const color = scoreColor(score)
   const grade = gradeFromScore(score)

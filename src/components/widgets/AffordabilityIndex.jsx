@@ -1,13 +1,10 @@
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts'
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import { fmt } from '../../utils/formatters'
 import CompChip from './CompChip'
 
 export default function AffordabilityIndex() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
 
   const { pctIncome, monthlyPayment, medianIncome } = d.affordability
   const color = pctIncome > 40 ? 'var(--red)' : pctIncome > 30 ? 'var(--yellow)' : 'var(--green)'

@@ -1,6 +1,5 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import CompChip from './CompChip'
 
 function CustomTooltip({ active, payload, label }) {
@@ -17,9 +16,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function AppreciationForecast() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
 
   const yr1 = d.appreciation.yr1
   const yr3 = d.appreciation.yr3

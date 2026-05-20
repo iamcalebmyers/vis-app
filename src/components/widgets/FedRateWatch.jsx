@@ -1,6 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData } from '../../data/geoData'
 
 const FED_FUND_HISTORY = [
   { month: 'Jan', fed: 5.33 }, { month: 'Feb', fed: 5.33 }, { month: 'Mar', fed: 5.33 },
@@ -21,8 +20,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function FedRateWatch() {
-  const { activeGeo } = useGeo()
-  const d = getGeoData(activeGeo)
+  const { data: d } = useGeo()
 
   const rate30yr  = d.rate_30yr.current
   const spread    = (rate30yr - FED_FUND_HISTORY[FED_FUND_HISTORY.length - 1].fed).toFixed(2)

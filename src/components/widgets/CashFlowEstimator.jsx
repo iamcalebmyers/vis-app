@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData } from '../../data/geoData'
 import { cashFlow as calcCashFlow } from '../../utils/calculations'
 import { fmt } from '../../utils/formatters'
 
@@ -20,8 +19,7 @@ function NumInput({ label, value, onChange, prefix = '', suffix = '', step = 100
 }
 
 export default function CashFlowEstimator() {
-  const { activeGeo } = useGeo()
-  const d = getGeoData(activeGeo)
+  const { data: d } = useGeo()
 
   const defaultPrice = d.home_price.median
   const defaultRent  = d.rent.median

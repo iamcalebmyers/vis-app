@@ -1,12 +1,9 @@
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import { fmt } from '../../utils/formatters'
 import CompChip from './CompChip'
 
 export default function OvervaluationIndex() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
 
   const { pct, fairValue } = d.overvaluation
   const medianIncome = d.affordability.medianIncome

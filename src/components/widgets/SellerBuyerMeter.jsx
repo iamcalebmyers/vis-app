@@ -1,11 +1,8 @@
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import CompChip from './CompChip'
 
 export default function SellerBuyerMeter() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
   const { score, label, inventoryScore, domScore, cutsScore } = d.seller_buyer
 
   // score: 0 = strong buyer, 100 = strong seller

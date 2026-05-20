@@ -1,5 +1,4 @@
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import { fmt, arrow, deltaColor } from '../../utils/formatters'
 
 const METRICS = [
@@ -29,9 +28,7 @@ function spark(base, slope, n = 12) {
 }
 
 export default function NationalBenchmarkPanel() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
 
   const localHotter = d.market_score.score > nat.market_score.score
   const badge = localHotter ? { label: '🔥 Hotter than National', color: 'var(--red)' }

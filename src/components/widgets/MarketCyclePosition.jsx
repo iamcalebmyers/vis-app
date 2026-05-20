@@ -1,5 +1,4 @@
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 
 const PHASES = ['Recovery', 'Expansion', 'Peak', 'Contraction']
 const PHASE_NORM = { recovery: 'Recovery', expansion: 'Expansion', peak: 'Peak', contraction: 'Contraction', hyper_supply: 'Contraction' }
@@ -33,9 +32,7 @@ function trackPath(r) {
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)) }
 
 export default function MarketCyclePosition() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d } = useGeo()
 
   const rawPhase   = d.cycle.phase
   const monthsIn   = d.cycle.monthsIn

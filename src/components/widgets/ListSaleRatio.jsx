@@ -1,11 +1,8 @@
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import CompChip from './CompChip'
 
 export default function ListSaleRatio() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
 
   const { ratio, yearAgo } = d.list_sale
   const delta = ratio - yearAgo

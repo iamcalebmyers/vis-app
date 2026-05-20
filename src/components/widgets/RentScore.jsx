@@ -1,13 +1,10 @@
 import { useGeo } from '../../context/GeoContext'
-import { getGeoData, geoData } from '../../data/geoData'
 import { fmt, scoreColor } from '../../utils/formatters'
 import ArcGauge from './ArcGauge'
 import CompChip from './CompChip'
 
 export default function RentScore() {
-  const { activeGeo } = useGeo()
-  const d   = getGeoData(activeGeo)
-  const nat = geoData.national
+  const { data: d, national: nat } = useGeo()
 
   const rs = d.rent_score
   const color = scoreColor(rs.score)
