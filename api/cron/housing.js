@@ -11,7 +11,10 @@
 // before triggering this cron.
 
 import { getPool, isDbAvailable } from '../_lib/db.js'
-import { fetchZillowZip, FEEDS } from '../_lib/zillow.js'
+import {
+  fetchZillowZip, fetchZillowState, fetchZillowNational,
+  ZIP_FEEDS, STATE_FEEDS, METRO_FEEDS,
+} from '../_lib/zillow.js'
 
 function authorized(req) {
   const secret = process.env.CRON_SECRET
@@ -59,14 +62,27 @@ export default async function handler(req, res) {
   const pool   = getPool()
   const client = await pool.connect()
 
+  // Plan: { feed, level, fetcher } per CSV. All run sequentially since each
+  // upsert holds the same connection and we want predictable ordering.
+  const jobs = [
+    ...Object.entries(ZIP_FEEDS).map(  ([m, url]) => ({ key: `zip:${m}`,      metric: m, url, fetcher: fetchZillowZip })),
+    ...Object.entries(STATE_FEEDS).map(([m, url]) => ({ key: `state:${m}`,    metric: m, url, fetcher: fetchZillowState })),
+    // National is pulled from the Metro CSV's "United States" row
+    { key: 'national:zhvi',              metric: 'zhvi',              url: METRO_FEEDS.zhvi,              fetcher: fetchZillowNational },
+    { key: 'national:zori',              metric: 'zori',              url: METRO_FEEDS.zori,              fetcher: fetchZillowNational },
+    { key: 'national:inventory',         metric: 'inventory',         url: METRO_FEEDS.inventory,         fetcher: fetchZillowNational },
+    { key: 'national:dom',               metric: 'dom',               url: METRO_FEEDS.dom,               fetcher: fetchZillowNational },
+    { key: 'national:median_sale_price', metric: 'median_sale_price', url: METRO_FEEDS.median_sale_price, fetcher: fetchZillowNational },
+  ]
+
   try {
-    for (const [metric, url] of Object.entries(FEEDS)) {
+    for (const job of jobs) {
       try {
-        const rows = await fetchZillowZip(url)
-        await upsertRows(client, rows, metric)
-        results[metric] = rows.length
+        const rows = await job.fetcher(job.url)
+        await upsertRows(client, rows, job.metric)
+        results[job.key] = rows.length
       } catch (err) {
-        errors[metric] = err.message
+        errors[job.key] = err.message
       }
     }
   } finally {

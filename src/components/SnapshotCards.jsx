@@ -7,9 +7,108 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { SNAPSHOT_CARDS } from '../mockData'
+import { useGeo } from '../context/GeoContext'
+import { fmt } from '../utils/formatters'
 
 const DEFAULT_ORDER = ['30yr Rate', 'Median Price', 'Inventory', 'Days on Market', 'List/Sale Ratio', 'Price Cuts']
 const CARDS_BY_LABEL = Object.fromEntries(SNAPSHOT_CARDS.map(c => [c.label, c]))
+
+// 8-point sparkline interpolated from start → end (with mild curvature for visual interest)
+function synthSpark(start, end) {
+  if (start == null || end == null) return [1, 1, 1, 1, 1, 1, 1, 1]
+  return Array.from({ length: 8 }, (_, i) => {
+    const t = i / 7
+    return start + (end - start) * t
+  })
+}
+
+// Build a snapshot card from live geo data. Falls back to the mock card if
+// a field isn't available yet.
+function liveCard(label, d) {
+  const fallback = CARDS_BY_LABEL[label]
+  switch (label) {
+    case '30yr Rate': {
+      const v  = d?.rate_30yr?.rate
+      const ch = d?.rate_30yr?.weekChange ?? 0
+      if (v == null) return fallback
+      const start = v - ch * 8
+      return {
+        label,
+        value:  `${v.toFixed(2)}%`,
+        change: `${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%`,
+        up:     ch <= 0, // lower rates are favorable
+        spark:  synthSpark(start, v),
+      }
+    }
+    case 'Median Price': {
+      const v   = d?.home_price?.median
+      const yoy = d?.home_price?.yoy ?? 0
+      if (v == null) return fallback
+      const start = v / (1 + yoy / 100)
+      return {
+        label,
+        value:  fmt.currency(v, true),
+        change: `${yoy >= 0 ? '+' : ''}${yoy.toFixed(1)}%`,
+        up:     yoy >= 0,
+        spark:  synthSpark(start, v),
+      }
+    }
+    case 'Inventory': {
+      const v  = d?.inventory?.current
+      const ya = d?.inventory?.yearAgo
+      if (v == null) return fallback
+      const yoy = ya ? ((v - ya) / ya * 100) : 0
+      return {
+        label,
+        value:  fmt.num(v, true),
+        change: `${yoy >= 0 ? '+' : ''}${yoy.toFixed(1)}%`,
+        up:     yoy >= 0,
+        spark:  synthSpark(ya ?? v, v),
+      }
+    }
+    case 'Days on Market': {
+      const v  = d?.dom?.current
+      const ya = d?.dom?.yearAgo
+      if (v == null) return fallback
+      const ch = ya != null ? (v - ya) : 0
+      return {
+        label,
+        value:  `${Math.round(v)}d`,
+        change: `${ch >= 0 ? '+' : ''}${Math.round(ch)}d`,
+        up:     ch <= 0, // faster market = favorable
+        spark:  synthSpark(ya ?? v, v),
+      }
+    }
+    case 'List/Sale Ratio': {
+      const v  = d?.list_sale?.ratio
+      const ya = d?.list_sale?.yearAgo
+      if (v == null) return fallback
+      const ch = ya != null ? (v - ya) : 0
+      return {
+        label,
+        value:  `${v.toFixed(1)}%`,
+        change: `${ch >= 0 ? '+' : ''}${ch.toFixed(1)}%`,
+        up:     ch >= 0,
+        spark:  synthSpark(ya ?? v, v),
+      }
+    }
+    case 'Price Cuts': {
+      const v  = d?.price_cuts?.pct
+      const ya = d?.price_cuts?.yearAgo
+      if (v == null) return fallback
+      const ch = ya != null ? (v - ya) : 0
+      return {
+        label,
+        value:  `${v.toFixed(1)}%`,
+        change: `${ch >= 0 ? '+' : ''}${ch.toFixed(1)}%`,
+        up:     ch <= 0, // fewer cuts = favorable
+        spark:  synthSpark(ya ?? v, v),
+      }
+    }
+    default:
+      return fallback
+  }
+}
 
 function loadOrder() {
   try {
@@ -97,10 +196,9 @@ function CardContent({ card }) {
   )
 }
 
-function SortableCard({ label, idx, active, editMode, onSelect, onRemove }) {
+function SortableCard({ label, card, idx, active, editMode, onSelect, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: label })
 
-  const card = CARDS_BY_LABEL[label]
   if (!card) return null
 
   const baseTransform = CSS.Transform.toString(transform)
@@ -174,6 +272,7 @@ function SortableCard({ label, idx, active, editMode, onSelect, onRemove }) {
 }
 
 export default function SnapshotCards({ activeMetric, onSelect, editMode = false }) {
+  const { data: d } = useGeo()
   const [order,  setOrder]  = useState(loadOrder)
   const [hidden, setHidden] = useState(loadHidden)
   const wasEditRef = useRef(editMode)
@@ -243,6 +342,7 @@ export default function SnapshotCards({ activeMetric, onSelect, editMode = false
               <SortableCard
                 key={label}
                 label={label}
+                card={liveCard(label, d)}
                 idx={idx}
                 active={label === activeMetric}
                 editMode={editMode}
