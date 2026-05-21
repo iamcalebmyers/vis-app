@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/rates",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/housing",
+      "schedule": "0 7 15 * *"
     }
   ]
 }
