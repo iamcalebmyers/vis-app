@@ -10,11 +10,14 @@
 
 const BASE = 'https://files.zillowstatic.com/research/public_csvs'
 
+// Zillow renamed two feeds in 2024:
+//   ZORI: now lowercase `zori` + seasonally adjusted variant
+//   "Days on Market" → "Median Days on Zillow before Pending" (med_doz_pending)
 export const FEEDS = {
   zhvi:              `${BASE}/zhvi/Zip_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv`,
-  zori:              `${BASE}/zori/Zip_ZORI_uc_sfrcondomfr_sm_month.csv`,
+  zori:              `${BASE}/zori/Zip_zori_uc_sfrcondomfr_sm_sa_month.csv`,
   inventory:         `${BASE}/invt_fs/Zip_invt_fs_uc_sfrcondo_sm_month.csv`,
-  dom:               `${BASE}/days_on_market/Zip_days_on_market_uc_sfrcondo_sm_month.csv`,
+  dom:               `${BASE}/med_doz_pending/Zip_med_doz_pending_uc_sfrcondo_sm_month.csv`,
   median_sale_price: `${BASE}/median_sale_price/Zip_median_sale_price_uc_sfrcondo_sm_month.csv`,
 }
 
