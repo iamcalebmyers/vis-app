@@ -1,5 +1,6 @@
 import { GripVertical } from 'lucide-react'
 import { useGeo } from '../../context/GeoContext'
+import { fmtMonth } from '../../utils/formatters'
 
 function ComingSoon({ title }) {
   return (
@@ -11,7 +12,19 @@ function ComingSoon({ title }) {
 }
 
 export default function WidgetCard({ widget, dragListeners, dragAttributes, children, isDragging }) {
-  const { geoLabel } = useGeo()
+  const { geoLabel, asOf, sources } = useGeo()
+
+  const dotColor = sources?.housing === 'live'
+    ? 'var(--green)'
+    : sources?.macro === 'live'
+    ? 'var(--yellow)'
+    : 'var(--dim)'
+
+  const sourceLabel = sources?.housing === 'live'
+    ? 'Zillow'
+    : sources?.macro === 'live'
+    ? 'FRED'
+    : 'Sample'
 
   return (
     <div style={{
@@ -70,6 +83,23 @@ export default function WidgetCard({ widget, dragListeners, dragAttributes, chil
       <div style={{ flex: 1, padding: '14px', minHeight: 0 }}>
         {widget.built ? children : <ComingSoon title={widget.title} />}
       </div>
+
+      {/* Card Footer — data provenance */}
+      {asOf && (
+        <div style={{
+          borderTop: '1px solid var(--border)',
+          padding: '4px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px',
+          flexShrink: 0,
+        }}>
+          <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '8px', color: 'var(--dim)', letterSpacing: '0.04em' }}>
+            {sourceLabel} · Updated {fmtMonth(asOf)}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

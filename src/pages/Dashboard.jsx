@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import Nav from '../components/Nav'
 import Ticker from '../components/Ticker'
+import DataStatusBar from '../components/DataStatusBar'
 import MainChart from '../components/MainChart'
 import SnapshotCards from '../components/SnapshotCards'
 import DashboardGrid from '../components/layout/DashboardGrid'
@@ -60,6 +61,7 @@ export default function Dashboard({
         onToggleEdit={() => setEditMode(e => !e)}
       />
       <Ticker />
+      <DataStatusBar />
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>

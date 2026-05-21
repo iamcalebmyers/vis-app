@@ -77,7 +77,7 @@ export default function GeoSelector() {
           padding: '2px 7px',
           marginLeft: '4px',
         }}>
-          mock data — real data lands in Phase 4
+          no data for this area · showing national estimates
         </span>
       )}
     </div>
