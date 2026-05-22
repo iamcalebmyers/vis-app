@@ -48,15 +48,3 @@ export const FOMC_DATES = [
   { date: 'Sep 18, 2026', note: 'Projected',                    isNext: false },
   { date: 'Nov  6, 2026', note: 'Projected',                    isNext: false },
 ]
-
-export const MARKET_SCORE = {
-  score: 74,
-  label: "Seller's Market",
-  sub: 'Conditions favor sellers nationally',
-  indicators: [
-    { label: 'Rate Environment',   value: 62, color: 'yellow' },
-    { label: 'Inventory Pressure', value: 81, color: 'red'    },
-    { label: 'Price Momentum',     value: 74, color: 'green'  },
-    { label: 'Demand Strength',    value: 68, color: 'green'  },
-  ],
-}
