@@ -8,7 +8,7 @@
 export const ALL_WIDGETS = [
   // Market Signals
   { id: 'market_score',          title: 'Vis Market Score',           category: 'forecast',     size: 'medium', built: true,  source: 'derived' },
-  { id: 'fed_calendar',          title: 'Fed Calendar',               category: 'agent',        size: 'medium', built: true,  source: 'mock'    },
+  { id: 'fed_calendar',          title: 'Fed Calendar',               category: 'agent',        size: 'medium', built: true,  source: 'fred'    },
   { id: 'price_forecast_score',  title: 'Price Forecast Score',       category: 'forecast',     size: 'medium', built: true,  source: 'both'    },
   { id: 'rate_30yr',             title: '30-Year Mortgage Rate',      category: 'market',       size: 'small',  built: true,  source: 'fred'    },
   { id: 'seller_buyer_meter',    title: 'Seller vs. Buyer Meter',     category: 'market',       size: 'medium', built: true,  source: 'derived' },

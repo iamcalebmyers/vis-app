@@ -24,6 +24,8 @@ const MACRO_KEYS = [
   'macro:cpi',
   'macro:unemployment',
   'macro:meta',
+  'fomc:upcoming',
+  'fomc:meta',
 ]
 
 const HOUSING_METRICS = ['zhvi', 'zori', 'inventory', 'dom', 'median_sale_price']
@@ -125,6 +127,10 @@ export default async function handler(req, res) {
     cpi:          macro['macro:cpi']          || null,
     unemployment: macro['macro:unemployment'] || null,
     meta:         macro['macro:meta']         || null,
+    fomc: {
+      upcoming: macro['fomc:upcoming'] || [],
+      meta:     macro['fomc:meta']     || null,
+    },
   }
 
   overlayMacro(data, macro)
