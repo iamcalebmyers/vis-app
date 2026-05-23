@@ -2,34 +2,49 @@ import { useState, useEffect } from 'react'
 import { ALL_WIDGETS } from '../data/widgetConfig'
 import { DEFAULT_LAYOUT } from '../data/defaultLayouts'
 
-function buildDefaultState(layout) {
-  const enabledSet = new Set(layout)
-  return ALL_WIDGETS.map((w, i) => ({
-    ...w,
-    enabled: enabledSet.has(w.id),
-    order: layout.indexOf(w.id) >= 0 ? layout.indexOf(w.id) : layout.length + i,
-  })).sort((a, b) => a.order - b.order)
+// Build the in-memory widget list by merging fresh metadata from ALL_WIDGETS
+// with just the user-mutable state (enabled, order) from localStorage. This
+// ensures that adding a new field like `source` to widgetConfig.js takes
+// effect for users who already have a saved layout, instead of being shadowed
+// by stale objects in localStorage.
+function buildState(saved) {
+  const savedById = saved
+    ? Object.fromEntries(saved.map(w => [w.id, w]))
+    : {}
+
+  return ALL_WIDGETS.map((w, i) => {
+    const s = savedById[w.id]
+    if (s) {
+      return {
+        ...w,                              // fresh metadata (title, source, built, …)
+        enabled: !!s.enabled,
+        order:   typeof s.order === 'number' ? s.order : i,
+      }
+    }
+    const layoutIdx = DEFAULT_LAYOUT.indexOf(w.id)
+    return {
+      ...w,
+      enabled: layoutIdx >= 0,
+      order:   layoutIdx >= 0 ? layoutIdx : DEFAULT_LAYOUT.length + i,
+    }
+  }).sort((a, b) => a.order - b.order)
 }
 
 export function useWidgetConfig() {
   const [widgets, setWidgets] = useState(() => {
     try {
-      const saved = localStorage.getItem('vis-widgets')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // Merge any new widgets added since last save
-        const savedIds = new Set(parsed.map(w => w.id))
-        const newWidgets = ALL_WIDGETS.filter(w => !savedIds.has(w.id)).map((w, i) => ({
-          ...w, enabled: false, order: parsed.length + i,
-        }))
-        return [...parsed, ...newWidgets]
-      }
-    } catch {}
-    return buildDefaultState(DEFAULT_LAYOUT)
+      const raw = localStorage.getItem('vis-widgets')
+      const parsed = raw ? JSON.parse(raw) : null
+      return buildState(Array.isArray(parsed) ? parsed : null)
+    } catch {
+      return buildState(null)
+    }
   })
 
+  // Persist only user-mutable state. Metadata always comes from the code.
   useEffect(() => {
-    localStorage.setItem('vis-widgets', JSON.stringify(widgets))
+    const minimal = widgets.map(w => ({ id: w.id, enabled: w.enabled, order: w.order }))
+    localStorage.setItem('vis-widgets', JSON.stringify(minimal))
   }, [widgets])
 
   function toggle(id) {
@@ -45,7 +60,14 @@ export function useWidgetConfig() {
   }
 
   function loadLayout(layout) {
-    setWidgets(buildDefaultState(layout))
+    setWidgets(ALL_WIDGETS.map((w, i) => {
+      const layoutIdx = layout.indexOf(w.id)
+      return {
+        ...w,
+        enabled: layoutIdx >= 0,
+        order:   layoutIdx >= 0 ? layoutIdx : layout.length + i,
+      }
+    }).sort((a, b) => a.order - b.order))
   }
 
   function exportLayout() {
@@ -60,7 +82,7 @@ export function useWidgetConfig() {
   function importLayout(file) {
     const reader = new FileReader()
     reader.onload = e => {
-      try { setWidgets(JSON.parse(e.target.result)) } catch {}
+      try { setWidgets(buildState(JSON.parse(e.target.result))) } catch {}
     }
     reader.readAsText(file)
   }
