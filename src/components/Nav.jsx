@@ -2,6 +2,17 @@ import GeoSearch from './navigation/GeoSearch'
 
 const NAV_TABS = ['Dashboard', 'Reports', 'Markets', 'Rates', 'Property Search']
 
+function DocIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="8" y1="13" x2="16" y2="13"/>
+      <line x1="8" y1="17" x2="13" y2="17"/>
+    </svg>
+  )
+}
+
 function GearIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -42,11 +53,17 @@ export default function Nav({ page = 'dashboard', onNavigate, editMode, onToggle
       {/* Nav Tabs */}
       <div style={{ display: 'flex', alignItems: 'stretch', height: '100%', gap: '4px' }}>
         {NAV_TABS.map(tab => {
-          const active = tab === 'Dashboard' && page === 'dashboard'
+          const active =
+            (tab === 'Dashboard' && page === 'dashboard') ||
+            (tab === 'Reports'   && page === 'reports')
+          const clickable = tab === 'Dashboard' || tab === 'Reports'
           return (
             <button
               key={tab}
-              onClick={() => tab === 'Dashboard' && onNavigate?.('dashboard')}
+              onClick={() => {
+                if (tab === 'Dashboard') onNavigate?.('dashboard')
+                else if (tab === 'Reports') onNavigate?.('reports')
+              }}
               style={{
                 background: 'none', border: 'none',
                 borderBottom: active ? '2px solid var(--green)' : '2px solid transparent',
@@ -54,10 +71,14 @@ export default function Nav({ page = 'dashboard', onNavigate, editMode, onToggle
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: '13px', fontWeight: active ? 600 : 400,
                 padding: '0 14px',
-                cursor: tab === 'Dashboard' ? 'pointer' : 'default',
+                cursor: clickable ? 'pointer' : 'default',
                 transition: 'color 0.15s, border-color 0.15s',
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
               }}
-            >{tab}</button>
+            >
+              {tab === 'Reports' && <DocIcon />}
+              {tab}
+            </button>
           )
         })}
       </div>

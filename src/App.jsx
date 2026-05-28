@@ -4,6 +4,7 @@ import { SNAPSHOT_CARDS } from './mockData'
 import { GeoProvider } from './context/GeoContext'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
+import ReportsPage from './pages/ReportsPage'
 
 const DEFAULT_TOP_PANELS = [
   { id: 'main-chart',     label: 'Main Chart',     visible: true },
@@ -38,6 +39,14 @@ export default function App() {
     setTheme(name)
     applyTheme(name)
     localStorage.setItem('vis-theme', name)
+  }
+
+  if (page === 'reports') {
+    return (
+      <GeoProvider>
+        <ReportsPage onNavigate={setPage} />
+      </GeoProvider>
+    )
   }
 
   if (page === 'settings') {
