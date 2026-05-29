@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Nav from '../components/Nav'
 import { SAMPLE_REPORT } from '../reports/mockReport'
+import MarketScoreBlock from '../reports/blocks/MarketScoreBlock'
 
 function CardLayoutIcon() {
   return (
@@ -168,21 +169,38 @@ export default function ReportsPage({ onNavigate }) {
           </div>
 
           {/* Report container */}
-          <div style={{
-            background: 'var(--card)', border: '1px dashed var(--border)',
-            borderRadius: '12px', padding: '64px 24px',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: '8px',
-          }}>
-            <span style={{
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px',
-              color: 'var(--dim)', letterSpacing: '0.08em', textTransform: 'uppercase',
-            }}>
-              {format === 'card' ? 'Card' : 'Print'} layout · {visibleBlocks.length} blocks
-            </span>
-            <span style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: '14px', color: 'var(--muted)',
-            }}>Blocks will render here</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {visibleBlocks.map(block => {
+              if (block.type === 'marketScore') {
+                return (
+                  <div key={block.id} style={{
+                    background: format === 'card' ? 'var(--card)' : '#ffffff',
+                    border: format === 'card' ? '0.5px solid var(--border)' : '0.5px solid #e0e0e0',
+                    borderRadius: '12px', padding: '14px 16px',
+                  }}>
+                    <MarketScoreBlock
+                      score={62}
+                      label="Balanced — Slight Seller Advantage"
+                      description="More inventory than 12 months ago, but well-priced homes still move quickly"
+                      format={format}
+                      geo={`${report.city} ${report.state}`}
+                    />
+                  </div>
+                )
+              }
+              return (
+                <div key={block.id} style={{
+                  background: 'var(--card)', border: '1px dashed var(--border)',
+                  borderRadius: '12px', padding: '24px 16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{
+                    fontFamily: "'IBM Plex Mono', monospace", fontSize: '10px',
+                    color: 'var(--dim)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  }}>{block.type}</span>
+                </div>
+              )
+            })}
           </div>
 
         </div>
