@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Nav from '../components/Nav'
 import { SAMPLE_REPORT } from '../reports/mockReport'
 import MarketScoreBlock from '../reports/blocks/MarketScoreBlock'
+import MarketConditionsBlock from '../reports/blocks/MarketConditionsBlock'
 
 function CardLayoutIcon() {
   return (
@@ -171,6 +172,25 @@ export default function ReportsPage({ onNavigate }) {
           {/* Report container */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {visibleBlocks.map(block => {
+              if (block.type === 'marketConditions') {
+                return (
+                  <div key={block.id} style={{
+                    background: format === 'card' ? 'var(--card)' : '#ffffff',
+                    border: format === 'card' ? '0.5px solid var(--border)' : '0.5px solid #e0e0e0',
+                    borderRadius: '12px', padding: '14px 16px',
+                  }}>
+                    <MarketConditionsBlock
+                      rate={6.84}
+                      rateDelta={0.03}
+                      medianPrice={487000}
+                      medianPriceDelta={-3.2}
+                      daysOnMarket={42}
+                      domDelta={14}
+                      format={format}
+                    />
+                  </div>
+                )
+              }
               if (block.type === 'marketScore') {
                 return (
                   <div key={block.id} style={{
