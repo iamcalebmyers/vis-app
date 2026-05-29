@@ -5,6 +5,8 @@ import MarketScoreBlock from '../reports/blocks/MarketScoreBlock'
 import MarketConditionsBlock from '../reports/blocks/MarketConditionsBlock'
 import PropertyDetailBlock from '../reports/blocks/PropertyDetailBlock'
 import FieldToggle from '../reports/blocks/FieldToggle'
+import CompsBlock from '../reports/blocks/CompsBlock'
+import AISummaryBlock from '../reports/blocks/AISummaryBlock'
 
 function CardLayoutIcon() {
   return (
@@ -242,6 +244,50 @@ export default function ReportsPage({ onNavigate }) {
                       description="More inventory than 12 months ago, but well-priced homes still move quickly"
                       format={format}
                       geo={`${report.city} ${report.state}`}
+                    />
+                  </div>
+                )
+              }
+              if (block.type === 'comps') {
+                return (
+                  <div key={block.id} style={{
+                    background: format === 'card' ? 'var(--card)' : '#ffffff',
+                    border: format === 'card' ? '0.5px solid var(--border)' : '0.5px solid #e0e0e0',
+                    borderRadius: '12px', padding: '14px 16px',
+                  }}>
+                    <CompsBlock
+                      comps={[
+                        { address: '3012 Riverside Dr',  beds: 4, baths: 3, sqft: 2290, salePrice: 479000, pricePerSqft: 209 },
+                        { address: '918 Montclaire Ave', beds: 4, baths: 2, sqft: 2180, salePrice: 461500, pricePerSqft: 212 },
+                        { address: '2204 Cypress Ln',    beds: 4, baths: 3, sqft: 2510, salePrice: 512000, pricePerSqft: 204 },
+                        { address: '3341 Oak Terrace',   beds: 3, baths: 3, sqft: 2100, salePrice: 448000, pricePerSqft: 213 },
+                      ]}
+                      format={format}
+                    />
+                  </div>
+                )
+              }
+              if (block.type === 'aiSummary') {
+                const cardStyle = {
+                  background: 'var(--card)',
+                  borderTop: '0.5px solid var(--border)',
+                  borderRight: '0.5px solid var(--border)',
+                  borderBottom: '0.5px solid var(--border)',
+                  borderLeft: '3px solid var(--green)',
+                  borderRadius: '0 12px 12px 0',
+                  padding: '14px 16px',
+                }
+                const printStyle = {
+                  background: '#ffffff',
+                  border: '0.5px solid #e0e0e0',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                }
+                return (
+                  <div key={block.id} style={format === 'card' ? cardStyle : printStyle}>
+                    <AISummaryBlock
+                      summary="This property's Vis estimated value of $487,500 is supported by four comparable sales closing between $448K–$512K in the past 90 days. At $208/sqft versus a comp average of $210/sqft, it is competitively priced. The Austin market is moderating — days on market are up 14 days year over year — but this home's 2019 build, 8/10 school rating, and Zone X flood status are durable advantages."
+                      format={format}
                     />
                   </div>
                 )
