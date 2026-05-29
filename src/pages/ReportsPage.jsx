@@ -3,6 +3,8 @@ import Nav from '../components/Nav'
 import { SAMPLE_REPORT } from '../reports/mockReport'
 import MarketScoreBlock from '../reports/blocks/MarketScoreBlock'
 import MarketConditionsBlock from '../reports/blocks/MarketConditionsBlock'
+import PropertyDetailBlock from '../reports/blocks/PropertyDetailBlock'
+import FieldToggle from '../reports/blocks/FieldToggle'
 
 function CardLayoutIcon() {
   return (
@@ -61,10 +63,19 @@ const btnBase = {
   padding: '7px 14px', borderRadius: '7px', cursor: 'pointer', transition: 'all 0.15s',
 }
 
+const ALL_PROPERTY_FIELDS = ['previousSale', 'pricePerSqft', 'schoolRating', 'floodZone', 'hoaMonthly', 'annualTaxes']
+
 export default function ReportsPage({ onNavigate }) {
   const [format, setFormat] = useState(SAMPLE_REPORT.format)
+  const [visibleFields, setVisibleFields] = useState(ALL_PROPERTY_FIELDS)
   const report = SAMPLE_REPORT
   const visibleBlocks = report.blocks.filter(b => b.visible)
+
+  function toggleField(key) {
+    setVisibleFields(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -188,6 +199,33 @@ export default function ReportsPage({ onNavigate }) {
                       domDelta={14}
                       format={format}
                     />
+                  </div>
+                )
+              }
+              if (block.type === 'propertyDetail') {
+                return (
+                  <div key={block.id}>
+                    <FieldToggle visibleFields={visibleFields} onToggle={toggleField} />
+                    <div style={{
+                      background: format === 'card' ? 'var(--card)' : '#ffffff',
+                      border: format === 'card' ? '0.5px solid var(--border)' : '0.5px solid #e0e0e0',
+                      borderRadius: '12px', padding: '14px 16px',
+                    }}>
+                      <PropertyDetailBlock
+                        address={report.address}
+                        cityStateZip={`${report.city}, ${report.state} ${report.zip}`}
+                        beds={4} baths={3} sqft={2340} yearBuilt={2019}
+                        visEstimate={487500} estimateRangeLow={465000} estimateRangeHigh={510000}
+                        previousSalePrice={418000} previousSaleDate="Jun 2022"
+                        pricePerSqft={208}
+                        schoolRating={8} schoolName="Zavala Elementary"
+                        floodZone="Zone X — Low Risk"
+                        hoaMonthly={120} annualTaxes={9840}
+                        appreciationPct={16.6}
+                        format={format}
+                        visibleFields={visibleFields}
+                      />
+                    </div>
                   </div>
                 )
               }
