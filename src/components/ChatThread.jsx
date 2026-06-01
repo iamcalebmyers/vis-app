@@ -16,17 +16,22 @@ function ChatThread({ messages, typing }) {
       style={{
         flex: 1,
         overflowY: "auto",
-        padding: "16px 20px 140px 20px",
-        width: "100%",
-        maxWidth: 760,
-        margin: "0 auto",
+        padding: "16px 20px",
       }}
     >
-      {messages.map((m) => (
-        <ChatMessage key={m.id} role={m.role} content={m.content} />
-      ))}
-      {typing && <TypingIndicator />}
-      <div ref={endRef} />
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 760,
+          margin: "0 auto",
+        }}
+      >
+        {messages.map((m) => (
+          <ChatMessage key={m.id} role={m.role} content={m.content} />
+        ))}
+        {typing && <TypingIndicator />}
+        <div ref={endRef} />
+      </div>
     </div>
   );
 }

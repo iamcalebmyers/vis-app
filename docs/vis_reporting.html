@@ -1,0 +1,258 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;700&display=swap');
+*{box-sizing:border-box}
+.r{font-family:'DM Sans',sans-serif;color:var(--color-text-primary)}
+.mono{font-family:'IBM Plex Mono',monospace}
+.up{color:#059669}.dn{color:#dc2626}
+.sec{font-size:11px;letter-spacing:0.07em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;color:var(--color-text-secondary);margin-bottom:8px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.row:last-child{border-bottom:none}
+.chip{font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;font-family:'IBM Plex Mono',monospace}
+
+/* Format selector */
+.fmt-btn{border:1.5px solid var(--color-border-tertiary);border-radius:10px;padding:12px 18px;cursor:pointer;background:var(--color-background-primary);transition:all 0.15s;flex:1;text-align:left}
+.fmt-btn.active{border-color:#00c968;background:rgba(0,201,104,0.06)}
+.fmt-btn:hover{border-color:var(--color-border-secondary)}
+
+/* Card layout */
+.cv{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.metric-box{background:var(--color-background-secondary);border-radius:8px;padding:10px}
+
+/* Print layout */
+.print-wrap{background:#ffffff;border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:24px 28px;font-family:'Georgia',serif}
+.print-wrap h1{font-size:20px;font-weight:700;font-family:'Georgia',serif;margin:0 0 2px;color:#111}
+.print-wrap h2{font-size:13px;font-weight:700;font-family:'Arial',sans-serif;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin:16px 0 8px;padding-bottom:4px;border-bottom:2px solid #111}
+.print-wrap p{font-size:12px;line-height:1.7;color:#333;margin:0 0 10px}
+.print-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'Arial',sans-serif;margin-bottom:10px}
+.print-table th{background:#111;color:#fff;padding:6px 10px;text-align:left;font-weight:600;font-size:10px;letter-spacing:0.06em;text-transform:uppercase}
+.print-table td{padding:6px 10px;border-bottom:0.5px solid #e0e0e0;color:#333}
+.print-table tr:last-child td{border-bottom:none}
+.print-metric{display:inline-block;text-align:center;margin-right:20px;margin-bottom:8px}
+.print-metric .val{font-size:20px;font-weight:700;font-family:'Arial',sans-serif;color:#111}
+.print-metric .lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.08em}
+
+/* Export buttons */
+.exp-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+</style>
+
+<div class="r" style="padding:4px 0 20px">
+<h2 class="sr-only">Vis report format selector showing modern card layout and print document layout side by side with export options</h2>
+
+<!-- Format selector -->
+<div style="margin-bottom:20px">
+  <div style="font-size:15px;font-weight:700;margin-bottom:4px">Choose report format</div>
+  <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">Both formats contain identical data and support agent white labeling</div>
+  <div style="display:flex;gap:10px">
+    <div class="fmt-btn active" id="btn-card" onclick="switchFormat('card')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <i class="ti ti-layout-cards" style="font-size:18px;color:#00c968" aria-hidden="true"></i>
+        <span style="font-size:14px;font-weight:700">Modern card layout</span>
+        <span class="chip" style="background:rgba(0,201,104,0.12);color:#059669">Default</span>
+      </div>
+      <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.5">Interactive web view · Shareable link · Export as PDF</div>
+    </div>
+    <div class="fmt-btn" id="btn-print" onclick="switchFormat('print')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <i class="ti ti-file-text" style="font-size:18px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+        <span style="font-size:14px;font-weight:700">Print / document layout</span>
+      </div>
+      <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.5">Formal document style · Optimized for print · Export as PDF</div>
+    </div>
+  </div>
+</div>
+
+<!-- Export buttons row -->
+<div style="display:flex;gap:8px;margin-bottom:18px;align-items:center">
+  <button class="exp-btn" style="background:#00c968;color:#fff">
+    <i class="ti ti-download" style="font-size:14px" aria-hidden="true"></i> Export PDF
+  </button>
+  <button class="exp-btn" style="background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary)">
+    <i class="ti ti-link" style="font-size:14px" aria-hidden="true"></i> Copy share link
+  </button>
+  <button class="exp-btn" style="background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary)">
+    <i class="ti ti-mail" style="font-size:14px" aria-hidden="true"></i> Send to client
+  </button>
+  <span style="font-size:11px;color:var(--color-text-secondary);margin-left:4px;font-family:'IBM Plex Mono',monospace">Generated May 18, 2026</span>
+</div>
+
+<!-- CARD LAYOUT -->
+<div id="view-card">
+
+  <!-- Agent header -->
+  <div class="cv" style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:24px;height:24px;border-radius:6px;background:#00c968;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-weight:900;font-size:11px;font-family:'IBM Plex Mono',monospace">V</span></div>
+        <span style="font-weight:800;font-size:15px">vis</span>
+        <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--color-text-secondary)">.realestate</span>
+      </div>
+      <div style="font-size:19px;font-weight:800;letter-spacing:-0.02em">Market + Property Report</div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-top:1px">Austin, TX · May 2026</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:13px;font-weight:700">Sarah Mitchell</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">Keller Williams Realty</div>
+      <div style="font-size:11px;color:#00c968;font-family:'IBM Plex Mono',monospace">sarah@kwaustin.com</div>
+    </div>
+  </div>
+
+  <!-- Score -->
+  <div class="cv" style="display:flex;align-items:center;gap:16px">
+    <div style="width:60px;height:60px;border-radius:50%;border:3px solid #00c968;display:flex;align-items:center;justify-content:center;background:rgba(0,201,104,0.07);flex-shrink:0">
+      <span style="font-family:'IBM Plex Mono',monospace;font-weight:900;font-size:20px;color:#00c968">62</span>
+    </div>
+    <div>
+      <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--color-text-secondary);letter-spacing:0.07em;margin-bottom:2px">VIS MARKET SCORE · AUSTIN TX</div>
+      <div style="font-size:17px;font-weight:800;color:#00c968">Balanced — Slight Seller Advantage</div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">More inventory than 12 months ago, but well-priced homes still move quickly</div>
+    </div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="cv">
+    <div class="sec">Market conditions</div>
+    <div class="metric-grid">
+      <div class="metric-box"><div style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--color-text-secondary);margin-bottom:3px">30YR RATE</div><div style="font-size:20px;font-weight:800;font-family:'IBM Plex Mono',monospace">6.84%</div><div class="dn" style="font-size:10px;font-family:'IBM Plex Mono',monospace">▲ +0.03%</div></div>
+      <div class="metric-box"><div style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--color-text-secondary);margin-bottom:3px">MED PRICE</div><div style="font-size:20px;font-weight:800;font-family:'IBM Plex Mono',monospace">$487K</div><div class="dn" style="font-size:10px;font-family:'IBM Plex Mono',monospace">▼ -3.2% YOY</div></div>
+      <div class="metric-box"><div style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--color-text-secondary);margin-bottom:3px">DAYS ON MKT</div><div style="font-size:20px;font-weight:800;font-family:'IBM Plex Mono',monospace">42d</div><div class="dn" style="font-size:10px;font-family:'IBM Plex Mono',monospace">▲ +14d YOY</div></div>
+    </div>
+  </div>
+
+  <!-- Property -->
+  <div class="cv" style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div style="font-size:18px;font-weight:800;letter-spacing:-0.02em">2847 Riverside Drive</div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">Austin, TX 78741 · 4bd · 3ba · 2,340 sqft · Built 2019</div>
+      <div class="row"><span style="font-size:12px;color:var(--color-text-secondary)">Previous sale</span><span style="font-size:12px;font-weight:600;font-family:'IBM Plex Mono',monospace">$418,000 · Jun 2022</span></div>
+      <div class="row"><span style="font-size:12px;color:var(--color-text-secondary)">Price per sqft</span><span style="font-size:12px;font-weight:600;font-family:'IBM Plex Mono',monospace">$208 / sqft</span></div>
+      <div class="row"><span style="font-size:12px;color:var(--color-text-secondary)">School rating</span><span style="font-size:12px;font-weight:600">8/10 · Zavala Elem</span></div>
+    </div>
+    <div style="text-align:right;margin-left:16px">
+      <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--color-text-secondary);letter-spacing:0.07em;margin-bottom:3px">VIS ESTIMATE</div>
+      <div style="font-size:26px;font-weight:900;color:#00c968;font-family:'IBM Plex Mono',monospace;letter-spacing:-0.03em">$487,500</div>
+      <div style="font-size:10px;color:var(--color-text-secondary)">Range $465K — $510K</div>
+      <div style="font-size:11px;color:#059669;margin-top:3px">↑ +16.6% since purchase</div>
+    </div>
+  </div>
+
+  <!-- AI summary -->
+  <div class="cv" style="border-left:3px solid #00c968;border-radius:0 12px 12px 0">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+      <div style="width:18px;height:18px;border-radius:4px;background:#00c968;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="color:#fff;font-weight:900;font-size:9px;font-family:'IBM Plex Mono',monospace">V</span></div>
+      <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--color-text-secondary);letter-spacing:0.07em">VIS AI SUMMARY</span>
+    </div>
+    <p style="font-size:13px;line-height:1.7;margin:0;color:var(--color-text-primary)">This property's Vis estimated value of $487,500 is supported by four comparable sales closing between $448K–$512K in the past 90 days. At $208/sqft versus a comp average of $210/sqft, it is competitively priced. The Austin market is moderating — days on market are up 14 days year over year — but this home's 2019 build, 8/10 school rating, and Zone X flood status are durable advantages. Expect above-average performance on days-to-offer if listed at or near the Vis estimate.</p>
+  </div>
+
+  <div style="padding-top:12px;border-top:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:10px;color:var(--color-text-secondary)">Generated May 18, 2026 · FRED · Freddie Mac PMMS · Redfin Research · For informational purposes only</div>
+    <div style="font-size:10px;color:#00c968;font-family:'IBM Plex Mono',monospace">vis.realestate</div>
+  </div>
+</div>
+
+<!-- PRINT LAYOUT -->
+<div id="view-print" style="display:none">
+  <div class="print-wrap">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #111;margin-bottom:16px">
+      <div>
+        <div style="font-size:10px;font-family:'Arial',sans-serif;font-weight:700;letter-spacing:0.15em;color:#888;text-transform:uppercase;margin-bottom:4px">Market + Property Report</div>
+        <h1 style="font-size:22px;font-family:'Georgia',serif;margin:0 0 2px;color:#111">2847 Riverside Drive</h1>
+        <div style="font-size:13px;color:#555;font-family:'Arial',sans-serif">Austin, TX 78741 · May 2026</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:700;font-family:'Arial',sans-serif;color:#111">Sarah Mitchell</div>
+        <div style="font-size:11px;color:#555;font-family:'Arial',sans-serif">Keller Williams Realty</div>
+        <div style="font-size:11px;color:#555;font-family:'Arial',sans-serif">License #TX-498201</div>
+        <div style="font-size:11px;color:#111;font-family:'Arial',sans-serif;margin-top:2px">sarah@kwaustin.com</div>
+        <div style="font-size:10px;color:#888;font-family:'Arial',sans-serif;margin-top:6px">Prepared by vis.realestate</div>
+      </div>
+    </div>
+
+    <!-- Market score -->
+    <h2 class="print-wrap" style="font-size:12px;font-family:'Arial',sans-serif;border-bottom:2px solid #111;margin:0 0 10px;padding-bottom:4px">Vis market score · Austin TX</h2>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <div style="width:52px;height:52px;border-radius:50%;border:3px solid #111;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-size:20px;font-weight:700;font-family:'Arial',sans-serif;color:#111">62</span>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:700;font-family:'Arial',sans-serif;color:#111">Balanced — Slight Seller Advantage</div>
+        <p style="margin:3px 0 0;font-size:12px;color:#444">Market is moderating. More inventory than 12 months ago, but well-priced homes still move quickly in Austin.</p>
+      </div>
+    </div>
+
+    <!-- Market conditions -->
+    <h2 style="font-size:12px;font-family:'Arial',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin:0 0 10px;padding-bottom:4px;border-bottom:2px solid #111">Market conditions</h2>
+    <div style="margin-bottom:14px">
+      <div class="print-metric"><div class="val">6.84%</div><div class="lbl">30yr rate</div></div>
+      <div class="print-metric"><div class="val">$487K</div><div class="lbl">Median price</div></div>
+      <div class="print-metric"><div class="val">42d</div><div class="lbl">Days on market</div></div>
+      <div class="print-metric"><div class="val">97.1%</div><div class="lbl">List/sale ratio</div></div>
+      <div class="print-metric"><div class="val">24.3%</div><div class="lbl">Price reductions</div></div>
+    </div>
+    <p style="font-size:12px;line-height:1.7;color:#333;margin:0 0 14px">The 30-year fixed rate currently sits at 6.84%, down 38 basis points over 12 weeks. The next FOMC meeting is June 12, 2026 — a rate hold is broadly expected. At 6.84%, a buyer financing $390,000 (20% down on $487,500) pays approximately $2,590/month principal and interest.</p>
+
+    <!-- Property -->
+    <h2 style="font-size:12px;font-family:'Arial',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin:0 0 10px;padding-bottom:4px;border-bottom:2px solid #111">Property analysis · 2847 Riverside Drive</h2>
+    <table class="print-table">
+      <tr><th>Attribute</th><th>Detail</th><th>Attribute</th><th>Detail</th></tr>
+      <tr><td>Bedrooms</td><td>4</td><td>Year built</td><td>2019</td></tr>
+      <tr><td>Bathrooms</td><td>3</td><td>HOA</td><td>$120 / month</td></tr>
+      <tr><td>Square footage</td><td>2,340 sqft</td><td>Flood zone</td><td>Zone X — Low Risk</td></tr>
+      <tr><td>Lot size</td><td>0.18 acres</td><td>School rating</td><td>8/10 · Zavala Elementary</td></tr>
+      <tr><td>Previous sale</td><td>$418,000 · Jun 2022</td><td>Annual taxes</td><td>$9,840 (2025)</td></tr>
+    </table>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f7f7f7;border:1px solid #e0e0e0;border-radius:6px;padding:12px 16px;margin-bottom:14px">
+      <div>
+        <div style="font-size:10px;font-family:'Arial',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:3px">Vis estimated value</div>
+        <div style="font-size:26px;font-weight:700;font-family:'Arial',sans-serif;color:#111">$487,500</div>
+        <div style="font-size:11px;color:#555;font-family:'Arial',sans-serif">Range: $465,000 — $510,000</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:#555;font-family:'Arial',sans-serif">Appreciation since purchase</div>
+        <div style="font-size:18px;font-weight:700;font-family:'Arial',sans-serif;color:#059669">+16.6%</div>
+        <div style="font-size:11px;color:#555">$418,000 → $487,500</div>
+      </div>
+    </div>
+
+    <!-- Comps -->
+    <h2 style="font-size:12px;font-family:'Arial',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin:0 0 10px;padding-bottom:4px;border-bottom:2px solid #111">Comparable sales (90 days)</h2>
+    <table class="print-table">
+      <tr><th>Address</th><th>Beds/Bath</th><th>Sq ft</th><th>Sale price</th><th>$/sqft</th></tr>
+      <tr><td>3012 Riverside Dr</td><td>4/3</td><td>2,290</td><td>$479,000</td><td>$209</td></tr>
+      <tr><td>918 Montclaire Ave</td><td>4/2</td><td>2,180</td><td>$461,500</td><td>$212</td></tr>
+      <tr><td>2204 Cypress Ln</td><td>4/3</td><td>2,510</td><td>$512,000</td><td>$204</td></tr>
+      <tr><td>3341 Oak Terrace</td><td>3/3</td><td>2,100</td><td>$448,000</td><td>$213</td></tr>
+      <tr style="background:#f7f7f7"><td style="font-weight:700">Comp average</td><td>—</td><td>—</td><td style="font-weight:700">$475,125</td><td style="font-weight:700">$210</td></tr>
+    </table>
+
+    <!-- AI Summary -->
+    <h2 style="font-size:12px;font-family:'Arial',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin:0 0 10px;padding-bottom:4px;border-bottom:2px solid #111">Vis analysis</h2>
+    <p>This property's Vis estimated value of $487,500 is supported by four comparable sales closing between $448,000 and $512,000 in the past 90 days. At $208 per square foot versus a comp average of $210, it is competitively priced relative to the current market.</p>
+    <p>The Austin market is moderating — days on market have risen to 42 days, up 14 days year over year, and 24% of active listings have taken price cuts. However, this home's 2019 build year, 8/10 school rating, and Zone X flood status are durable advantages that should support demand even as broader conditions soften. A 50bps rate reduction would improve buyer purchasing power by approximately $152/month on a 20% down payment scenario, meaningfully expanding the qualified buyer pool at this price point.</p>
+
+    <!-- Footer -->
+    <div style="margin-top:20px;padding-top:12px;border-top:1.5px solid #111;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:10px;color:#888;font-family:'Arial',sans-serif;line-height:1.6">Generated May 18, 2026 · Data: FRED, Freddie Mac PMMS, Redfin Research<br>For informational purposes only. Not financial or legal advice.</div>
+      <div style="font-size:10px;font-family:'Arial',sans-serif;color:#888;text-align:right">Generated by <strong style="color:#111">vis.realestate</strong><br>Sarah Mitchell · Keller Williams · (512) 408-7731</div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+function switchFormat(f) {
+  document.getElementById('view-card').style.display = f==='card' ? 'block' : 'none';
+  document.getElementById('view-print').style.display = f==='print' ? 'block' : 'none';
+  document.getElementById('btn-card').classList.toggle('active', f==='card');
+  document.getElementById('btn-print').classList.toggle('active', f==='print');
+  var icon = document.querySelector('#btn-print i');
+  if(icon) icon.style.color = f==='print' ? '#00c968' : 'var(--color-text-secondary)';
+}
+</script>

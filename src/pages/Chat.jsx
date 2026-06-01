@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Nav from "../components/Nav.jsx";
 import ChatThread from "../components/ChatThread.jsx";
 import ChatInput from "../components/ChatInput.jsx";
+import SessionSidebar from "../components/SessionSidebar.jsx";
 import { sendMessage } from "../utils/claudeApi.js";
+import {
+  loadSessions,
+  saveSession,
+  makeSessionName,
+} from "../utils/sessions.js";
 
 const NAV_HEIGHT = 48;
 
@@ -80,11 +86,53 @@ function toApiMessages(messages) {
 }
 
 function Chat() {
+  const [sessions, setSessions] = useState(() => loadSessions());
+  const [activeSession, setActiveSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
+
   const hasContent = messages.length > 0 || typing;
 
+  useEffect(() => {
+    if (!activeSession || messages.length === 0) return;
+    const updated = {
+      ...activeSession,
+      messages,
+      updatedAt: Date.now(),
+    };
+    saveSession(updated);
+    setSessions(loadSessions());
+  }, [activeSession, messages]);
+
+  function handleNewChat() {
+    setActiveSession(null);
+    setMessages([]);
+    setTyping(false);
+  }
+
+  function handleSelectSession(id) {
+    const found = sessions.find((s) => s.id === id);
+    if (!found) return;
+    setActiveSession({
+      id: found.id,
+      name: found.name,
+      createdAt: found.createdAt,
+    });
+    setMessages(found.messages || []);
+    setTyping(false);
+  }
+
   async function handleSend(text) {
+    let session = activeSession;
+    if (!session) {
+      session = {
+        id: crypto.randomUUID(),
+        name: makeSessionName(text),
+        createdAt: Date.now(),
+      };
+      setActiveSession(session);
+    }
+
     const userMsg = {
       id: crypto.randomUUID(),
       role: "user",
@@ -115,40 +163,56 @@ function Chat() {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        background: "var(--bg)",
-      }}
-    >
-      <Nav active="chat" />
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
+      <SessionSidebar
+        sessions={sessions}
+        activeId={activeSession?.id || null}
+        onSelect={handleSelectSession}
+        onNew={handleNewChat}
+      />
 
-      {hasContent ? (
-        <>
-          <ChatThread messages={messages} typing={typing} />
-          <ChatInput onSend={handleSend} disabled={typing} />
-        </>
-      ) : (
-        <div
-          style={{
-            flex: 1,
-            minHeight: `calc(100vh - ${NAV_HEIGHT}px)`,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 32,
-            padding: "40px 0",
-          }}
-        >
-          <Hero />
-          <div style={{ width: "100%", maxWidth: 760 }}>
-            <ChatInput onSend={handleSend} disabled={false} inline />
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+        }}
+      >
+        <Nav active="chat" />
+
+        {hasContent ? (
+          <>
+            <ChatThread messages={messages} typing={typing} />
+            <div style={{ padding: "12px 20px 20px", background: "var(--bg)" }}>
+              <ChatInput
+                onSend={handleSend}
+                disabled={typing}
+                autoFocus={false}
+              />
+            </div>
+          </>
+        ) : (
+          <div
+            style={{
+              flex: 1,
+              minHeight: `calc(100vh - ${NAV_HEIGHT}px)`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 32,
+              padding: "40px 20px",
+            }}
+          >
+            <Hero />
+            <div style={{ width: "100%", maxWidth: 760 }}>
+              <ChatInput onSend={handleSend} disabled={false} autoFocus />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

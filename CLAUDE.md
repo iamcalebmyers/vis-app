@@ -617,18 +617,24 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: Session 3 — Claude API + web search wired to chat
-Current status: Chat sends user messages to a Vercel serverless
-function (api/chat.js), which calls Claude (claude-opus-4-7) with
-the web_search tool and returns a reply. Graceful error fallback
-shown as an AI bubble if the call fails or the key is missing.
-Next task: Session 4 — Chat session management (save, name, list,
-reopen sessions via localStorage key vis-sessions)
-Known issues:
-  - ANTHROPIC_API_KEY must be set both in .env.local (for `npm run
-    dev:api` / vercel dev) and via `vercel env add ANTHROPIC_API_KEY`
-    for deploys. Plain `npm run dev` (vite-only) cannot serve /api,
-    so chat will fail there — use `npm run dev:api` for end-to-end.
+Last completed: Session 4 — Chat session management
+Current status: Sessions persist to localStorage (vis-sessions),
+list in a left sidebar, are auto-named from the first user message,
+and reopen with their full message history when clicked. New chat
+button clears state without persisting the empty chat.
+Next task: Session 5 — Suggested prompt chips on new chat
+(clickable, pre-fill the input)
+Known issues / pending:
+  - **PENDING: ANTHROPIC_API_KEY not yet set.** User stepped away
+    before adding the key. To resume: open
+    /Users/calebmyers/projects/vis-app/.env.local in any editor and
+    paste the key after `ANTHROPIC_API_KEY=`, then run
+    `vercel env add ANTHROPIC_API_KEY` for Production / Preview /
+    Development, then `vercel --prod` to redeploy. Until then, every
+    chat send returns a graceful "ANTHROPIC_API_KEY missing" error
+    bubble — UI works, model calls don't.
+  - Test locally with `npm run dev:api` (not `npm run dev`) — vite
+    alone cannot serve /api functions.
   - Web search is the only tool wired. Layer 2 (brokerage training)
     and Layer 3 (agent training) are accepted as inputs to api/chat
     but always null until Supabase + AgentContext arrive (Sessions
@@ -651,6 +657,41 @@ Session 2 from this commit):
     - Supabase NOT YET SET UP — deferred from Session 1 because not
       needed until Session 16 (schema) and Session 19 (subdomain
       routing). Pick it up there.
+
+  Session 4 — chat session management:
+    - src/utils/sessions.js: loadSessions / getSession / saveSession /
+      deleteSession / makeSessionName. localStorage key vis-sessions.
+      Stored as array of { id, name, messages, createdAt, updatedAt }.
+      makeSessionName takes the first user message and truncates to 40
+      chars (with ellipsis). Pure local — no API call. When the API is
+      live, a future enhancement can regenerate the name via a tiny
+      Claude call after the first exchange.
+    - src/utils/formatters.js: relativeTime(ms) — "just now", "Xm ago",
+      "Xh ago", "Xd ago", then locale date. Used in the sidebar item
+      timestamps. Will host currency / score / etc. formatters later.
+    - src/components/SessionSidebar.jsx: 260px left sidebar, sticky
+      full-height, var(--bg) bg with right border. "New chat" pill
+      button on top (var(--accent)), then a scrollable list of saved
+      sessions. Each item shows name (single-line ellipsis) plus a
+      mono relative-time. Active session highlighted with var(--card)
+      background. Empty state explains "Your saved chats will appear
+      here." Hidden on screens narrower than 768px via .vis-sidebar
+      media query in index.css.
+    - src/pages/Chat.jsx: now owns sessions + activeSession state. An
+      effect persists current messages to the active session on every
+      message change and refreshes the sidebar list. handleNewChat
+      clears state (no empty session is persisted — only chats with
+      at least one message land in the sidebar). handleSelectSession
+      loads a session's messages. handleSend creates a new session on
+      first message if none is active.
+    - src/components/ChatInput.jsx: refactored — single variant, no
+      more fixed positioning. Parent decides layout (sticky bottom in
+      active state, centered in empty state).
+    - src/components/ChatThread.jsx: drops the fixed-bottom padding
+      (input is now in flow), still smooth-scrolls to latest message.
+    - New file structure deviation flagged: utils/sessions.js was not
+      explicitly listed in CLAUDE.md's file structure block but
+      formatters.js was. sessions.js is a small pragmatic addition.
 
   Session 3 — Claude API + web search:
     - api/chat.js (Vercel serverless function, Node runtime): reads

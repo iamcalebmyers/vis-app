@@ -141,3 +141,11 @@ samp {
     opacity: 1;
   }
 }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 768px) {
+  .vis-sidebar {
+    display: none;
+  }
+}

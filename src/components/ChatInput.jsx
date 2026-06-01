@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function ChatInput({ onSend, disabled = false, inline = false }) {
+function ChatInput({ onSend, disabled = false, autoFocus = true }) {
   const [value, setValue] = useState("");
 
   function handleSubmit(e) {
@@ -14,7 +14,7 @@ function ChatInput({ onSend, disabled = false, inline = false }) {
   const trimmed = value.trim();
   const sendDisabled = disabled || !trimmed;
 
-  const form = (
+  return (
     <form
       onSubmit={handleSubmit}
       style={{
@@ -36,7 +36,7 @@ function ChatInput({ onSend, disabled = false, inline = false }) {
         onChange={(e) => setValue(e.target.value)}
         placeholder="Write a message..."
         disabled={disabled}
-        autoFocus
+        autoFocus={autoFocus}
         aria-label="Chat message"
         style={{
           flex: 1,
@@ -73,29 +73,6 @@ function ChatInput({ onSend, disabled = false, inline = false }) {
         Send
       </button>
     </form>
-  );
-
-  if (inline) {
-    return (
-      <div style={{ width: "100%", padding: "0 20px" }}>{form}</div>
-    );
-  }
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: "16px 20px 20px",
-        background:
-          "linear-gradient(to top, var(--bg) 60%, rgba(0,0,0,0))",
-        pointerEvents: "none",
-      }}
-    >
-      <div style={{ pointerEvents: "auto" }}>{form}</div>
-    </div>
   );
 }
 
