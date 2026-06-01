@@ -617,12 +617,22 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: Session 2 — Chat shell
-Current status: Chat shell renders on vis.realestate; stub AI reply
-demonstrates the bubble + typing-indicator loop
-Next task: Session 3 — Claude API + web search wired to chat (replace
-stub reply with real Claude calls via src/utils/claudeApi.js)
-Known issues: None
+Last completed: Session 3 — Claude API + web search wired to chat
+Current status: Chat sends user messages to a Vercel serverless
+function (api/chat.js), which calls Claude (claude-opus-4-7) with
+the web_search tool and returns a reply. Graceful error fallback
+shown as an AI bubble if the call fails or the key is missing.
+Next task: Session 4 — Chat session management (save, name, list,
+reopen sessions via localStorage key vis-sessions)
+Known issues:
+  - ANTHROPIC_API_KEY must be set both in .env.local (for `npm run
+    dev:api` / vercel dev) and via `vercel env add ANTHROPIC_API_KEY`
+    for deploys. Plain `npm run dev` (vite-only) cannot serve /api,
+    so chat will fail there — use `npm run dev:api` for end-to-end.
+  - Web search is the only tool wired. Layer 2 (brokerage training)
+    and Layer 3 (agent training) are accepted as inputs to api/chat
+    but always null until Supabase + AgentContext arrive (Sessions
+    16-19).
 
 Done so far (covers both Session 1 work from prior commit and
 Session 2 from this commit):
@@ -641,6 +651,29 @@ Session 2 from this commit):
     - Supabase NOT YET SET UP — deferred from Session 1 because not
       needed until Session 16 (schema) and Session 19 (subdomain
       routing). Pick it up there.
+
+  Session 3 — Claude API + web search:
+    - api/chat.js (Vercel serverless function, Node runtime): reads
+      ANTHROPIC_API_KEY from env, builds the layered system prompt
+      (Layer 1 Fair Housing always first; Layer 2 brokerage and
+      Layer 3 agent only when their training strings are passed;
+      Layer 4 Vis base instructions last), normalizes messages
+      ("ai" -> "assistant"), calls Claude with the web_search_20250305
+      tool, extracts text content blocks, returns { reply, stopReason,
+      usage }. Graceful 400/405/500/502 error responses
+    - src/utils/claudeApi.js: thin frontend wrapper around POST
+      /api/chat. Throws a human-readable Error on network failure,
+      non-200 response, or empty reply. Accepts an optional AbortSignal
+      for future cancellation
+    - src/pages/Chat.jsx: replaces the 1.2s setTimeout stub with a
+      real sendMessage() call; on error renders a graceful AI bubble
+      explaining what went wrong instead of a broken UI
+    - @anthropic-ai/sdk added as a dependency (server-side only — does
+      not enter the client bundle since api/ files aren't imported by
+      src/)
+    - package.json: new "dev:api" script aliasing `vercel dev` so the
+      full stack (vite + serverless) runs locally. Regular `npm run
+      dev` stays as vite-only for fast UI work
 
   Session 2 — chat shell:
     - src/components/Nav.jsx: 48px sticky top nav with logo +
