@@ -578,9 +578,6 @@ Session 4  — Chat session management: save, name, list, reopen
 Session 5  — (removed: suggested prompt chips not wanted in Vis)
 Session 6  — Inline data cards in chat thread
 Session 7  — Generate Full Report button logic
-Session 7.5 — AI response card emission: update system prompt + parse
-              structured payload so real Claude replies attach a
-              cardType + data to the message (so cards aren't demo-only)
 Session 8  — Property Report view: full layout, mock data
 Session 9  — Property facts block + user edit layer
 Session 10 — Area market conditions block
@@ -588,6 +585,10 @@ Session 11 — Vis Property Score: circle, label, color logic
 Session 12 — Loan calculator: inputs, monthly breakdown
 Session 13 — AI property summary block
 Session 14 — Market Conditions Report: full layout
+Session 14.5 — AI response card emission: update system prompt + parse
+               structured payload so real Claude replies attach a
+               cardType + cardData to the message. Tuned live against
+               the API once the key is in
 Session 15 — Three tier system: vis-tier, feature gates per tier
 Session 16 — Supabase schema: agents, agent_training, brokerages tables
 Session 17 — Agent settings page: AI name, logo upload, brand color,
@@ -618,17 +619,22 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: Session 7 — Generate Full Report button logic
-Current status: Clicking the orange Generate Full Report button on a
-property or market card opens a placeholder report page over the
-chat with a back button. ChatThread is back to rendering the live
-messages prop; the Session 6 demo conversation is now exported from
-src/data/demoMessages.js and pre-loads when the URL has #demo (dev
-helper). Real AI replies still won't show cards until Session 7.5
-ships card emission from the model side.
-Next task: Session 7.5 — AI response card emission (update system
-prompt + parse structured payload so real Claude replies attach a
-cardType + cardData to the message)
+Last completed: Session 8 — Property Report full layout
+Current status: PropertyReport.jsx now renders the full aesthetic
+report using mock data — top bar (back), WhiteLabelHeader, address +
+6-stat header card, VisScore donut, PropertyFacts grid, MarketConditions
+6-metric grid, LoanCalculator breakdown, AISummary (prose + strengths
++ risks + best-suited-for), ShareExport bar with tier-gated Send to
+Client, legal footer. Each section is its own component so 9-13 can
+enhance in place without touching the page-level layout.
+Next task: Session 9 — Property facts inline edit layer (let user
+correct or annotate any field; user additions labelled "added by
+user")
+Known issues / pending: ANTHROPIC_API_KEY still not configured;
+chat-side AI replies surface a graceful error bubble until added.
+File-structure deviation: PropertyReport.jsx + MarketReport.jsx live
+in src/pages/ (page-shaped views) rather than src/components/ as the
+spec lists them. All sub-components are in src/components/ per spec.
 Known issues / pending:
   - **PENDING: ANTHROPIC_API_KEY not yet set.** User stepped away
     before adding the key. To resume: open
