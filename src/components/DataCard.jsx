@@ -187,7 +187,7 @@ function TotalRow({ label, value }) {
   );
 }
 
-function PropertyCard({ data, showButton }) {
+function PropertyCard({ data, showButton, onGenerateReport }) {
   return (
     <div style={container}>
       <div style={headerLabel}>Property snapshot</div>
@@ -202,7 +202,13 @@ function PropertyCard({ data, showButton }) {
         <FactPill label="Year built" value={data.yearBuilt} />
         <FactPill label="School rating" value={data.schoolRating} />
       </div>
-      {showButton && <GenerateReportButton />}
+      {showButton && (
+        <GenerateReportButton
+          onClick={() =>
+            onGenerateReport && onGenerateReport("property", data)
+          }
+        />
+      )}
     </div>
   );
 }
@@ -220,7 +226,7 @@ function LoanCard({ data }) {
   );
 }
 
-function MarketCard({ data, showButton }) {
+function MarketCard({ data, showButton, onGenerateReport }) {
   return (
     <div style={container}>
       <div style={headerLabel}>Market conditions</div>
@@ -235,7 +241,13 @@ function MarketCard({ data, showButton }) {
         <FactPill label="Price reductions" value={data.priceReductions} />
         <FactPill label="Avg price/sqft" value={data.avgPricePerSqft} />
       </div>
-      {showButton && <GenerateReportButton />}
+      {showButton && (
+        <GenerateReportButton
+          onClick={() =>
+            onGenerateReport && onGenerateReport("market", data)
+          }
+        />
+      )}
     </div>
   );
 }
@@ -270,17 +282,29 @@ const DEFAULT_DATA = {
   rate: MOCK_RATE_CARD,
 };
 
-function DataCard({ type, data, showButton = false }) {
+function DataCard({ type, data, showButton = false, onGenerateReport }) {
   const finalData = data || DEFAULT_DATA[type];
   if (!finalData) return null;
 
   switch (type) {
     case "property":
-      return <PropertyCard data={finalData} showButton={showButton} />;
+      return (
+        <PropertyCard
+          data={finalData}
+          showButton={showButton}
+          onGenerateReport={onGenerateReport}
+        />
+      );
     case "loan":
       return <LoanCard data={finalData} />;
     case "market":
-      return <MarketCard data={finalData} showButton={showButton} />;
+      return (
+        <MarketCard
+          data={finalData}
+          showButton={showButton}
+          onGenerateReport={onGenerateReport}
+        />
+      );
     case "rate":
       return <RateCard data={finalData} />;
     default:

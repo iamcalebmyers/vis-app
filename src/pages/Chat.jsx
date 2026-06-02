@@ -3,14 +3,25 @@ import Nav from "../components/Nav.jsx";
 import ChatThread from "../components/ChatThread.jsx";
 import ChatInput from "../components/ChatInput.jsx";
 import SessionSidebar from "../components/SessionSidebar.jsx";
+import PropertyReport from "./PropertyReport.jsx";
+import MarketReport from "./MarketReport.jsx";
 import { sendMessage } from "../utils/claudeApi.js";
 import {
   loadSessions,
   saveSession,
   makeSessionName,
 } from "../utils/sessions.js";
+import { DEMO_MESSAGES } from "../data/demoMessages.js";
 
 const NAV_HEIGHT = 48;
+
+function loadInitialMessages() {
+  if (typeof window === "undefined") return [];
+  if (window.location.hash === "#demo") {
+    return DEMO_MESSAGES.map((m) => ({ ...m }));
+  }
+  return [];
+}
 
 function Hero() {
   return (
@@ -88,8 +99,9 @@ function toApiMessages(messages) {
 function Chat() {
   const [sessions, setSessions] = useState(() => loadSessions());
   const [activeSession, setActiveSession] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(loadInitialMessages);
   const [typing, setTyping] = useState(false);
+  const [activeReport, setActiveReport] = useState(null);
 
   const hasContent = messages.length > 0 || typing;
 
@@ -108,6 +120,7 @@ function Chat() {
     setActiveSession(null);
     setMessages([]);
     setTyping(false);
+    setActiveReport(null);
   }
 
   function handleSelectSession(id) {
@@ -120,6 +133,15 @@ function Chat() {
     });
     setMessages(found.messages || []);
     setTyping(false);
+    setActiveReport(null);
+  }
+
+  function handleGenerateReport(type, data) {
+    setActiveReport({ type, data });
+  }
+
+  function handleCloseReport() {
+    setActiveReport(null);
   }
 
   async function handleSend(text) {
@@ -182,9 +204,19 @@ function Chat() {
       >
         <Nav active="chat" />
 
-        {hasContent ? (
+        {activeReport ? (
+          activeReport.type === "property" ? (
+            <PropertyReport data={activeReport.data} onBack={handleCloseReport} />
+          ) : activeReport.type === "market" ? (
+            <MarketReport data={activeReport.data} onBack={handleCloseReport} />
+          ) : null
+        ) : hasContent ? (
           <>
-            <ChatThread messages={messages} typing={typing} />
+            <ChatThread
+              messages={messages}
+              typing={typing}
+              onGenerateReport={handleGenerateReport}
+            />
             <div style={{ padding: "12px 20px 20px", background: "var(--bg)" }}>
               <ChatInput
                 onSend={handleSend}

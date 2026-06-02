@@ -24,7 +24,15 @@ function AiAvatar() {
   );
 }
 
-function ChatMessage({ role, content, text, cardType, showButton }) {
+function ChatMessage({
+  role,
+  content,
+  text,
+  cardType,
+  cardData,
+  showButton,
+  onGenerateReport,
+}) {
   const isUser = role === "user";
   const body = text ?? content ?? "";
   const hasCard = !isUser && Boolean(cardType);
@@ -46,7 +54,14 @@ function ChatMessage({ role, content, text, cardType, showButton }) {
       }}
     >
       {body}
-      {hasCard && <DataCard type={cardType} showButton={showButton} />}
+      {hasCard && (
+        <DataCard
+          type={cardType}
+          data={cardData}
+          showButton={showButton}
+          onGenerateReport={onGenerateReport}
+        />
+      )}
     </div>
   );
 

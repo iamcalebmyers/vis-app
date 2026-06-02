@@ -578,6 +578,9 @@ Session 4  — Chat session management: save, name, list, reopen
 Session 5  — (removed: suggested prompt chips not wanted in Vis)
 Session 6  — Inline data cards in chat thread
 Session 7  — Generate Full Report button logic
+Session 7.5 — AI response card emission: update system prompt + parse
+              structured payload so real Claude replies attach a
+              cardType + data to the message (so cards aren't demo-only)
 Session 8  — Property Report view: full layout, mock data
 Session 9  — Property facts block + user edit layer
 Session 10 — Area market conditions block
@@ -615,13 +618,17 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: Session 4 — Chat session management
-Current status: Sessions persist to localStorage (vis-sessions),
-list in a left sidebar, are auto-named from the first user message,
-and reopen with their full message history when clicked. New chat
-button clears state without persisting the empty chat.
-Next task: Session 5 — Suggested prompt chips on new chat
-(clickable, pre-fill the input)
+Last completed: Session 7 — Generate Full Report button logic
+Current status: Clicking the orange Generate Full Report button on a
+property or market card opens a placeholder report page over the
+chat with a back button. ChatThread is back to rendering the live
+messages prop; the Session 6 demo conversation is now exported from
+src/data/demoMessages.js and pre-loads when the URL has #demo (dev
+helper). Real AI replies still won't show cards until Session 7.5
+ships card emission from the model side.
+Next task: Session 7.5 — AI response card emission (update system
+prompt + parse structured payload so real Claude replies attach a
+cardType + cardData to the message)
 Known issues / pending:
   - **PENDING: ANTHROPIC_API_KEY not yet set.** User stepped away
     before adding the key. To resume: open
