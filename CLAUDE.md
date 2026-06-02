@@ -127,7 +127,6 @@ vis-app/
       ChatMessage.jsx
       ChatInput.jsx
       DataCard.jsx
-      SuggestedPrompts.jsx
       TypingIndicator.jsx
       GenerateReportButton.jsx
       SessionSidebar.jsx
@@ -309,10 +308,9 @@ Message types:
   qualifying AI responses
 - Typing indicator: three animated dots while Claude thinks
 
-Suggested prompt chips on new chat (clickable, pre-fill input):
-Look up a property / Check market conditions /
-Calculate my affordability / Compare two markets /
-Ask anything about real estate
+No suggested prompt chips. Empty state is just the logo, tagline, and
+input — let the user write what they actually want without prefab
+suggestions.
 
 Input bar fixed to bottom: var(--card) bg, var(--bg) input field,
 var(--accent) send button.
@@ -577,7 +575,7 @@ Session 1  — Environment: Vite, React, Tailwind, Supabase, GitHub, Vercel
 Session 2  — Chat shell: thread, bubbles, input bar, typing indicator
 Session 3  — Claude API + web search wired to chat
 Session 4  — Chat session management: save, name, list, reopen
-Session 5  — Suggested prompt chips on new chat
+Session 5  — (removed: suggested prompt chips not wanted in Vis)
 Session 6  — Inline data cards in chat thread
 Session 7  — Generate Full Report button logic
 Session 8  — Property Report view: full layout, mock data
