@@ -1,3 +1,5 @@
+import DataCard from "./DataCard.jsx";
+
 function AiAvatar() {
   return (
     <span
@@ -22,13 +24,15 @@ function AiAvatar() {
   );
 }
 
-function ChatMessage({ role, content }) {
+function ChatMessage({ role, content, text, cardType, showButton }) {
   const isUser = role === "user";
+  const body = text ?? content ?? "";
+  const hasCard = !isUser && Boolean(cardType);
 
   const bubble = (
     <div
       style={{
-        maxWidth: "75%",
+        maxWidth: hasCard ? "90%" : "75%",
         padding: "10px 14px",
         background: isUser ? "var(--accent)" : "var(--card)",
         color: isUser ? "#ffffff" : "var(--text)",
@@ -41,7 +45,8 @@ function ChatMessage({ role, content }) {
         wordBreak: "break-word",
       }}
     >
-      {content}
+      {body}
+      {hasCard && <DataCard type={cardType} showButton={showButton} />}
     </div>
   );
 
