@@ -13,16 +13,17 @@ function GenerateReportButton({ onClick, label = "Generate Full Report" }) {
         width: "100%",
         marginTop: 10,
         padding: "10px 0",
-        background: hover ? "var(--accent)" : "transparent",
-        color: hover ? "#ffffff" : "var(--accent)",
-        border: "1.5px solid var(--accent)",
+        background: "var(--accent)",
+        color: "#ffffff",
+        border: "none",
         borderRadius: 6,
         fontFamily: "var(--font-sans)",
         fontSize: 13,
-        fontWeight: 600,
+        fontWeight: 700,
         letterSpacing: "0.01em",
         cursor: "pointer",
-        transition: "background 0.15s ease, color 0.15s ease",
+        opacity: hover ? 0.88 : 1,
+        transition: "opacity 0.15s ease",
       }}
     >
       {label}
