@@ -85,7 +85,7 @@ function Nav({ active = "chat", onTabChange }) {
         justifyContent: "space-between",
         height: 48,
         padding: "0 24px",
-        background: "rgba(247, 246, 243, 0.92)",
+        background: "var(--nav-bg)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border)",
