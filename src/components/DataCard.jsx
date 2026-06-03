@@ -192,8 +192,8 @@ function PropertyCard({ data, showButton, onGenerateReport }) {
     <div style={container}>
       <div style={headerLabel}>Property snapshot</div>
       <div style={statRow}>
-        <StatBlock label="Vis score" value={data.score} sublabel={data.scoreLabel} accent />
-        <StatBlock label="Est. value" value={data.estValue} sublabel={data.appreciation} />
+        <StatBlock label="Est. value" value={data.estValue} sublabel={data.appreciation} accent />
+        <StatBlock label="Price / sqft" value={data.pricePerSqft} sublabel={data.pricePerSqftHint} />
         <StatBlock label="Days on mkt" value={data.daysOnMarket} sublabel="Area avg" />
       </div>
       <div style={grid2}>
@@ -231,8 +231,8 @@ function MarketCard({ data, showButton, onGenerateReport }) {
     <div style={container}>
       <div style={headerLabel}>Market conditions</div>
       <div style={statRow}>
-        <StatBlock label="Market score" value={data.score} sublabel={data.scoreLabel} accent />
-        <StatBlock label="Median price" value={data.medianPrice} sublabel={data.priceChange} />
+        <StatBlock label="Median price" value={data.medianPrice} sublabel={data.priceChange} accent />
+        <StatBlock label="Active listings" value={data.activeListings} sublabel={data.activeListingsChange} />
         <StatBlock label="Days on mkt" value={data.daysOnMarket} sublabel="Area average" />
       </div>
       <div style={grid2}>

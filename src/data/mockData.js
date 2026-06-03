@@ -55,10 +55,6 @@ export const MOCK_AGENT = {
 };
 
 export const MOCK_AI_RESPONSE = {
-  visScore: 74,
-  visScoreLabel: "Good Value",
-  visScoreReason:
-    "Competitively priced against recent comps in a moderating but stable market.",
   aiSummary:
     "2847 Riverside Drive presents a solid opportunity in Austin's 78741 ZIP code. The estimated value of $487,500 is supported by recent comparable sales, and at $208 per square foot it sits in line with the neighborhood average. The Austin market has moderated over the past year with days on market rising and price reductions becoming more common, giving buyers more negotiating room than in 2022. The 2019 build means modern systems without near-term renovation risk. The 8/10 school rating and Zone X flood status add durable value that holds through market cycles. At current rates a 20% down payment puts monthly principal and interest near $2,590, improving if rates fall. The main risk is broader market softening with nearly a quarter of area listings taking price cuts.",
   keyStrengths: [
@@ -79,10 +75,10 @@ export const MOCK_AI_RESPONSE = {
 // data above so layout and formatting can stay pixel-perfect.
 
 export const MOCK_PROPERTY_CARD = {
-  score: 74,
-  scoreLabel: "Good Value",
   estValue: "$487K",
   appreciation: "↑ +16.6%",
+  pricePerSqft: "$208",
+  pricePerSqftHint: "Area avg $210",
   daysOnMarket: "42d",
   beds: 4,
   baths: 3,
@@ -100,12 +96,11 @@ export const MOCK_LOAN_CARD = {
 };
 
 export const MOCK_MARKET_CARD = {
-  score: 62,
-  scoreLabel: "Balanced",
   medianPrice: "$487K",
   priceChange: "▼ -3.2% YOY",
-  daysOnMarket: "42d",
   activeListings: "4,218",
+  activeListingsChange: "▲ +22%",
+  daysOnMarket: "42d",
   listSaleRatio: "97.1%",
   priceReductions: "24.3%",
   avgPricePerSqft: "$210",

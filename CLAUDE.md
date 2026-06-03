@@ -134,7 +134,6 @@ vis-app/
       MarketReport.jsx
       PropertyFacts.jsx
       MarketConditions.jsx
-      VisScore.jsx
       LoanCalculator.jsx
       AISummary.jsx
       UserEditLayer.jsx
@@ -210,7 +209,7 @@ Typography — strict, no exceptions
 
 - DM Sans: ALL labels, body text, buttons, nav, chat messages, summaries
 - IBM Plex Mono: ALL numbers, data values, percentages, dollar amounts,
-  scores, dates in data context, URLs, codes
+  dates in data context, URLs, codes
 - Numbers always mono. Words always DM Sans.
 - DM Sans weights used: 400, 700, 800
 - IBM Plex Mono weights used: 400, 700
@@ -232,8 +231,13 @@ Visual rules
 Accent color
 
 var(--accent) is used for: logo mark, active nav underline, primary
-buttons, Vis/agent score circle, user message bubbles, send button,
-Generate Full Report button, key totals, AI avatar background.
+buttons, headline values in cards (est. value, median price),
+user message bubbles, send button, Generate Full Report button,
+key totals (monthly payment), AI avatar background.
+
+No Vis Score / Market Score concept anywhere — Vis does not assign
+scores to properties or markets. The accent color highlights the
+single most important value in each context instead.
 
 On vis.realestate this is #DA6B3A.
 On agent URLs this is the agent's brand_color from Supabase.
@@ -382,9 +386,6 @@ Ask Claude to return only valid JSON, no markdown, no preamble:
 
 ```json
 {
-  "visScore": 74,
-  "visScoreLabel": "Good Value",
-  "visScoreReason": "one sentence",
   "aiSummary": "250-350 word prose analysis",
   "keyStrengths": ["string", "string", "string"],
   "keyRisks": ["string", "string"],
@@ -479,9 +480,6 @@ export const MOCK_AGENT = {
 };
 
 export const MOCK_AI_RESPONSE = {
-  visScore: 74,
-  visScoreLabel: "Good Value",
-  visScoreReason: "Competitively priced against recent comps in a moderating but stable market.",
   aiSummary: "2847 Riverside Drive presents a solid opportunity in Austin's 78741 ZIP code. The estimated value of $487,500 is supported by recent comparable sales, and at $208 per square foot it sits in line with the neighborhood average. The Austin market has moderated over the past year with days on market rising and price reductions becoming more common, giving buyers more negotiating room than in 2022. The 2019 build means modern systems without near-term renovation risk. The 8/10 school rating and Zone X flood status add durable value that holds through market cycles. At current rates a 20% down payment puts monthly principal and interest near $2,590, improving if rates fall. The main risk is broader market softening with nearly a quarter of area listings taking price cuts.",
   keyStrengths: [
     "2019 build - modern systems, no immediate renovation costs",
@@ -498,28 +496,35 @@ export const MOCK_AI_RESPONSE = {
 
 REPORTS
 
-Property Report sections (order)
+Two default report formats live alongside any custom templates an
+agent builds (see Sessions 21.5 / 21.6 below):
 
-1. White label header (branding per tier and URL context)
-2. Property header — address, stats row
-3. Score — 0-100 circle, label, one-sentence reason, color coded
-4. Property facts block — all key fields, unknown = "—"
-5. User edit layer — review/correct/add before finalizing
-6. Area market conditions — metric cards
-7. Loan calculator
-8. AI summary — 250-350 word prose
-9. Share / export / save
-10. Send to Client (Agent + Enterprise only)
+A. Modern card layout (default — dark Vis aesthetic):
+   1. White label header (branding per tier and URL context)
+   2. Property header — address, stats row
+   3. Property facts block — all key fields, unknown = "—"
+   4. User edit layer — review/correct/add before finalizing
+   5. Area market conditions — metric cards
+   6. Loan calculator
+   7. AI summary — 250-350 word prose
+   8. Share / export / save
+   9. Send to Client (Agent + Enterprise only)
+
+B. Print / document layout (default — Georgia serif, white bg,
+   formal table-driven aesthetic; see docs/vis_reporting.html):
+   Same data, same section order, different visual treatment.
+   Optimized for PDF export and formal sharing.
 
 Market Conditions Report sections (order)
 
 1. White label header
 2. Area header — location, date
-3. Market score — 0-100, plain language label
-4. Metrics grid — 6 cards with directional change
-5. Rate context — current rate, trend, Fed meeting
-6. AI market summary — 2 paragraphs
-7. Share / export / save
+3. Metrics grid — 6 cards with directional change
+4. Rate context — current rate, trend, Fed meeting
+5. AI market summary — 2 paragraphs
+6. Share / export / save
+
+Market Report supports both default formats (A and B) too.
 
 Report footers
 
@@ -538,7 +543,7 @@ No exceptions.
 
 Loan data: local only, never stored server-side.
 AI content: always labeled (as agent's AI name on custom URLs).
-Scores: always labeled as AI estimates, not appraisals.
+All AI-generated estimates labeled clearly as estimates, not appraisals.
 
 LOCALSTORAGE KEYS
 
@@ -581,14 +586,19 @@ Session 7  — Generate Full Report button logic
 Session 8  — Property Report view: full layout, mock data
 Session 9  — Property facts block + user edit layer
 Session 10 — Area market conditions block
-Session 11 — Vis Property Score: circle, label, color logic
+Session 11 — (removed: Vis Property Score concept dropped — no scoring
+              anywhere in the product)
 Session 12 — Loan calculator: inputs, monthly breakdown
 Session 13 — AI property summary block
-Session 14 — Market Conditions Report: full layout
+Session 14 — Market Conditions Report: full layout (modern card)
 Session 14.5 — AI response card emission: update system prompt + parse
                structured payload so real Claude replies attach a
                cardType + cardData to the message. Tuned live against
                the API once the key is in
+Session 14.6 — Print/document report format (default #2): Georgia
+               serif + white bg + table-driven layout, format selector
+               at top of report views, both Property + Market reports
+               support it. Reference: docs/vis_reporting.html
 Session 15 — Three tier system: vis-tier, feature gates per tier
 Session 16 — Supabase schema: agents, agent_training, brokerages tables
 Session 17 — Agent settings page: AI name, logo upload, brand color,
@@ -600,6 +610,17 @@ Session 19 — Subdomain routing: Vercel wildcard domain config,
 Session 20 — Agent branded chat UI: logo replaces V, AI name applied,
              brand color applied, Vis invisible
 Session 21 — Agent branded reports: agent logo, name, no Vis mention
+Session 21.5 — Custom template schema + AI-driven generation: define
+               a JSON template schema (sections + which existing
+               components + custom-section primitives); add a "Train
+               Your Template" textarea where the agent describes the
+               report they want; Claude converts the description into
+               a valid template JSON; preview pane renders the result
+Session 21.6 — Custom template storage + picker UI + reuse: Supabase
+               agent_templates table; save / list / delete custom
+               templates per agent; format/template picker at top of
+               every report view shows the 2 defaults (Modern card +
+               Print document) plus the agent's saved custom templates
 Session 22 — Enterprise brokerage URL + brokerage training baseline
 Session 23 — Agent sub-URLs under brokerage subdomain
 Session 24 — Combined system prompt: brokerage layer + agent layer
@@ -619,14 +640,16 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: Session 8 — Property Report full layout
-Current status: PropertyReport.jsx now renders the full aesthetic
-report using mock data — top bar (back), WhiteLabelHeader, address +
-6-stat header card, VisScore donut, PropertyFacts grid, MarketConditions
-6-metric grid, LoanCalculator breakdown, AISummary (prose + strengths
-+ risks + best-suited-for), ShareExport bar with tier-gated Send to
-Client, legal footer. Each section is its own component so 9-13 can
-enhance in place without touching the page-level layout.
+Last completed: Session 8 + spec cleanup — VisScore removed from
+product, AI template builder sessions drafted
+Current status: PropertyReport.jsx renders the full Modern card
+report (top bar, WhiteLabelHeader, address + 6-stat header card,
+PropertyFacts grid, MarketConditions 6-metric grid, LoanCalculator
+breakdown, AISummary, ShareExport, legal footer). No score concept
+anywhere; cards highlight the headline value (est. value / median
+price) in accent. New build-order entries: 14.6 (Print format),
+21.5 (Template schema + AI gen), 21.6 (Template storage + picker).
+Session 11 marked removed.
 Next task: Session 9 — Property facts inline edit layer (let user
 correct or annotate any field; user additions labelled "added by
 user")

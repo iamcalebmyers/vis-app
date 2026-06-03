@@ -1,5 +1,4 @@
 import WhiteLabelHeader from "../components/WhiteLabelHeader.jsx";
-import VisScore from "../components/VisScore.jsx";
 import PropertyFacts from "../components/PropertyFacts.jsx";
 import MarketConditions from "../components/MarketConditions.jsx";
 import LoanCalculator from "../components/LoanCalculator.jsx";
@@ -218,11 +217,6 @@ function PropertyReport({ data, onBack }) {
       >
         <WhiteLabelHeader reportType="Property Report" />
         <PropertyHeader property={property} />
-        <VisScore
-          score={ai.visScore}
-          label={ai.visScoreLabel}
-          reason={ai.visScoreReason}
-        />
         <PropertyFacts property={property} />
         <MarketConditions market={market} />
         <LoanCalculator />
