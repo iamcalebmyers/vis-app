@@ -679,7 +679,10 @@ Session 27 — Buyer tier branding + usage limit UI
 Session 28 — Share / export / save: link, PDF, save to sessions
 Session 29 — Settings page: theme, account, subscription status
 Session 30 — Subscription gate: paywall, upgrade prompts on limit hit
-Session 31 — Theme system: Charcoal, True Black, Light switcher
+Session 31 — Theme system polish (the in-nav cycle switcher was pulled
+              forward into the UI redesign; this session can add system
+              preference detection, per-tier defaults, smarter UI like
+              a dropdown with live previews, etc.)
 Session 32 — Mobile optimization: responsive pass all pages
 Session 33 — Performance + error handling: loading states, fallbacks
 Session 34 — Beta deployment + feedback collection

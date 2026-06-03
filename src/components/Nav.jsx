@@ -1,5 +1,6 @@
 import { useState } from "react";
 import TierBadge from "./TierBadge.jsx";
+import ThemeSwitcher from "./ThemeSwitcher.jsx";
 
 const TABS = [
   { id: "chat", label: "Chat" },
@@ -148,7 +149,8 @@ function Nav({ active = "chat", onTabChange }) {
         ))}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <ThemeSwitcher />
         <TierBadge />
         <LiveIndicator />
       </div>
