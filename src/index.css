@@ -28,8 +28,8 @@
   --bg: #111111;
   --card: #3d3d3d;
   --card-tint: #2a201a;
-  --border: #3d3d3d;
-  --border-soft: #2a2a2a;
+  --border: #525252;        /* lighter than --card so internal borders show */
+  --border-soft: #2a2a2a;   /* darker than --card for inset surface bgs */
   --muted: #888888;
   --muted-soft: #aaaaaa;
   --muted-faint: #555555;
@@ -45,8 +45,8 @@
   --bg: #000000;
   --card: #1a1a1a;
   --card-tint: #1f1410;
-  --border: #2a2a2a;
-  --border-soft: #1a1a1a;
+  --border: #3d3d3d;        /* lighter than --card so internal borders show */
+  --border-soft: #2a2a2a;   /* between --bg and --card for inset surfaces */
   --muted: #777777;
   --muted-soft: #999999;
   --muted-faint: #444444;
