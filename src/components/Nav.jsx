@@ -1,3 +1,4 @@
+import { useState } from "react";
 import TierBadge from "./TierBadge.jsx";
 
 const TABS = [
@@ -7,7 +8,74 @@ const TABS = [
   { id: "settings", label: "Settings" },
 ];
 
-function Nav({ active = "chat" }) {
+function LiveIndicator() {
+  return (
+    <div
+      title="Live"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          background: "var(--accent)",
+          boxShadow: "0 0 0 3px var(--accent-soft)",
+        }}
+      />
+      <span
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          fontWeight: 700,
+          color: "var(--accent)",
+          letterSpacing: "0.1em",
+        }}
+      >
+        LIVE
+      </span>
+    </div>
+  );
+}
+
+function Tab({ tab, isActive, onClick }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: "transparent",
+        border: "none",
+        padding: "6px 14px",
+        fontFamily: "var(--font-sans)",
+        fontSize: 13,
+        fontWeight: isActive ? 600 : 400,
+        color: isActive
+          ? "var(--white)"
+          : hover
+            ? "var(--white)"
+            : "var(--muted)",
+        borderBottom: isActive
+          ? "2px solid var(--accent)"
+          : "2px solid transparent",
+        cursor: isActive ? "default" : "pointer",
+        transition: "color 0.15s ease",
+      }}
+    >
+      {tab.label}
+    </button>
+  );
+}
+
+function Nav({ active = "chat", onTabChange }) {
   return (
     <nav
       style={{
@@ -15,8 +83,10 @@ function Nav({ active = "chat" }) {
         alignItems: "center",
         justifyContent: "space-between",
         height: 48,
-        padding: "0 20px",
-        background: "var(--bg)",
+        padding: "0 24px",
+        background: "rgba(247, 246, 243, 0.92)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border)",
         fontFamily: "var(--font-sans)",
         position: "sticky",
@@ -28,16 +98,16 @@ function Nav({ active = "chat" }) {
         <span
           aria-hidden="true"
           style={{
-            width: 24,
-            height: 24,
+            width: 26,
+            height: 26,
             borderRadius: 6,
             background: "var(--accent)",
             color: "#ffffff",
             display: "grid",
             placeItems: "center",
             fontFamily: "var(--font-mono)",
-            fontWeight: 700,
-            fontSize: 11,
+            fontWeight: 800,
+            fontSize: 12,
             lineHeight: 1,
           }}
         >
@@ -47,76 +117,41 @@ function Nav({ active = "chat" }) {
           style={{
             fontFamily: "var(--font-sans)",
             fontWeight: 800,
-            fontSize: 16,
+            fontSize: 15,
             color: "var(--white)",
-            letterSpacing: "-0.01em",
+            letterSpacing: "-0.02em",
             lineHeight: 1,
           }}
         >
           vis
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontWeight: 400,
-              fontSize: 9,
-              color: "var(--muted)",
-              marginLeft: 1,
-              letterSpacing: 0,
-            }}
-          >
-            .realestate
-          </span>
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            color: "var(--muted-faint)",
+            lineHeight: 1,
+          }}
+        >
+          .realestate
         </span>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "stretch",
-          height: "100%",
-          gap: 24,
-        }}
-      >
-        {TABS.map((tab) => {
-          const isActive = active === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              style={{
-                position: "relative",
-                background: "transparent",
-                border: "none",
-                padding: 0,
-                color: isActive ? "var(--white)" : "var(--muted)",
-                fontFamily: "var(--font-sans)",
-                fontWeight: isActive ? 700 : 400,
-                fontSize: 14,
-                lineHeight: 1,
-                cursor: isActive ? "default" : "pointer",
-                transition: "color 0.15s ease",
-              }}
-            >
-              {tab.label}
-              {isActive && (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    bottom: -16,
-                    height: 2,
-                    background: "var(--accent)",
-                  }}
-                />
-              )}
-            </button>
-          );
-        })}
+      <div style={{ display: "flex", gap: 2 }}>
+        {TABS.map((tab) => (
+          <Tab
+            key={tab.id}
+            tab={tab}
+            isActive={active === tab.id}
+            onClick={() => onTabChange && onTabChange(tab.id)}
+          />
+        ))}
       </div>
 
-      <TierBadge />
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <TierBadge />
+        <LiveIndicator />
+      </div>
     </nav>
   );
 }

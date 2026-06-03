@@ -6,56 +6,71 @@ import {
   MOCK_RATE_CARD,
 } from "../data/mockData.js";
 
-const container = {
-  background: "var(--bg)",
+const cardOuter = {
+  background: "var(--card)",
   border: "1px solid var(--border)",
-  borderRadius: 10,
-  padding: 14,
+  borderRadius: 8,
+  overflow: "hidden",
   marginTop: 10,
-  width: "100%",
+};
+
+const cardHeader = {
+  padding: "10px 14px",
+  borderBottom: "1px solid var(--border)",
 };
 
 const headerLabel = {
   fontFamily: "var(--font-mono)",
-  fontSize: 10,
+  fontSize: 11,
   color: "var(--muted)",
-  letterSpacing: "0.1em",
+  letterSpacing: "0.08em",
   textTransform: "uppercase",
-  marginBottom: 12,
 };
 
-const statRow = { display: "flex", gap: 12, marginBottom: 12 };
+const statRow = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr",
+  gap: 6,
+  marginBottom: 12,
+};
+const statTwoRow = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 6,
+  marginBottom: 12,
+};
 const grid2 = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 };
 
-function StatBlock({ label, value, sublabel, accent, sublabelAccent }) {
+function StatBlock({ label, value, sublabel, accent }) {
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        flex: 1,
+        padding: "10px 12px",
+        background: accent ? "var(--card-tint)" : "var(--border-soft)",
+        borderRadius: 6,
         minWidth: 0,
       }}
     >
-      <span
+      <div
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: 9,
-          color: "var(--muted)",
-          letterSpacing: "0.08em",
+          color: "var(--muted-faint)",
+          letterSpacing: "0.1em",
+          marginBottom: 4,
           textTransform: "uppercase",
         }}
       >
         {label}
-      </span>
-      <span
+      </div>
+      <div
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 26,
-          fontWeight: 800,
+          fontSize: accent ? 26 : 20,
+          fontWeight: 700,
           color: accent ? "var(--accent)" : "var(--white)",
-          lineHeight: 1.05,
+          lineHeight: 1,
+          marginBottom: 3,
           letterSpacing: "-0.01em",
           overflow: "hidden",
           textOverflow: "ellipsis",
@@ -63,17 +78,17 @@ function StatBlock({ label, value, sublabel, accent, sublabelAccent }) {
         }}
       >
         {value}
-      </span>
+      </div>
       {sublabel && (
-        <span
+        <div
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: 12,
-            color: sublabelAccent || accent ? "var(--accent)" : "var(--muted)",
+            fontSize: 11,
+            color: accent ? "var(--accent)" : "var(--muted)",
           }}
         >
           {sublabel}
-        </span>
+        </div>
       )}
     </div>
   );
@@ -83,12 +98,13 @@ function FactPill({ label, value }) {
   return (
     <div
       style={{
-        background: "var(--card)",
-        borderRadius: 8,
-        padding: "8px 12px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
+        padding: "7px 10px",
+        background: "var(--border-soft)",
+        border: "1px solid var(--border)",
+        borderRadius: 6,
         gap: 8,
         minWidth: 0,
       }}
@@ -106,9 +122,9 @@ function FactPill({ label, value }) {
       <span
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: 700,
-          color: "var(--text)",
+          color: "var(--white)",
           whiteSpace: "nowrap",
         }}
       >
@@ -125,15 +141,15 @@ function LineItem({ label, value }) {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: "8px 0",
-        borderBottom: "1px solid var(--border)",
+        padding: "9px 0",
+        borderBottom: "1px solid var(--border-soft)",
       }}
     >
       <span
         style={{
           fontFamily: "var(--font-sans)",
           fontSize: 13,
-          color: "var(--muted)",
+          color: "var(--muted-soft)",
         }}
       >
         {label}
@@ -141,9 +157,9 @@ function LineItem({ label, value }) {
       <span
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 14,
-          fontWeight: 700,
-          color: "var(--text)",
+          fontSize: 13,
+          fontWeight: 600,
+          color: "var(--white)",
         }}
       >
         {value}
@@ -159,8 +175,8 @@ function TotalRow({ label, value }) {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingTop: 10,
-        borderTop: "1px solid var(--border)",
+        paddingTop: 12,
+        marginTop: 2,
       }}
     >
       <span
@@ -177,8 +193,9 @@ function TotalRow({ label, value }) {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: 22,
-          fontWeight: 900,
+          fontWeight: 800,
           color: "var(--accent)",
+          letterSpacing: "-0.01em",
         }}
       >
         {value}
@@ -189,87 +206,133 @@ function TotalRow({ label, value }) {
 
 function PropertyCard({ data, showButton, onGenerateReport }) {
   return (
-    <div style={container}>
-      <div style={headerLabel}>Property snapshot</div>
-      <div style={statRow}>
-        <StatBlock label="Est. value" value={data.estValue} sublabel={data.appreciation} accent />
-        <StatBlock label="Price / sqft" value={data.pricePerSqft} sublabel={data.pricePerSqftHint} />
-        <StatBlock label="Days on mkt" value={data.daysOnMarket} sublabel="Area avg" />
+    <div style={cardOuter}>
+      <div style={cardHeader}>
+        <span style={headerLabel}>Property snapshot</span>
       </div>
-      <div style={grid2}>
-        <FactPill label="Beds / Baths" value={`${data.beds} / ${data.baths}`} />
-        <FactPill label="Sq ft" value={data.sqft} />
-        <FactPill label="Year built" value={data.yearBuilt} />
-        <FactPill label="School rating" value={data.schoolRating} />
+      <div style={{ padding: "14px 14px 14px" }}>
+        <div style={statRow}>
+          <StatBlock
+            label="Est. value"
+            value={data.estValue}
+            sublabel={data.appreciation}
+            accent
+          />
+          <StatBlock
+            label="Price / sqft"
+            value={data.pricePerSqft}
+            sublabel={data.pricePerSqftHint}
+          />
+          <StatBlock
+            label="Days on mkt"
+            value={data.daysOnMarket}
+            sublabel="Area avg"
+          />
+        </div>
+        <div style={grid2}>
+          <FactPill label="Beds / Baths" value={`${data.beds} / ${data.baths}`} />
+          <FactPill label="Sq ft" value={data.sqft} />
+          <FactPill label="Year built" value={data.yearBuilt} />
+          <FactPill label="School rating" value={data.schoolRating} />
+        </div>
+        {showButton && (
+          <GenerateReportButton
+            onClick={() =>
+              onGenerateReport && onGenerateReport("property", data)
+            }
+          />
+        )}
       </div>
-      {showButton && (
-        <GenerateReportButton
-          onClick={() =>
-            onGenerateReport && onGenerateReport("property", data)
-          }
-        />
-      )}
     </div>
   );
 }
 
 function LoanCard({ data }) {
   return (
-    <div style={container}>
-      <div style={headerLabel}>Monthly breakdown</div>
-      <LineItem label="Principal & interest" value={data.principalAndInterest} />
-      <LineItem label="Est. property tax" value={data.propertyTax} />
-      <LineItem label="HOA" value={data.hoa} />
-      <LineItem label="Est. insurance" value={data.insurance} />
-      <TotalRow label="Total monthly" value={data.totalMonthly} />
+    <div style={cardOuter}>
+      <div style={cardHeader}>
+        <span style={headerLabel}>Monthly breakdown</span>
+      </div>
+      <div style={{ padding: "4px 14px 14px" }}>
+        <LineItem label="Principal & interest" value={data.principalAndInterest} />
+        <LineItem label="Est. property tax" value={data.propertyTax} />
+        <LineItem label="HOA" value={data.hoa} />
+        <LineItem label="Est. insurance" value={data.insurance} />
+        <TotalRow label="Total monthly" value={data.totalMonthly} />
+      </div>
     </div>
   );
 }
 
 function MarketCard({ data, showButton, onGenerateReport }) {
   return (
-    <div style={container}>
-      <div style={headerLabel}>Market conditions</div>
-      <div style={statRow}>
-        <StatBlock label="Median price" value={data.medianPrice} sublabel={data.priceChange} accent />
-        <StatBlock label="Active listings" value={data.activeListings} sublabel={data.activeListingsChange} />
-        <StatBlock label="Days on mkt" value={data.daysOnMarket} sublabel="Area average" />
+    <div style={cardOuter}>
+      <div style={cardHeader}>
+        <span style={headerLabel}>Market conditions</span>
       </div>
-      <div style={grid2}>
-        <FactPill label="Active listings" value={data.activeListings} />
-        <FactPill label="List/Sale ratio" value={data.listSaleRatio} />
-        <FactPill label="Price reductions" value={data.priceReductions} />
-        <FactPill label="Avg price/sqft" value={data.avgPricePerSqft} />
+      <div style={{ padding: "14px 14px 14px" }}>
+        <div style={statRow}>
+          <StatBlock
+            label="Median price"
+            value={data.medianPrice}
+            sublabel={data.priceChange}
+            accent
+          />
+          <StatBlock
+            label="Active listings"
+            value={data.activeListings}
+            sublabel={data.activeListingsChange}
+          />
+          <StatBlock
+            label="Days on mkt"
+            value={data.daysOnMarket}
+            sublabel="Area avg"
+          />
+        </div>
+        <div style={grid2}>
+          <FactPill label="Active listings" value={data.activeListings} />
+          <FactPill label="List/Sale ratio" value={data.listSaleRatio} />
+          <FactPill label="Price reductions" value={data.priceReductions} />
+          <FactPill label="Avg price/sqft" value={data.avgPricePerSqft} />
+        </div>
+        {showButton && (
+          <GenerateReportButton
+            onClick={() =>
+              onGenerateReport && onGenerateReport("market", data)
+            }
+          />
+        )}
       </div>
-      {showButton && (
-        <GenerateReportButton
-          onClick={() =>
-            onGenerateReport && onGenerateReport("market", data)
-          }
-        />
-      )}
     </div>
   );
 }
 
 function RateCard({ data }) {
   return (
-    <div style={container}>
-      <div style={headerLabel}>Rate snapshot</div>
-      <div style={statRow}>
-        <StatBlock label="30yr fixed" value={data.rate30yr} sublabel={data.rateChange} />
-        <StatBlock
-          label="Monthly payment"
-          value={data.monthlyPayment}
-          sublabel="at 20% down on $487K"
-          accent
-        />
+    <div style={cardOuter}>
+      <div style={cardHeader}>
+        <span style={headerLabel}>Rate snapshot</span>
       </div>
-      <div style={grid2}>
-        <FactPill label="15yr Fixed" value={data.rate15yr} />
-        <FactPill label="5/1 ARM" value={data.rateArm} />
-        <FactPill label="Next Fed Meeting" value={data.nextFed} />
-        <FactPill label="Fed Expectation" value={data.fedExpectation} />
+      <div style={{ padding: "14px 14px 14px" }}>
+        <div style={statTwoRow}>
+          <StatBlock
+            label="30yr fixed"
+            value={data.rate30yr}
+            sublabel={data.rateChange}
+          />
+          <StatBlock
+            label="Monthly payment"
+            value={data.monthlyPayment}
+            sublabel="at 20% down on $487K"
+            accent
+          />
+        </div>
+        <div style={grid2}>
+          <FactPill label="15yr Fixed" value={data.rate15yr} />
+          <FactPill label="5/1 ARM" value={data.rateArm} />
+          <FactPill label="Next Fed Meeting" value={data.nextFed} />
+          <FactPill label="Fed Expectation" value={data.fedExpectation} />
+        </div>
       </div>
     </div>
   );

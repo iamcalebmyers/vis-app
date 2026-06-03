@@ -20,37 +20,67 @@ function TypingIndicator() {
     <div
       style={{
         display: "flex",
-        alignItems: "flex-end",
-        gap: 8,
-        margin: "8px 0",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        marginBottom: 20,
       }}
     >
-      <span
-        aria-hidden="true"
+      <div
         style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          background: "var(--accent)",
-          color: "#ffffff",
-          display: "grid",
-          placeItems: "center",
-          fontFamily: "var(--font-mono)",
-          fontWeight: 700,
-          fontSize: 13,
-          lineHeight: 1,
-          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          marginBottom: 6,
         }}
       >
-        V
-      </span>
+        <span
+          aria-hidden="true"
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 5,
+            background: "var(--accent)",
+            color: "#ffffff",
+            display: "grid",
+            placeItems: "center",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 800,
+            fontSize: 10,
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+        >
+          V
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--white)",
+          }}
+        >
+          Vis
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 11,
+            color: "var(--muted-faint)",
+          }}
+        >
+          typing
+        </span>
+      </div>
       <div
         role="status"
         aria-label="Vis is typing"
         style={{
-          background: "var(--card)",
-          borderRadius: "0 10px 10px 10px",
           padding: "12px 14px",
+          background: "var(--card)",
+          border: "1px solid var(--border)",
+          borderRadius: "4px 14px 14px 14px",
+          boxShadow: "var(--shadow-card)",
           display: "flex",
           alignItems: "center",
           gap: 6,

@@ -112,7 +112,7 @@ function AISummary({ summary, strengths, risks, bestSuitedFor, aiName = "Vis" })
         <div
           style={{
             padding: 16,
-            background: "var(--bg)",
+            background: "var(--border-soft)",
             border: "1px solid var(--border)",
             borderRadius: 10,
           }}

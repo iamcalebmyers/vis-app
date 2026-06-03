@@ -12,7 +12,7 @@ function InputRow({ label, value }) {
         flexDirection: "column",
         gap: 4,
         padding: 12,
-        background: "var(--bg)",
+        background: "var(--border-soft)",
         border: "1px solid var(--border)",
         borderRadius: 10,
         minWidth: 0,

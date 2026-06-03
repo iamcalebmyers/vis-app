@@ -170,33 +170,55 @@ DESIGN SYSTEM — FOLLOW EXACTLY EVERY SESSION
 Colors — CSS variables only. Never hardcode hex in components.
 
 ```css
-/* Charcoal (default) */
---bg:       #111111
---card:     #3D3D3D
---border:   #3D3D3D
---muted:    #888888
---text:     #D8D8D8
---white:    #FFFFFF
---accent:   #DA6B3A
+/* Light (default) — warm cream */
+--bg:           #f7f6f3   /* page background */
+--card:         #ffffff   /* cards, surfaces */
+--card-tint:    #fff8f5   /* warm accent-tinted surface (headline stats) */
+--border:       #e8e6e3   /* primary borders */
+--border-soft:  #f0ede9   /* sidebar bg + tertiary borders + inset surfaces */
+--muted:        #9b8ea0   /* labels */
+--muted-soft:   #6b6560   /* secondary text */
+--muted-faint:  #c0b8b4   /* timestamps, tertiary */
+--text:         #2a2825   /* body text */
+--white:        #1a1a18   /* strongest text — headlines, key values */
+--accent:       #DA6B3A   /* brand orange */
+--accent-soft:  rgba(218, 107, 58, 0.08)  /* halo / focus ring tint */
+--shadow-card:  0 1px 3px rgba(0, 0, 0, 0.04)
 
-/* True Black */
---bg:       #000000
---card:     #1a1a1a
---border:   #2a2a2a
---muted:    #777777
---text:     #e8e8e8
---white:    #FFFFFF
---accent:   #DA6B3A
+/* Charcoal (alternate, opt-in via data-theme="charcoal") */
+--bg:           #111111
+--card:         #3D3D3D
+--card-tint:    #2a201a
+--border:       #3D3D3D
+--border-soft:  #2a2a2a
+--muted:        #888888
+--muted-soft:   #aaaaaa
+--muted-faint:  #555555
+--text:         #D8D8D8
+--white:        #FFFFFF
+--accent:       #DA6B3A
+--accent-soft:  rgba(218, 107, 58, 0.18)
+--shadow-card:  none
 
-/* Light */
---bg:       #F4F4F2
---card:     #FFFFFF
---border:   #D8D8D8
---muted:    #888888
---text:     #111111
---white:    #111111
---accent:   #C05A2A
+/* True Black (alternate, opt-in via data-theme="black") */
+--bg:           #000000
+--card:         #1a1a1a
+--card-tint:    #1f1410
+--border:       #2a2a2a
+--border-soft:  #1a1a1a
+--muted:        #777777
+--muted-soft:   #999999
+--muted-faint:  #444444
+--text:         #e8e8e8
+--white:        #FFFFFF
+--accent:       #DA6B3A
+--accent-soft:  rgba(218, 107, 58, 0.18)
+--shadow-card:  none
 ```
+
+`--white` is semantic: it means "strongest text color in this theme" — actual
+white on dark themes, near-black `#1a1a18` on Light. Same for `--text` (body
+text) and `--muted-*` (the muted ladder).
 
 On agent custom URLs var(--accent) is replaced with the agent's
 brand_color from Supabase. Apply by overriding --accent on
@@ -217,16 +239,43 @@ Typography — strict, no exceptions
 Visual rules
 
 - Background: always var(--bg)
-- Cards: var(--card) bg, 1px solid var(--border), radius 12px
-- No drop shadows anywhere. Borders only.
-- Primary buttons: var(--accent) bg, white text, 700 weight
-- Secondary buttons: var(--card) bg, 1px solid var(--border)
-- Radius: 12px cards, 8px buttons and inputs, 20px pills
+- Cards: var(--card) bg, 1px solid var(--border), radius 8-12px
+- Inset surfaces (cards inside cards, fact pills): var(--border-soft) bg
+- Drop shadows: only the subtle var(--shadow-card) on AI message bubbles
+  and the chat input bar in Light theme. None in Charcoal / Black. No
+  shadows elsewhere
+- Primary buttons: var(--accent) bg, white text, 600-700 weight, radius 7
+- Secondary buttons: var(--border-soft) bg, 1px solid var(--border),
+  hover lifts to var(--card)
+- Outlined buttons (Generate Full Report): transparent bg, 1.5px solid
+  var(--accent), accent text, fills accent on hover
+- Radius: 8-12px cards, 6-8px buttons, 20px pills, 6-10px inner pills
 - Transitions: 0.15s ease on all interactive elements
 - Spacing: generous, never crowd elements
-- Scrollbar: 6px, var(--bg) track, var(--border) thumb
+- Scrollbar: 4px thin, transparent track, var(--border) thumb
 - Global reset: box-sizing border-box, no default margin or padding
 - Round every displayed number — no floating point artifacts
+
+Chat patterns
+
+- Nav: 48px, frosted backdrop (rgba(247,246,243,0.92) + blur(12px)),
+  1px var(--border) bottom. Logo left, tabs center, TierBadge + LIVE
+  indicator right. LIVE = 7px accent dot with var(--accent-soft) halo
+  + "LIVE" uppercase mono label
+- AI message: V avatar + "Vis" name + relative timestamp ABOVE the
+  bubble. Bubble var(--card) bg, 1px var(--border), radius
+  4/14/14/14, var(--shadow-card), max-width 88% (92% with a card)
+- User message: orange bubble, white text, radius 14/14/4/14, max-width
+  72%. No avatar, no header
+- Page title block at top of thread: session name + "Started {date}"
+  in muted
+- Chat input: white card + var(--shadow-card), pill input field +
+  orange Send button (7px radius). Persistent disclaimer line below:
+  "Vis uses AI and publicly available data · Not financial or legal
+  advice"
+- Sidebar: var(--border-soft) bg, "Recent chats" mono header, sessions
+  as flat rows, active session in white card with border, "+ New chat"
+  is a 1.5px dashed border button at the bottom of the list
 
 Accent color
 
@@ -640,16 +689,21 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: Session 8 + spec cleanup — VisScore removed from
-product, AI template builder sessions drafted
-Current status: PropertyReport.jsx renders the full Modern card
-report (top bar, WhiteLabelHeader, address + 6-stat header card,
-PropertyFacts grid, MarketConditions 6-metric grid, LoanCalculator
-breakdown, AISummary, ShareExport, legal footer). No score concept
-anywhere; cards highlight the headline value (est. value / median
-price) in accent. New build-order entries: 14.6 (Print format),
-21.5 (Template schema + AI gen), 21.6 (Template storage + picker).
-Session 11 marked removed.
+Last completed: UI redesign — Light theme as default, new chat
+patterns
+Current status: Whole app moved to the new warm-light aesthetic.
+Light is the default theme at :root; Charcoal + True Black are
+opt-in via [data-theme]. New tokens (--card-tint, --border-soft,
+--muted-soft, --muted-faint, --shadow-card, --accent-soft). Nav has
+frosted backdrop + LIVE indicator. AI messages now show V avatar +
+"Vis" name + relative timestamp above the bubble; bubbles use
+asymmetric 4/14/14/14 radius with subtle shadow. ChatInput has
+persistent disclaimer below. SessionSidebar in cream with dashed
+"+ New chat" button. DataCard has tinted accent column on the
+headline stat. GenerateReportButton is outlined (fills on hover).
+Reports keep the same structure, now light. Empty state hero
+unchanged in spirit, just light. Session 11 (VisScore) remains
+removed.
 Next task: Session 9 — Property facts inline edit layer (let user
 correct or annotate any field; user additions labelled "added by
 user")

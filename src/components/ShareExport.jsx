@@ -20,25 +20,25 @@ function SecondaryButton({ children, onClick }) {
       type="button"
       onClick={onClick}
       style={{
-        height: 40,
-        padding: "0 16px",
-        background: "var(--card)",
+        height: 36,
+        padding: "0 14px",
+        background: "var(--border-soft)",
         color: "var(--text)",
         border: "1px solid var(--border)",
-        borderRadius: 8,
+        borderRadius: 7,
         fontFamily: "var(--font-sans)",
         fontSize: 13,
-        fontWeight: 700,
+        fontWeight: 600,
         cursor: "pointer",
-        transition: "color 0.15s ease, border-color 0.15s ease",
+        transition: "color 0.15s ease, background 0.15s ease",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.color = "var(--white)";
-        e.currentTarget.style.borderColor = "var(--muted)";
+        e.currentTarget.style.background = "var(--card)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.color = "var(--text)";
-        e.currentTarget.style.borderColor = "var(--border)";
+        e.currentTarget.style.background = "var(--border-soft)";
       }}
     >
       {children}
@@ -52,14 +52,14 @@ function PrimaryButton({ children, onClick }) {
       type="button"
       onClick={onClick}
       style={{
-        height: 40,
-        padding: "0 20px",
+        height: 36,
+        padding: "0 18px",
         background: "var(--accent)",
         color: "#ffffff",
         border: "none",
-        borderRadius: 8,
+        borderRadius: 7,
         fontFamily: "var(--font-sans)",
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 700,
         cursor: "pointer",
         opacity: 1,

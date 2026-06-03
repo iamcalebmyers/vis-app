@@ -7,15 +7,15 @@ function BackButton({ onClick }) {
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
-        height: 32,
+        height: 30,
         padding: "0 12px",
         background: "var(--card)",
-        color: "var(--text)",
+        color: "var(--muted-soft)",
         border: "1px solid var(--border)",
-        borderRadius: 8,
+        borderRadius: 7,
         fontFamily: "var(--font-sans)",
-        fontSize: 13,
-        fontWeight: 700,
+        fontSize: 12,
+        fontWeight: 600,
         cursor: "pointer",
         transition: "color 0.15s ease, border-color 0.15s ease",
       }}
@@ -24,7 +24,7 @@ function BackButton({ onClick }) {
         e.currentTarget.style.borderColor = "var(--muted)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.color = "var(--text)";
+        e.currentTarget.style.color = "var(--muted-soft)";
         e.currentTarget.style.borderColor = "var(--border)";
       }}
     >
@@ -104,7 +104,7 @@ function MarketReport({ data, onBack }) {
           <pre
             style={{
               padding: 16,
-              background: "var(--card)",
+              background: "var(--border-soft)",
               border: "1px solid var(--border)",
               borderRadius: 10,
               fontFamily: "var(--font-mono)",

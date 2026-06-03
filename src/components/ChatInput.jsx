@@ -1,6 +1,9 @@
 import { useState } from "react";
 
-function ChatInput({ onSend, disabled = false, autoFocus = true }) {
+const DISCLAIMER =
+  "Vis uses AI and publicly available data · Not financial or legal advice";
+
+function ChatInput({ onSend, disabled = false, autoFocus = true, showDisclaimer = true }) {
   const [value, setValue] = useState("");
 
   function handleSubmit(e) {
@@ -15,64 +18,79 @@ function ChatInput({ onSend, disabled = false, autoFocus = true }) {
   const sendDisabled = disabled || !trimmed;
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        width: "100%",
-        maxWidth: 720,
-        margin: "0 auto",
-        padding: 12,
-        display: "flex",
-        gap: 8,
-        alignItems: "stretch",
-        background: "var(--card)",
-        border: "none",
-        borderRadius: 16,
-      }}
-    >
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="Write a message..."
-        disabled={disabled}
-        autoFocus={autoFocus}
-        aria-label="Chat message"
+    <div style={{ width: "100%" }}>
+      <form
+        onSubmit={handleSubmit}
         style={{
-          flex: 1,
-          height: 56,
-          padding: "0 14px",
+          width: "100%",
+          maxWidth: 760,
+          margin: "0 auto",
+          display: "flex",
+          gap: 8,
+          alignItems: "stretch",
           background: "var(--card)",
-          color: "var(--text)",
-          border: "none",
-          borderRadius: 8,
-          fontFamily: "var(--font-sans)",
-          fontSize: 15,
-          outline: "none",
-        }}
-      />
-      <button
-        type="submit"
-        disabled={sendDisabled}
-        aria-label="Send message"
-        style={{
-          minWidth: 72,
-          padding: "0 18px",
-          background: "var(--accent)",
-          color: "#ffffff",
-          border: "none",
+          border: "1px solid var(--border)",
           borderRadius: 10,
-          fontFamily: "var(--font-sans)",
-          fontSize: 14,
-          fontWeight: 700,
-          cursor: sendDisabled ? "not-allowed" : "pointer",
-          opacity: sendDisabled ? 0.5 : 1,
-          transition: "opacity 0.15s ease",
+          padding: "8px 8px 8px 14px",
+          boxShadow: "var(--shadow-card)",
         }}
       >
-        Send
-      </button>
-    </form>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Ask anything about any property or market..."
+          disabled={disabled}
+          autoFocus={autoFocus}
+          aria-label="Chat message"
+          style={{
+            flex: 1,
+            border: "none",
+            background: "transparent",
+            color: "var(--white)",
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            outline: "none",
+            minHeight: 36,
+          }}
+        />
+        <button
+          type="submit"
+          disabled={sendDisabled}
+          aria-label="Send message"
+          style={{
+            background: "var(--accent)",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: 7,
+            padding: "8px 18px",
+            fontFamily: "var(--font-sans)",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: sendDisabled ? "not-allowed" : "pointer",
+            opacity: sendDisabled ? 0.5 : 1,
+            transition: "opacity 0.15s ease",
+          }}
+        >
+          Send
+        </button>
+      </form>
+      {showDisclaimer && (
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 760,
+            margin: "7px auto 0",
+            textAlign: "center",
+            fontFamily: "var(--font-sans)",
+            fontSize: 11,
+            color: "var(--muted-faint)",
+          }}
+        >
+          {DISCLAIMER}
+        </div>
+      )}
+    </div>
   );
 }
 

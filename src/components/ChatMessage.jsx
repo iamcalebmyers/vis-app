@@ -1,26 +1,61 @@
 import DataCard from "./DataCard.jsx";
+import { relativeTime } from "../utils/formatters.js";
 
-function AiAvatar() {
+function AiAvatar({ size = 22 }) {
   return (
     <span
       aria-hidden="true"
       style={{
-        width: 28,
-        height: 28,
-        borderRadius: 8,
+        width: size,
+        height: size,
+        borderRadius: 5,
         background: "var(--accent)",
         color: "#ffffff",
         display: "grid",
         placeItems: "center",
         fontFamily: "var(--font-mono)",
-        fontWeight: 700,
-        fontSize: 13,
+        fontWeight: 800,
+        fontSize: 10,
         lineHeight: 1,
         flexShrink: 0,
       }}
     >
       V
     </span>
+  );
+}
+
+function AiHeader({ aiName = "Vis", createdAt }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
+        marginBottom: 6,
+      }}
+    >
+      <AiAvatar />
+      <span
+        style={{
+          fontFamily: "var(--font-sans)",
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--white)",
+        }}
+      >
+        {aiName}
+      </span>
+      <span
+        style={{
+          fontFamily: "var(--font-sans)",
+          fontSize: 11,
+          color: "var(--muted-faint)",
+        }}
+      >
+        {createdAt ? relativeTime(createdAt) : "just now"}
+      </span>
+    </div>
   );
 }
 
@@ -32,51 +67,48 @@ function ChatMessage({
   cardData,
   showButton,
   onGenerateReport,
+  createdAt,
 }) {
   const isUser = role === "user";
   const body = text ?? content ?? "";
   const hasCard = !isUser && Boolean(cardType);
 
-  const bubble = (
-    <div
-      style={{
-        maxWidth: hasCard ? "90%" : "75%",
-        padding: "10px 14px",
-        background: isUser ? "var(--accent)" : "var(--card)",
-        color: isUser ? "#ffffff" : "var(--text)",
-        borderRadius: isUser ? "10px 0 10px 10px" : "0 10px 10px 10px",
-        fontFamily: "var(--font-sans)",
-        fontSize: 15,
-        fontWeight: 400,
-        lineHeight: 1.5,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-      }}
-    >
-      {body}
-      {hasCard && (
-        <DataCard
-          type={cardType}
-          data={cardData}
-          showButton={showButton}
-          onGenerateReport={onGenerateReport}
-        />
-      )}
-    </div>
-  );
-
   return (
     <div
       style={{
         display: "flex",
-        justifyContent: isUser ? "flex-end" : "flex-start",
-        alignItems: "flex-end",
-        gap: 8,
-        margin: "8px 0",
+        flexDirection: "column",
+        alignItems: isUser ? "flex-end" : "flex-start",
+        marginBottom: 20,
       }}
     >
-      {!isUser && <AiAvatar />}
-      {bubble}
+      {!isUser && <AiHeader createdAt={createdAt} />}
+      <div
+        style={{
+          maxWidth: isUser ? "72%" : hasCard ? "92%" : "88%",
+          padding: isUser ? "9px 14px" : "12px 14px",
+          background: isUser ? "var(--accent)" : "var(--card)",
+          border: isUser ? "none" : "1px solid var(--border)",
+          borderRadius: isUser ? "14px 14px 4px 14px" : "4px 14px 14px 14px",
+          color: isUser ? "#ffffff" : "var(--text)",
+          fontFamily: "var(--font-sans)",
+          fontSize: 14,
+          lineHeight: 1.65,
+          boxShadow: isUser ? "none" : "var(--shadow-card)",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        }}
+      >
+        <p style={{ margin: 0 }}>{body}</p>
+        {hasCard && (
+          <DataCard
+            type={cardType}
+            data={cardData}
+            showButton={showButton}
+            onGenerateReport={onGenerateReport}
+          />
+        )}
+      </div>
     </div>
   );
 }

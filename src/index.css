@@ -3,37 +3,56 @@
 /* ---------- Themes (CSS variables only — never hardcode hex in components) ---------- */
 
 :root {
-  /* Charcoal — default */
-  --bg: #111111;
-  --card: #3d3d3d;
-  --border: #3d3d3d;
-  --muted: #888888;
-  --text: #d8d8d8;
-  --white: #ffffff;
+  /* Light (default) — warm cream */
+  --bg: #f7f6f3;
+  --card: #ffffff;
+  --card-tint: #fff8f5;        /* warm accent-tinted surface */
+  --border: #e8e6e3;
+  --border-soft: #f0ede9;       /* sidebar bg + tertiary borders */
+  --muted: #9b8ea0;             /* labels */
+  --muted-soft: #6b6560;        /* secondary text */
+  --muted-faint: #c0b8b4;       /* timestamps, tertiary */
+  --text: #2a2825;              /* body text */
+  --white: #1a1a18;             /* strongest text (headlines / key values) */
   --accent: #da6b3a;
+  --accent-soft: rgba(218, 107, 58, 0.08); /* halo, focus ring tint */
 
   --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="charcoal"] {
+  --bg: #111111;
+  --card: #3d3d3d;
+  --card-tint: #2a201a;
+  --border: #3d3d3d;
+  --border-soft: #2a2a2a;
+  --muted: #888888;
+  --muted-soft: #aaaaaa;
+  --muted-faint: #555555;
+  --text: #d8d8d8;
+  --white: #ffffff;
+  --accent: #da6b3a;
+  --accent-soft: rgba(218, 107, 58, 0.18);
+  --shadow-card: none;
 }
 
 [data-theme="black"] {
   --bg: #000000;
   --card: #1a1a1a;
+  --card-tint: #1f1410;
   --border: #2a2a2a;
+  --border-soft: #1a1a1a;
   --muted: #777777;
+  --muted-soft: #999999;
+  --muted-faint: #444444;
   --text: #e8e8e8;
   --white: #ffffff;
   --accent: #da6b3a;
-}
-
-[data-theme="light"] {
-  --bg: #f4f4f2;
-  --card: #ffffff;
-  --border: #d8d8d8;
-  --muted: #888888;
-  --text: #111111;
-  --white: #111111;
-  --accent: #c05a2a;
+  --accent-soft: rgba(218, 107, 58, 0.18);
+  --shadow-card: none;
 }
 
 /* ---------- Global reset ---------- */
@@ -86,8 +105,12 @@ select {
   font-family: inherit;
 }
 
-/* Numbers and data values always use IBM Plex Mono.
-   Use the .mono class or a <code> tag to opt in. */
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* Numbers and data values always use IBM Plex Mono. */
 .mono,
 code,
 kbd,
@@ -95,25 +118,25 @@ samp {
   font-family: var(--font-mono);
 }
 
-/* ---------- Custom scrollbar ---------- */
+/* ---------- Scrollbar (thin) ---------- */
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) var(--bg);
+  scrollbar-color: var(--border) transparent;
 }
 
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--bg);
+  background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 *::-webkit-scrollbar-thumb:hover {

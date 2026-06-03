@@ -1,6 +1,6 @@
 const STORAGE_KEY = "vis-theme";
-const THEMES = ["charcoal", "black", "light"];
-const DEFAULT_THEME = "charcoal";
+const THEMES = ["light", "charcoal", "black"];
+const DEFAULT_THEME = "light";
 
 export function getStoredTheme() {
   try {

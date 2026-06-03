@@ -1,87 +1,69 @@
-import { relativeTime } from "../utils/formatters.js";
+import { useState } from "react";
 
-const SIDEBAR_WIDTH = 260;
+const SIDEBAR_WIDTH = 220;
 
 function NewChatButton({ onClick }) {
+  const [hover, setHover] = useState(false);
   return (
     <button
       type="button"
       onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
-        width: "100%",
-        height: 40,
-        padding: "0 14px",
-        background: "var(--accent)",
-        color: "#ffffff",
-        border: "none",
-        borderRadius: 8,
+        marginTop: 8,
+        padding: "7px 10px",
+        background: "transparent",
+        border: `1.5px dashed ${hover ? "var(--accent)" : "var(--muted-faint)"}`,
+        borderRadius: 6,
         fontFamily: "var(--font-sans)",
-        fontSize: 13,
-        fontWeight: 700,
+        fontSize: 12,
+        color: hover ? "var(--accent)" : "var(--muted)",
         cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        transition: "opacity 0.15s ease",
+        textAlign: "left",
+        transition: "color 0.12s ease, border-color 0.12s ease",
       }}
     >
-      <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-      New chat
+      + New chat
     </button>
   );
 }
 
 function SessionItem({ session, isActive, onClick }) {
+  const [hover, setHover] = useState(false);
+
+  const background = isActive
+    ? "var(--card)"
+    : hover
+      ? "var(--card)"
+      : "transparent";
+  const border =
+    isActive || hover ? "1px solid var(--border)" : "1px solid transparent";
+
   return (
     <button
       type="button"
       onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
-        width: "100%",
-        padding: "10px 12px",
-        background: isActive ? "var(--card)" : "transparent",
-        color: isActive ? "var(--white)" : "var(--text)",
-        border: "none",
-        borderRadius: 8,
+        padding: "7px 10px",
+        background,
+        border,
+        borderRadius: 6,
         textAlign: "left",
         cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        transition: "background 0.15s ease",
         fontFamily: "var(--font-sans)",
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) e.currentTarget.style.background = "var(--card)";
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) e.currentTarget.style.background = "transparent";
+        fontSize: 12,
+        fontWeight: isActive ? 500 : 400,
+        color: isActive ? "var(--white)" : "var(--muted-soft)",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        transition: "background 0.12s ease, border-color 0.12s ease, color 0.12s ease",
       }}
     >
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 400,
-          lineHeight: 1.35,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          width: "100%",
-        }}
-      >
-        {session.name || "New chat"}
-      </span>
-      <span
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          color: "var(--muted)",
-          lineHeight: 1,
-        }}
-      >
-        {relativeTime(session.updatedAt)}
-      </span>
+      {session.name || "New chat"}
     </button>
   );
 }
@@ -93,56 +75,53 @@ function SessionSidebar({ sessions, activeId, onSelect, onNew }) {
       style={{
         width: SIDEBAR_WIDTH,
         flexShrink: 0,
-        background: "var(--bg)",
+        background: "var(--border-soft)",
         borderRight: "1px solid var(--border)",
+        padding: "16px 12px",
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
-        position: "sticky",
-        top: 0,
+        gap: 2,
+        overflowY: "auto",
       }}
     >
       <div
         style={{
-          padding: 12,
-          borderBottom: "1px solid var(--border)",
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          color: "var(--muted-faint)",
+          letterSpacing: "0.08em",
+          padding: "4px 8px",
+          marginBottom: 4,
+          textTransform: "uppercase",
         }}
       >
-        <NewChatButton onClick={onNew} />
+        Recent chats
       </div>
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: 8,
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-        }}
-      >
-        {sessions.length === 0 ? (
-          <p
-            style={{
-              padding: "12px 4px",
-              color: "var(--muted)",
-              fontFamily: "var(--font-sans)",
-              fontSize: 12,
-              lineHeight: 1.5,
-            }}
-          >
-            Your saved chats will appear here.
-          </p>
-        ) : (
-          sessions.map((s) => (
-            <SessionItem
-              key={s.id}
-              session={s}
-              isActive={s.id === activeId}
-              onClick={() => onSelect(s.id)}
-            />
-          ))
-        )}
-      </div>
+
+      {sessions.length === 0 ? (
+        <p
+          style={{
+            padding: "12px 8px",
+            color: "var(--muted)",
+            fontFamily: "var(--font-sans)",
+            fontSize: 12,
+            lineHeight: 1.5,
+          }}
+        >
+          Your saved chats will appear here.
+        </p>
+      ) : (
+        sessions.map((s) => (
+          <SessionItem
+            key={s.id}
+            session={s}
+            isActive={s.id === activeId}
+            onClick={() => onSelect(s.id)}
+          />
+        ))
+      )}
+
+      <NewChatButton onClick={onNew} />
     </aside>
   );
 }

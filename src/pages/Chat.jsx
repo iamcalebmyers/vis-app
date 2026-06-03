@@ -18,7 +18,10 @@ const NAV_HEIGHT = 48;
 function loadInitialMessages() {
   if (typeof window === "undefined") return [];
   if (window.location.hash === "#demo") {
-    return DEMO_MESSAGES.map((m) => ({ ...m }));
+    return DEMO_MESSAGES.map((m) => ({
+      ...m,
+      createdAt: m.createdAt ?? Date.now(),
+    }));
   }
   return [];
 }
@@ -30,7 +33,7 @@ function Hero() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 12,
+        gap: 14,
         textAlign: "center",
       }}
     >
@@ -46,7 +49,7 @@ function Hero() {
             display: "grid",
             placeItems: "center",
             fontFamily: "var(--font-mono)",
-            fontWeight: 700,
+            fontWeight: 800,
             fontSize: 18,
             lineHeight: 1,
           }}
@@ -69,7 +72,7 @@ function Hero() {
               fontFamily: "var(--font-mono)",
               fontWeight: 400,
               fontSize: 12,
-              color: "var(--muted)",
+              color: "var(--muted-faint)",
               marginLeft: 2,
               letterSpacing: 0,
             }}
@@ -159,6 +162,7 @@ function Chat() {
       id: crypto.randomUUID(),
       role: "user",
       content: text,
+      createdAt: Date.now(),
     };
     const next = [...messages, userMsg];
     setMessages(next);
@@ -168,7 +172,12 @@ function Chat() {
       const reply = await sendMessage(toApiMessages(next));
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "ai", content: reply },
+        {
+          id: crypto.randomUUID(),
+          role: "ai",
+          content: reply,
+          createdAt: Date.now(),
+        },
       ]);
     } catch (err) {
       setMessages((prev) => [
@@ -177,6 +186,7 @@ function Chat() {
           id: crypto.randomUUID(),
           role: "ai",
           content: `Sorry — something went wrong reaching the server.\n\n${err?.message || "Unknown error"}`,
+          createdAt: Date.now(),
         },
       ]);
     } finally {
@@ -185,65 +195,86 @@ function Chat() {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
-      <SessionSidebar
-        sessions={sessions}
-        activeId={activeSession?.id || null}
-        onSelect={handleSelectSession}
-        onNew={handleNewChat}
-      />
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        background: "var(--bg)",
+      }}
+    >
+      <Nav active="chat" />
 
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-        }}
-      >
-        <Nav active="chat" />
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <SessionSidebar
+          sessions={sessions}
+          activeId={activeSession?.id || null}
+          onSelect={handleSelectSession}
+          onNew={handleNewChat}
+        />
 
-        {activeReport ? (
-          activeReport.type === "property" ? (
-            <PropertyReport data={activeReport.data} onBack={handleCloseReport} />
-          ) : activeReport.type === "market" ? (
-            <MarketReport data={activeReport.data} onBack={handleCloseReport} />
-          ) : null
-        ) : hasContent ? (
-          <>
-            <ChatThread
-              messages={messages}
-              typing={typing}
-              onGenerateReport={handleGenerateReport}
-            />
-            <div style={{ padding: "12px 20px 20px", background: "var(--bg)" }}>
-              <ChatInput
-                onSend={handleSend}
-                disabled={typing}
-                autoFocus={false}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {activeReport ? (
+            activeReport.type === "property" ? (
+              <PropertyReport
+                data={activeReport.data}
+                onBack={handleCloseReport}
               />
+            ) : activeReport.type === "market" ? (
+              <MarketReport
+                data={activeReport.data}
+                onBack={handleCloseReport}
+              />
+            ) : null
+          ) : hasContent ? (
+            <>
+              <ChatThread
+                messages={messages}
+                typing={typing}
+                session={activeSession}
+                onGenerateReport={handleGenerateReport}
+              />
+              <div
+                style={{
+                  padding: "12px 32px 20px",
+                  background: "var(--bg)",
+                  borderTop: "1px solid var(--border)",
+                }}
+              >
+                <ChatInput
+                  onSend={handleSend}
+                  disabled={typing}
+                  autoFocus={false}
+                />
+              </div>
+            </>
+          ) : (
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 32,
+                padding: "40px 32px",
+              }}
+            >
+              <Hero />
+              <div style={{ width: "100%", maxWidth: 760 }}>
+                <ChatInput onSend={handleSend} disabled={false} autoFocus />
+              </div>
             </div>
-          </>
-        ) : (
-          <div
-            style={{
-              flex: 1,
-              minHeight: `calc(100vh - ${NAV_HEIGHT}px)`,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 32,
-              padding: "40px 20px",
-            }}
-          >
-            <Hero />
-            <div style={{ width: "100%", maxWidth: 760 }}>
-              <ChatInput onSend={handleSend} disabled={false} autoFocus />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

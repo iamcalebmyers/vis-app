@@ -1,28 +1,28 @@
+import { useState } from "react";
+
 function GenerateReportButton({ onClick, label = "Generate Full Report" }) {
+  const [hover, setHover] = useState(false);
+
   return (
     <button
       type="button"
       onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
         width: "100%",
-        background: "var(--accent)",
-        color: "var(--white)",
-        fontFamily: "var(--font-sans)",
-        fontSize: 14,
-        fontWeight: 700,
-        border: "none",
-        borderRadius: 8,
-        padding: 12,
         marginTop: 10,
+        padding: "10px 0",
+        background: hover ? "var(--accent)" : "transparent",
+        color: hover ? "#ffffff" : "var(--accent)",
+        border: "1.5px solid var(--accent)",
+        borderRadius: 6,
+        fontFamily: "var(--font-sans)",
+        fontSize: 13,
+        fontWeight: 600,
+        letterSpacing: "0.01em",
         cursor: "pointer",
-        opacity: 1,
-        transition: "opacity 0.15s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.opacity = "0.85";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.opacity = "1";
+        transition: "background 0.15s ease, color 0.15s ease",
       }}
     >
       {label}
