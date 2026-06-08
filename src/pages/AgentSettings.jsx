@@ -3,48 +3,132 @@ import { supabase } from "../utils/supabase.js";
 import { hasFeature } from "../utils/tier.js";
 import { loadAgentInfo, saveAgentInfo } from "../utils/useAgentInfo.js";
 
-function hslToHex(h, s, l) {
-  s /= 100; l /= 100;
-  const k = n => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  return "#" + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, "0")).join("");
+const WHEEL = 220;
+
+function hsvToRgb(h, s, v) {
+  s /= 100; v /= 100;
+  const k = n => (n + h / 60) % 6;
+  const f = n => v * (1 - s * Math.max(0, Math.min(k(n), 4 - k(n), 1)));
+  return [Math.round(f(5) * 255), Math.round(f(3) * 255), Math.round(f(1) * 255)];
 }
 
-function hexToHue(hex) {
-  if (!/^#[0-9a-f]{6}$/i.test(hex)) return 0;
+function hsvToHex(h, s, v) {
+  const [r, g, b] = hsvToRgb(h, s, v);
+  return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+
+function hexToHsv(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return [0, 0, 100];
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
   const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  if (max === min) return 0;
-  const d = max - min;
-  let h;
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-  else if (max === g) h = ((b - r) / d + 2) / 6;
-  else h = ((r - g) / d + 4) / 6;
-  return Math.round(h * 360);
-}
-
-// Slider range: 0-400. 0-359 = hue, 360-380 = grey, 381-400 = dark/black
-function sliderToColor(val) {
-  const v = parseInt(val);
-  if (v <= 359) return hslToHex(v, 72, 48);
-  if (v <= 380) return "#888888";
-  return "#1a1a1a";
-}
-
-function colorToSlider(hex) {
-  if (!/^#[0-9a-f]{6}$/i.test(hex)) return 0;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  if (max - min < 30) {
-    const lum = (r + g + b) / 3;
-    return lum < 120 ? 395 : 370;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  const v = max;
+  const s = max === 0 ? 0 : d / max;
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d % 6) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+    if (h < 0) h += 1;
   }
-  return hexToHue(hex);
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(v * 100)];
+}
+
+function ColorWheel({ color, onChange }) {
+  const canvasRef = useRef(null);
+  const dragging = useRef(false);
+  const [hsv, setHsv] = useState(() => hexToHsv(color));
+  const R = WHEEL / 2;
+
+  // Sync wheel when hex is typed manually
+  const lastColor = useRef(color);
+  useEffect(() => {
+    if (color !== lastColor.current) {
+      lastColor.current = color;
+      setHsv(hexToHsv(color));
+    }
+  }, [color]);
+
+  // Draw hue/sat wheel at current brightness
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const img = ctx.createImageData(WHEEL, WHEEL);
+    for (let y = 0; y < WHEEL; y++) {
+      for (let x = 0; x < WHEEL; x++) {
+        const dx = x - R, dy = y - R;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > R) continue;
+        const h = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
+        const s = (dist / R) * 100;
+        const [r, g, b] = hsvToRgb(h, s, hsv[2]);
+        const i = (y * WHEEL + x) * 4;
+        img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }, [hsv[2], R]);
+
+  function pick(clientX, clientY) {
+    const rect = canvasRef.current.getBoundingClientRect();
+    const cx = ((clientX - rect.left) / rect.width) * WHEEL;
+    const cy = ((clientY - rect.top) / rect.height) * WHEEL;
+    const dx = cx - R, dy = cy - R;
+    const dist = Math.min(Math.sqrt(dx * dx + dy * dy), R - 1);
+    const h = Math.round(((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360);
+    const s = Math.round((dist / R) * 100);
+    const next = [h, s, hsv[2]];
+    setHsv(next);
+    lastColor.current = hsvToHex(h, s, hsv[2]);
+    onChange(lastColor.current);
+  }
+
+  function onBrightness(v) {
+    const next = [hsv[0], hsv[1], v];
+    setHsv(next);
+    lastColor.current = hsvToHex(hsv[0], hsv[1], v);
+    onChange(lastColor.current);
+  }
+
+  const angle = hsv[0] * Math.PI / 180;
+  const idist = (hsv[1] / 100) * (R - 2);
+  const ix = R + idist * Math.cos(angle);
+  const iy = R + idist * Math.sin(angle);
+  const pureColor = hsvToHex(hsv[0], hsv[1], 100);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+      {/* Wheel */}
+      <div style={{ position: "relative", width: WHEEL, height: WHEEL }}>
+        <div
+          style={{ position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden", cursor: "crosshair", boxShadow: "0 2px 12px rgba(0,0,0,0.25)" }}
+          onMouseDown={e => { dragging.current = true; pick(e.clientX, e.clientY); }}
+          onMouseMove={e => { if (dragging.current) pick(e.clientX, e.clientY); }}
+          onMouseUp={() => { dragging.current = false; }}
+          onMouseLeave={() => { dragging.current = false; }}
+          onTouchStart={e => { e.preventDefault(); pick(e.touches[0].clientX, e.touches[0].clientY); }}
+          onTouchMove={e => { e.preventDefault(); pick(e.touches[0].clientX, e.touches[0].clientY); }}
+        >
+          <canvas ref={canvasRef} width={WHEEL} height={WHEEL} style={{ display: "block", width: "100%", height: "100%" }} />
+        </div>
+        {/* Indicator — outside the clipped div so it's never cut off */}
+        <div style={{ position: "absolute", left: ix, top: iy, width: 18, height: 18, borderRadius: "50%", border: "3px solid #fff", boxShadow: "0 1px 5px rgba(0,0,0,0.45)", transform: "translate(-50%,-50%)", pointerEvents: "none", background: color }} />
+      </div>
+
+      {/* Brightness slider */}
+      <style>{`
+        .brt-slider{-webkit-appearance:none;appearance:none;width:100%;height:18px;border-radius:9px;outline:none;cursor:pointer;border:1px solid var(--border);background:linear-gradient(to right,#000,${pureColor})}
+        .brt-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,0.35);cursor:pointer}
+        .brt-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,0.35);cursor:pointer}
+      `}</style>
+      <div style={{ width: "100%" }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>Brightness</div>
+        <input type="range" min={0} max={100} value={hsv[2]} onChange={e => onBrightness(parseInt(e.target.value))} className="brt-slider" />
+      </div>
+    </div>
+  );
 }
 
 const INPUT = {
@@ -191,20 +275,8 @@ function AgentSettings({ user, userRow }) {
 
         {/* Brand color */}
         <Field label="Brand color" hint="Used on buttons, highlights, and accents across your branded experience.">
-          <style>{`
-            .hue-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; border-radius: 14px; outline: none; cursor: pointer; background: linear-gradient(to right, #ff0000 0%, #ffff00 20%, #00ff00 40%, #00ffff 52%, #0000ff 65%, #ff00ff 89%, #888888 91%, #888888 94.5%, #444444 97%, #1a1a1a 100%); border: 1px solid var(--border); }
-            .hue-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: ${brandColor}; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.35); cursor: pointer; }
-            .hue-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: ${brandColor}; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.35); cursor: pointer; }
-          `}</style>
-          <input
-            type="range"
-            min={0}
-            max={400}
-            value={colorToSlider(brandColor)}
-            onChange={e => setBrandColor(sliderToColor(e.target.value))}
-            className="hue-slider"
-          />
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
+          <ColorWheel color={brandColor} onChange={setBrandColor} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
             <input
               value={brandColor}
               onChange={e => setBrandColor(e.target.value)}
@@ -212,7 +284,7 @@ function AgentSettings({ user, userRow }) {
               maxLength={7}
               style={{ ...INPUT, width: 120, fontFamily: "var(--font-mono)", fontSize: 13 }}
             />
-            <div style={{ width: 44, height: 44, borderRadius: 8, background: brandColor, border: "1px solid var(--border)", flexShrink: 0 }} />
+            <div style={{ width: 40, height: 40, borderRadius: 8, background: brandColor, border: "1px solid var(--border)", flexShrink: 0 }} />
           </div>
         </Field>
 
