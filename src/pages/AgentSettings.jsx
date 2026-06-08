@@ -4,6 +4,17 @@ import { hasFeature } from "../utils/tier.js";
 import { loadAgentInfo, saveAgentInfo } from "../utils/useAgentInfo.js";
 
 const WHEEL = 220;
+const DEFAULT_COLOR = "#DA6B3A";
+
+function getContrastColor(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return "#fff";
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const toLinear = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+  return L > 0.179 ? "#000" : "#fff";
+}
 
 function hsvToRgb(h, s, v) {
   s /= 100; v /= 100;
@@ -202,6 +213,7 @@ function AgentSettings({ user, userRow }) {
 
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", brandColor);
+    document.documentElement.style.setProperty("--accent-text", getContrastColor(brandColor));
   }, [brandColor]);
 
   async function handleLogoUpload(e) {
@@ -302,6 +314,12 @@ function AgentSettings({ user, userRow }) {
               style={{ ...INPUT, width: 120, fontFamily: "var(--font-mono)", fontSize: 13 }}
             />
             <div style={{ width: 40, height: 40, borderRadius: 8, background: brandColor, border: "1px solid var(--border)", flexShrink: 0 }} />
+            {brandColor.toLowerCase() !== DEFAULT_COLOR.toLowerCase() && (
+              <button onClick={() => setBrandColor(DEFAULT_COLOR)}
+                style={{ height: 36, padding: "0 12px", borderRadius: 7, background: "transparent", border: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", cursor: "pointer", whiteSpace: "nowrap" }}>
+                Reset
+              </button>
+            )}
           </div>
         </Field>
 
@@ -367,7 +385,7 @@ function AgentSettings({ user, userRow }) {
         )}
 
         <button onClick={handleSave} disabled={saving || uploading}
-          style={{ height: 42, borderRadius: 8, background: saved ? "#16a34a" : "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: "#fff", cursor: saving || uploading ? "not-allowed" : "pointer", opacity: saving || uploading ? 0.7 : 1, transition: "background 0.2s ease" }}>
+          style={{ height: 42, borderRadius: 8, background: saved ? "#16a34a" : "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: saved ? "#fff" : "var(--accent-text)", cursor: saving || uploading ? "not-allowed" : "pointer", opacity: saving || uploading ? 0.7 : 1, transition: "background 0.2s ease, color 0.2s ease" }}>
           {saving ? "Saving…" : saved ? "Saved!" : "Save settings"}
         </button>
       </div>

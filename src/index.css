@@ -15,6 +15,7 @@
   --text: #2a2825;              /* body text */
   --white: #1a1a18;             /* strongest text (headlines / key values) */
   --accent: #da6b3a;
+  --accent-text: #fff;
   --accent-soft: rgba(218, 107, 58, 0.08); /* halo, focus ring tint */
   --nav-bg: rgba(247, 246, 243, 0.92);
 
@@ -36,6 +37,7 @@
   --text: #d8d8d8;
   --white: #ffffff;
   --accent: #da6b3a;
+  --accent-text: #fff;
   --accent-soft: rgba(218, 107, 58, 0.18);
   --nav-bg: rgba(17, 17, 17, 0.92);
   --shadow-card: none;
@@ -53,6 +55,7 @@
   --text: #e8e8e8;
   --white: #ffffff;
   --accent: #da6b3a;
+  --accent-text: #fff;
   --accent-soft: rgba(218, 107, 58, 0.18);
   --nav-bg: rgba(0, 0, 0, 0.92);
   --shadow-card: none;
