@@ -1,11 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Nav from "../components/Nav.jsx";
 import ChatThread from "../components/ChatThread.jsx";
 import ChatInput from "../components/ChatInput.jsx";
 import SessionSidebar from "../components/SessionSidebar.jsx";
 import PropertyReport from "./PropertyReport.jsx";
 import MarketReport from "./MarketReport.jsx";
+import InvestorReport from "./InvestorReport.jsx";
+import AgentSettings from "./AgentSettings.jsx";
+import TrainAI from "./TrainAI.jsx";
+import ReportTemplates from "./ReportTemplates.jsx";
+import OverageModal from "../components/OverageModal.jsx";
 import { sendMessage } from "../utils/claudeApi.js";
+import { useAgent } from "../utils/AgentContext.jsx";
+import { hasFeature, INVESTOR_CARD_TYPES, usagePct } from "../utils/tier.js";
 import {
   loadSessions,
   saveSession,
@@ -26,71 +33,30 @@ function loadInitialMessages() {
   return [];
 }
 
-function Hero() {
+function Hero({ isAgentDomain, aiName, logoUrl }) {
+  const logo = isAgentDomain ? (
+    logoUrl
+      ? <img src={logoUrl} alt={aiName} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
+      : <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 18, lineHeight: 1 }}>{aiName[0]?.toUpperCase() || "A"}</span>
+  ) : (
+    <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "var(--accent)", color: "#ffffff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 18, lineHeight: 1 }}>V</span>
+  );
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 14,
-        textAlign: "center",
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span
-          aria-hidden="true"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: "var(--accent)",
-            color: "#ffffff",
-            display: "grid",
-            placeItems: "center",
-            fontFamily: "var(--font-mono)",
-            fontWeight: 800,
-            fontSize: 18,
-            lineHeight: 1,
-          }}
-        >
-          V
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-sans)",
-            fontWeight: 800,
-            fontSize: 36,
-            color: "var(--white)",
-            letterSpacing: "-0.02em",
-            lineHeight: 1,
-          }}
-        >
-          vis
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontWeight: 400,
-              fontSize: 12,
-              color: "var(--muted-faint)",
-              marginLeft: 2,
-              letterSpacing: 0,
-            }}
-          >
-            .realestate
-          </span>
+        {logo}
+        <span style={{ fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: 36, color: "var(--white)", letterSpacing: "-0.02em", lineHeight: 1 }}>
+          {isAgentDomain ? aiName : (
+            <>vis<span style={{ fontFamily: "var(--font-mono)", fontWeight: 400, fontSize: 12, color: "var(--muted-faint)", marginLeft: 2, letterSpacing: 0 }}>.realestate</span></>
+          )}
         </span>
       </div>
-      <p
-        style={{
-          color: "var(--muted)",
-          fontFamily: "var(--font-sans)",
-          fontWeight: 400,
-          fontSize: 16,
-        }}
-      >
-        See the market clearly
-      </p>
+      {!isAgentDomain && (
+        <p style={{ color: "var(--muted)", fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: 16 }}>
+          See the market clearly
+        </p>
+      )}
     </div>
   );
 }
@@ -99,12 +65,20 @@ function toApiMessages(messages) {
   return messages.map((m) => ({ role: m.role, content: m.content }));
 }
 
-function Chat() {
+function Chat({ user, userRow, onSignOut, onRefreshUser }) {
+  const agentCtx = useAgent();
   const [sessions, setSessions] = useState(() => loadSessions());
   const [activeSession, setActiveSession] = useState(null);
   const [messages, setMessages] = useState(loadInitialMessages);
   const [typing, setTyping] = useState(false);
   const [activeReport, setActiveReport] = useState(null);
+  const [showOverageModal, setShowOverageModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("chat");
+  const pendingMessageRef = useRef(null);
+
+  const tier = userRow?.tier || "solo";
+  const pct = usagePct(userRow?.usage_current, userRow?.usage_limit);
+  const atLimit = userRow?.usage_limit && (userRow?.usage_current || 0) >= userRow.usage_limit;
 
   const hasContent = messages.length > 0 || typing;
 
@@ -147,7 +121,7 @@ function Chat() {
     setActiveReport(null);
   }
 
-  async function handleSend(text) {
+  async function doSend(text) {
     let session = activeSession;
     if (!session) {
       session = {
@@ -169,16 +143,33 @@ function Chat() {
     setTyping(true);
 
     try {
-      const reply = await sendMessage(toApiMessages(next));
+      const agentTraining = [agentCtx.trainingText, agentCtx.trainingDocText].filter(Boolean).join("\n\n") || null;
+      const { reply, card } = await sendMessage(toApiMessages(next), {
+        userId: user?.id,
+        aiName: agentCtx.aiName,
+        agentTraining,
+        brokerageTraining: agentCtx.brokerageTraining,
+      });
+
+      // Feature gate: investor cards require investor+ tier
+      const isInvestorCard = card?.type && INVESTOR_CARD_TYPES.has(card.type);
+      const canSeeCard = !isInvestorCard || hasFeature(tier, "investor");
+
       setMessages((prev) => [
         ...prev,
         {
           id: crypto.randomUUID(),
           role: "ai",
           content: reply,
+          cardType: canSeeCard ? (card?.type || null) : null,
+          cardData: canSeeCard ? (card?.data || null) : null,
+          showButton: canSeeCard && (card?.type === "property" || card?.type === "market" || card?.type === "deal"),
+          upgradeRequired: !canSeeCard ? "investor" : null,
           createdAt: Date.now(),
         },
       ]);
+
+      if (onRefreshUser) onRefreshUser();
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -194,6 +185,27 @@ function Chat() {
     }
   }
 
+  function handleSend(text) {
+    if (atLimit) {
+      pendingMessageRef.current = text;
+      setShowOverageModal(true);
+      return;
+    }
+    doSend(text);
+  }
+
+  function handleOverageConfirm() {
+    setShowOverageModal(false);
+    const text = pendingMessageRef.current;
+    pendingMessageRef.current = null;
+    if (text) doSend(text);
+  }
+
+  function handleOverageCancel() {
+    setShowOverageModal(false);
+    pendingMessageRef.current = null;
+  }
+
   return (
     <div
       style={{
@@ -203,9 +215,37 @@ function Chat() {
         background: "var(--bg)",
       }}
     >
-      <Nav active="chat" />
+      {showOverageModal && (
+        <OverageModal
+          overageRate={userRow?.overage_rate}
+          onConfirm={handleOverageConfirm}
+          onCancel={handleOverageCancel}
+        />
+      )}
+      <Nav active={activeTab} onTabChange={setActiveTab} userEmail={user?.email} onSignOut={onSignOut} userRow={userRow} />
+      {pct >= 80 && pct < 100 && (
+        <div style={{ background: "rgba(245,158,11,0.1)", borderBottom: "1px solid rgba(245,158,11,0.3)", padding: "7px 24px", fontFamily: "var(--font-sans)", fontSize: 12, color: "#f59e0b", display: "flex", alignItems: "center", gap: 8 }}>
+          <span>You've used {pct}% of your monthly AI queries.</span>
+          <span style={{ color: "var(--muted)" }}>Upgrade your plan for a higher limit.</span>
+        </div>
+      )}
+      {pct >= 100 && (
+        <div style={{ background: "rgba(220,38,38,0.1)", borderBottom: "1px solid rgba(220,38,38,0.3)", padding: "7px 24px", fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+          <span>Monthly query limit reached. Additional queries will be billed as overage.</span>
+        </div>
+      )}
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      {activeTab === "settings" && (
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <AgentSettings user={user} userRow={userRow} />
+          <div style={{ borderTop: "1px solid var(--border)" }} />
+          <TrainAI user={user} userRow={userRow} />
+          <div style={{ borderTop: "1px solid var(--border)" }} />
+          <ReportTemplates user={user} userRow={userRow} />
+        </div>
+      )}
+
+      {activeTab !== "settings" && <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <SessionSidebar
           sessions={sessions}
           activeId={activeSession?.id || null}
@@ -230,6 +270,11 @@ function Chat() {
               />
             ) : activeReport.type === "market" ? (
               <MarketReport
+                data={activeReport.data}
+                onBack={handleCloseReport}
+              />
+            ) : activeReport.type === "deal" ? (
+              <InvestorReport
                 data={activeReport.data}
                 onBack={handleCloseReport}
               />
@@ -268,14 +313,14 @@ function Chat() {
                 padding: "40px 32px",
               }}
             >
-              <Hero />
+              <Hero isAgentDomain={agentCtx.isAgentDomain} aiName={agentCtx.aiName} logoUrl={agentCtx.logoUrl} />
               <div style={{ width: "100%", maxWidth: 760 }}>
                 <ChatInput onSend={handleSend} disabled={false} autoFocus />
               </div>
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
