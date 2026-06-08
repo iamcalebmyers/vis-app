@@ -240,12 +240,16 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
           <AgentSettings user={user} userRow={userRow} />
           <div style={{ borderTop: "1px solid var(--border)" }} />
           <TrainAI user={user} userRow={userRow} />
-          <div style={{ borderTop: "1px solid var(--border)" }} />
+        </div>
+      )}
+
+      {activeTab === "reports" && (
+        <div style={{ flex: 1, overflowY: "auto" }}>
           <ReportTemplates user={user} userRow={userRow} />
         </div>
       )}
 
-      {activeTab !== "settings" && <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      {activeTab === "chat" && <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <SessionSidebar
           sessions={sessions}
           activeId={activeSession?.id || null}
