@@ -1,122 +1,121 @@
+import { useState } from "react";
+import MarketDataGrid from "../components/MarketDataGrid.jsx";
+import AISummary from "../components/AISummary.jsx";
+import ShareExport from "../components/ShareExport.jsx";
+import { MOCK_MARKET, MOCK_RATE_CARD, MOCK_MARKET_AI } from "../data/mockData.js";
+import { ReportFooterLine } from "../components/WhiteLabelHeader.jsx";
+import ReportAgentHeader from "../components/ReportAgentHeader.jsx";
+import { useAgent } from "../utils/AgentContext.jsx";
+
+const SEC = { fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", borderBottom: "2px solid var(--white)", paddingBottom: 6, marginBottom: 14 };
+const TD_L = { fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text)", padding: "10px 0", borderBottom: "1px solid var(--border)" };
+const TD_V = { fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "var(--text)", textAlign: "right", padding: "10px 0", borderBottom: "1px solid var(--border)" };
+
 function BackButton({ onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        height: 30,
-        padding: "0 12px",
-        background: "var(--card)",
-        color: "var(--muted-soft)",
-        border: "1px solid var(--border)",
-        borderRadius: 7,
-        fontFamily: "var(--font-sans)",
-        fontSize: 12,
-        fontWeight: 600,
-        cursor: "pointer",
-        transition: "color 0.15s ease, border-color 0.15s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.color = "var(--white)";
-        e.currentTarget.style.borderColor = "var(--muted)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.color = "var(--muted-soft)";
-        e.currentTarget.style.borderColor = "var(--border)";
-      }}
+    <button type="button" onClick={onClick}
+      style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 30, padding: "0 12px", background: "var(--card)", color: "var(--muted-soft)", border: "1px solid var(--border)", borderRadius: 7, fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "color 0.15s ease, border-color 0.15s ease" }}
+      onMouseEnter={(e) => { e.currentTarget.style.color = "var(--white)"; e.currentTarget.style.borderColor = "var(--muted)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.color = "var(--muted-soft)"; e.currentTarget.style.borderColor = "var(--border)"; }}
     >
-      <span aria-hidden="true">←</span>
-      Back to chat
+      <span aria-hidden="true">←</span> Back to chat
     </button>
   );
 }
 
-function MarketReport({ data, onBack }) {
+function SectionToggle({ enabled, onToggle }) {
   return (
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        background: "var(--bg)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          padding: "16px 20px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+    <button type="button" onClick={onToggle} aria-label={enabled ? "Hide section" : "Show section"}
+      style={{ width: 28, height: 16, borderRadius: 8, background: enabled ? "var(--accent)" : "var(--border)", border: "none", cursor: "pointer", position: "relative", flexShrink: 0, transition: "background 0.2s ease", padding: 0 }}>
+      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: enabled ? 15 : 3, transition: "left 0.2s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
+    </button>
+  );
+}
+
+function RateSection({ rate, enabled, onToggle }) {
+  if (!rate) return null;
+  const rows = [
+    ["30-year fixed", rate.rate30yr],
+    ["15-year fixed", rate.rate15yr],
+    ["5/1 ARM", rate.rateArm],
+    ["Week-over-week change", rate.rateChange],
+    ["Next Fed meeting", rate.nextFed],
+    ["Fed outlook", rate.fedExpectation],
+  ];
+  return (
+    <div style={{ marginTop: 28, opacity: enabled ? 1 : 0.3, transition: "opacity 0.15s ease" }}>
+      <div style={{ ...SEC, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>Rate Context</span>
+        <SectionToggle enabled={enabled} onToggle={onToggle} />
+      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
+          {rows.map(([label, value]) => (
+            <tr key={label}>
+              <td style={TD_L}>{label}</td>
+              <td style={TD_V}>{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function MarketReport({ data, onBack }) {
+  const { isAgentDomain, aiName } = useAgent();
+  const [agentInfo, setAgentInfo] = useState({ name: isAgentDomain ? aiName : "", brokerage: "", license: "", email: "", phone: "" });
+  const [includeAI, setIncludeAI] = useState(true);
+  const [includeRate, setIncludeRate] = useState(true);
+  const market = MOCK_MARKET;
+  const rate = MOCK_RATE_CARD;
+  const ai = MOCK_MARKET_AI;
+  const reportDate = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "var(--bg)", overflow: "auto" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, background: "var(--bg)", zIndex: 5 }}>
         <BackButton onClick={onBack} />
-        <span
-          className="mono"
-          style={{
-            fontSize: 11,
-            color: "var(--muted)",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-          }}
-        >
-          Market Report
-        </span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Market Report</span>
       </div>
 
-      <main
-        style={{
-          flex: 1,
-          padding: "40px 20px",
-          width: "100%",
-          maxWidth: 760,
-          margin: "0 auto",
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: "var(--font-sans)",
-            fontWeight: 800,
-            fontSize: 32,
-            color: "var(--white)",
-            letterSpacing: "-0.02em",
-            marginBottom: 8,
-          }}
-        >
-          Market conditions report
-        </h1>
-        <p
-          style={{
-            color: "var(--muted)",
-            fontFamily: "var(--font-sans)",
-            fontSize: 15,
-            marginBottom: 32,
-          }}
-        >
-          Full layout lands in Session 14 — this is the Session 7 shell so
-          the Generate Full Report button has somewhere to navigate to.
-        </p>
+      <main style={{ flex: 1, padding: "20px 20px 40px" }}>
+        <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
 
-        {data && (
-          <pre
-            style={{
-              padding: 16,
-              background: "var(--border-soft)",
-              border: "1px solid var(--border)",
-              borderRadius: 10,
-              fontFamily: "var(--font-mono)",
-              fontSize: 12,
-              color: "var(--text)",
-              overflowX: "auto",
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        )}
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 16, borderBottom: "3px solid var(--white)", marginBottom: 20 }}>
+            <div>
+              <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>Market Conditions Report</div>
+              <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 22, color: "var(--white)", margin: "0 0 4px" }}>{market.area}</h1>
+              <div style={{ fontFamily: "Arial, sans-serif", fontSize: 13, color: "var(--muted)" }}>{reportDate}</div>
+            </div>
+            <ReportAgentHeader info={agentInfo} onChange={setAgentInfo} />
+          </div>
+
+          {/* AI Analysis */}
+          <div style={{ marginTop: 4, opacity: includeAI ? 1 : 0.3, transition: "opacity 0.15s ease" }}>
+            <div style={{ ...SEC, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>AI Analysis</span>
+              <SectionToggle enabled={includeAI} onToggle={() => setIncludeAI(v => !v)} />
+            </div>
+            <AISummary summary={ai.aiSummary} strengths={ai.keyStrengths} risks={ai.keyRisks} bestSuitedFor={ai.bestSuitedFor} />
+          </div>
+
+          <MarketDataGrid market={market} />
+
+          <RateSection rate={rate} enabled={includeRate} onToggle={() => setIncludeRate(v => !v)} />
+
+          {/* Footer */}
+          <div style={{ marginTop: 28, paddingTop: 14, borderTop: "1px solid var(--border)", fontFamily: "Arial, sans-serif", fontSize: 10, color: "var(--muted)", lineHeight: 1.8 }}>
+            <div>Data sources: Zillow ZHVI · Realtor.com · US Census Bureau ACS · NCEI</div>
+            <ReportFooterLine agentInfo={agentInfo} />
+            <div>AI-gathered data — accuracy not guaranteed. Rate data is indicative only; always confirm with a licensed lender.</div>
+          </div>
+        </div>
+
+        <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
+          <ShareExport />
+        </div>
       </main>
     </div>
   );
