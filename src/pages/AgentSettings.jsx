@@ -158,16 +158,17 @@ function SaveBtn({ onClick, saving, saved, disabled }) {
 }
 
 const NAV = [
-  { id: "profile",  label: "Profile" },
-  { id: "branding", label: "Branding" },
-  { id: "contact",  label: "Contact" },
-  { id: "train",    label: "Train AI" },
+  { id: "profile",  label: "Profile",  tip: "Set your AI's name and the greeting clients see when they open the chat." },
+  { id: "branding", label: "Branding", tip: "Choose your brand color and upload a logo for reports and your client-facing experience." },
+  { id: "contact",  label: "Contact",  tip: "Your name, brokerage, and contact info — auto-filled in the header of every report." },
+  { id: "train",    label: "Train AI", tip: "Write instructions that shape how your AI responds. Upload a doc or type it directly." },
 ];
 
 function AgentSettings({ user, userRow }) {
   const tier = userRow?.tier || "solo";
   const canAccess = hasFeature(tier, "agent");
   const [section, setSection] = useState("profile");
+  const [tooltip, setTooltip] = useState(null); // { text, top, left }
 
   const [profile, setProfile] = useState(null);
   const [aiName, setAiName] = useState("");
@@ -243,12 +244,22 @@ function AgentSettings({ user, userRow }) {
       <nav style={{ width: 180, flexShrink: 0, borderRight: "1px solid var(--border)", background: "var(--border-soft)", display: "flex", flexDirection: "column", padding: "32px 0" }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "0 20px", marginBottom: 16 }}>Settings</div>
         {NAV.map(n => (
-          <button key={n.id} onClick={() => { setSection(n.id); setError(null); }}
+          <button key={n.id}
+            onClick={() => { setSection(n.id); setError(null); }}
+            onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setTooltip({ text: n.tip, top: r.top + r.height / 2, left: r.right + 12 }); }}
+            onMouseLeave={() => setTooltip(null)}
             style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 20px", background: "transparent", border: "none", borderLeft: section === n.id ? "2px solid var(--accent)" : "2px solid transparent", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: section === n.id ? 600 : 400, color: section === n.id ? "var(--white)" : "var(--muted)", cursor: "pointer", transition: "color 0.15s, border-color 0.15s" }}>
             {n.label}
           </button>
         ))}
       </nav>
+
+      {/* Hover tooltip — fixed so it's never clipped */}
+      {tooltip && (
+        <div style={{ position: "fixed", top: tooltip.top, left: tooltip.left, transform: "translateY(-50%)", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 14px", width: 200, zIndex: 1000, pointerEvents: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.18)" }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{tooltip.text}</div>
+        </div>
+      )}
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto" }}>
