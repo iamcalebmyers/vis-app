@@ -26,6 +26,27 @@ function hexToHue(hex) {
   return Math.round(h * 360);
 }
 
+// Slider range: 0-400. 0-359 = hue, 360-380 = grey, 381-400 = dark/black
+function sliderToColor(val) {
+  const v = parseInt(val);
+  if (v <= 359) return hslToHex(v, 72, 48);
+  if (v <= 380) return "#888888";
+  return "#1a1a1a";
+}
+
+function colorToSlider(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return 0;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  if (max - min < 30) {
+    const lum = (r + g + b) / 3;
+    return lum < 120 ? 395 : 370;
+  }
+  return hexToHue(hex);
+}
+
 const INPUT = {
   width: "100%",
   boxSizing: "border-box",
@@ -171,16 +192,16 @@ function AgentSettings({ user, userRow }) {
         {/* Brand color */}
         <Field label="Brand color" hint="Used on buttons, highlights, and accents across your branded experience.">
           <style>{`
-            .hue-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; border-radius: 14px; outline: none; cursor: pointer; background: linear-gradient(to right, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0080ff, #8000ff, #ff00ff, #ff0000); border: 1px solid var(--border); }
+            .hue-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; border-radius: 14px; outline: none; cursor: pointer; background: linear-gradient(to right, #ff0000 0%, #ffff00 20%, #00ff00 40%, #00ffff 52%, #0000ff 65%, #ff00ff 89%, #888888 91%, #888888 94.5%, #444444 97%, #1a1a1a 100%); border: 1px solid var(--border); }
             .hue-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: ${brandColor}; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.35); cursor: pointer; }
-            .hue-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: ${brandColor}; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.35); cursor: pointer; border: none; }
+            .hue-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: ${brandColor}; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.35); cursor: pointer; }
           `}</style>
           <input
             type="range"
             min={0}
-            max={359}
-            value={hexToHue(brandColor)}
-            onChange={e => setBrandColor(hslToHex(parseInt(e.target.value), 72, 48))}
+            max={400}
+            value={colorToSlider(brandColor)}
+            onChange={e => setBrandColor(sliderToColor(e.target.value))}
             className="hue-slider"
           />
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
