@@ -198,6 +198,7 @@ function AgentSettings({ user, userRow }) {
   const [error, setError] = useState(null);
   const fileRef = useRef();
   const [reportInfo, setReportInfo] = useState(loadAgentInfo);
+  const [greeting, setGreeting] = useState(() => loadAgentInfo().greeting || "");
 
   useEffect(() => {
     if (!canAccess || !user?.id) return;
@@ -253,7 +254,7 @@ function AgentSettings({ user, userRow }) {
     if (saveErr) {
       setError("Save failed: " + saveErr.message);
     } else {
-      saveAgentInfo(reportInfo);
+      saveAgentInfo({ ...reportInfo, greeting, logoUrl: logoUrl || "" });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
@@ -298,6 +299,17 @@ function AgentSettings({ user, userRow }) {
             onChange={e => setAiName(e.target.value)}
             placeholder="e.g. Alex"
             maxLength={40}
+            style={{ ...INPUT, borderColor: "var(--border)" }}
+          />
+        </Field>
+
+        {/* Custom greeting */}
+        <Field label="Chat greeting" hint="Shown above the chat input before any messages. Leave blank to show nothing.">
+          <input
+            value={greeting}
+            onChange={e => setGreeting(e.target.value)}
+            placeholder="e.g. Ask me anything about Austin real estate."
+            maxLength={120}
             style={{ ...INPUT, borderColor: "var(--border)" }}
           />
         </Field>

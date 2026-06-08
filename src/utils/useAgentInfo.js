@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const KEY = "vis-agent-info";
 
-const DEFAULTS = { name: "", brokerage: "", license: "", phone: "", email: "" };
+const DEFAULTS = { name: "", brokerage: "", license: "", phone: "", email: "", greeting: "", logoUrl: "" };
 
 export function loadAgentInfo() {
   try {

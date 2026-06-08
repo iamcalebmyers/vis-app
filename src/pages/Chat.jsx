@@ -12,6 +12,7 @@ import ReportTemplates from "./ReportTemplates.jsx";
 import OverageModal from "../components/OverageModal.jsx";
 import { sendMessage } from "../utils/claudeApi.js";
 import { useAgent } from "../utils/AgentContext.jsx";
+import { loadAgentInfo } from "../utils/useAgentInfo.js";
 import { hasFeature, INVESTOR_CARD_TYPES, usagePct } from "../utils/tier.js";
 import {
   loadSessions,
@@ -33,14 +34,18 @@ function loadInitialMessages() {
   return [];
 }
 
-function Hero({ isAgentDomain, aiName, logoUrl }) {
+function Hero({ isAgentDomain, aiName, logoUrl, greeting, localLogoUrl }) {
+  // On agent subdomain: use subdomain branding. On vis.realestate: use locally saved logo/greeting if set.
+  const effectiveLogo = isAgentDomain ? logoUrl : localLogoUrl;
+  const effectiveGreeting = isAgentDomain ? null : greeting; // subdomains handle greeting separately
+
   const logo = isAgentDomain ? (
-    logoUrl
-      ? <img src={logoUrl} alt={aiName} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
+    effectiveLogo
+      ? <img src={effectiveLogo} alt={aiName} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
       : <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 18, lineHeight: 1 }}>{aiName[0]?.toUpperCase() || "A"}</span>
-  ) : (
-    <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "var(--accent)", color: "#ffffff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 18, lineHeight: 1 }}>V</span>
-  );
+  ) : effectiveLogo ? (
+    <img src={effectiveLogo} alt="logo" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
+  ) : null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center" }}>
@@ -52,9 +57,9 @@ function Hero({ isAgentDomain, aiName, logoUrl }) {
           )}
         </span>
       </div>
-      {!isAgentDomain && (
+      {(effectiveGreeting || (!isAgentDomain && !effectiveGreeting)) && (
         <p style={{ color: "var(--muted)", fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: 16 }}>
-          See the market clearly
+          {effectiveGreeting || "See the market clearly"}
         </p>
       )}
     </div>
@@ -317,7 +322,15 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
                 padding: "40px 32px",
               }}
             >
-              <Hero isAgentDomain={agentCtx.isAgentDomain} aiName={agentCtx.aiName} logoUrl={agentCtx.logoUrl} />
+              {(() => { const ai = loadAgentInfo(); return (
+                <Hero
+                  isAgentDomain={agentCtx.isAgentDomain}
+                  aiName={agentCtx.aiName}
+                  logoUrl={agentCtx.logoUrl}
+                  greeting={ai.greeting}
+                  localLogoUrl={ai.logoUrl}
+                />
+              ); })()}
               <div style={{ width: "100%", maxWidth: 760 }}>
                 <ChatInput onSend={handleSend} disabled={false} autoFocus />
               </div>
