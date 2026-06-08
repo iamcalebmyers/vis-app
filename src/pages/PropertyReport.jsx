@@ -7,7 +7,9 @@ import { TipRow } from "../components/ReportTooltip.jsx";
 import { generatePropertySummary } from "../utils/claudeApi.js";
 import { ReportFooterLine } from "../components/WhiteLabelHeader.jsx";
 import ReportAgentHeader from "../components/ReportAgentHeader.jsx";
+import TemplatePicker from "../components/TemplatePicker.jsx";
 import { useAgentInfo } from "../utils/useAgentInfo.js";
+import { sectionVisible } from "../utils/useTemplates.js";
 import { MOCK_PROPERTY, MOCK_MARKET, MOCK_AI_RESPONSE } from "../data/mockData.js";
 import { PROPERTY_MARKET_TIPS } from "../utils/tooltips.js";
 
@@ -55,6 +57,7 @@ function BackButton({ onClick }) {
 
 function PropertyReport({ data, onBack }) {
   const [agentInfo, setAgentInfo] = useAgentInfo();
+  const [activeTemplate, setActiveTemplate] = useState(null);
   const [includeAI, setIncludeAI] = useState(true);
   const [factOverrides, setFactOverrides] = useState({});
   function handleOverride(label, value) {
@@ -96,6 +99,7 @@ function PropertyReport({ data, onBack }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, background: "var(--bg)", zIndex: 5 }}>
         <BackButton onClick={onBack} />
         <span className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Property Report</span>
+        <TemplatePicker reportType="property" selected={activeTemplate} onSelect={setActiveTemplate} />
         <label
           style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
         >
@@ -153,52 +157,57 @@ function PropertyReport({ data, onBack }) {
             <ReportAgentHeader info={agentInfo} onChange={setAgentInfo} />
           </div>
 
-          {/* Estimated value */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 20px", marginBottom: 4 }}>
-            <div>
-              <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>Estimated Value</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 30, color: "var(--accent)", letterSpacing: "-0.02em" }}>${property.estimatedValue?.toLocaleString()}</div>
-              {property.estimatedValueRange && (
-                <div style={{ fontFamily: "Arial, sans-serif", fontSize: 12, color: "var(--muted)", marginTop: 3 }}>Range: ${property.estimatedValueRange.low?.toLocaleString()} — ${property.estimatedValueRange.high?.toLocaleString()}</div>
+          {sectionVisible(activeTemplate, "estimated_value") && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 20px", marginBottom: 4 }}>
+              <div>
+                <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>Estimated Value</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 30, color: "var(--accent)", letterSpacing: "-0.02em" }}>${property.estimatedValue?.toLocaleString()}</div>
+                {property.estimatedValueRange && (
+                  <div style={{ fontFamily: "Arial, sans-serif", fontSize: 12, color: "var(--muted)", marginTop: 3 }}>Range: ${property.estimatedValueRange.low?.toLocaleString()} — ${property.estimatedValueRange.high?.toLocaleString()}</div>
+                )}
+              </div>
+              {appreciation && (
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "Arial, sans-serif", fontSize: 11, color: "var(--muted)" }}>Since purchase</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 22, color: "#059669" }}>+{appreciation}%</div>
+                  <div style={{ fontFamily: "Arial, sans-serif", fontSize: 11, color: "var(--muted)" }}>${property.prevSalePrice?.toLocaleString()} → ${property.estimatedValue?.toLocaleString()}</div>
+                </div>
               )}
             </div>
-            {appreciation && (
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "Arial, sans-serif", fontSize: 11, color: "var(--muted)" }}>Since purchase</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 22, color: "#059669" }}>+{appreciation}%</div>
-                <div style={{ fontFamily: "Arial, sans-serif", fontSize: 11, color: "var(--muted)" }}>${property.prevSalePrice?.toLocaleString()} → ${property.estimatedValue?.toLocaleString()}</div>
-              </div>
-            )}
-          </div>
+          )}
 
-          <PropertyFacts property={property} overrides={factOverrides} onOverride={handleOverride} />
+          {sectionVisible(activeTemplate, "property_facts") && (
+            <PropertyFacts property={property} overrides={factOverrides} onOverride={handleOverride} />
+          )}
 
-          {/* Market conditions */}
-          <div style={{ marginTop: 28 }}>
-            <div style={SEC}>Area Market Conditions · {market.area}</div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <tbody>
-                {marketMetrics.map((m) => (
-                  <TipRow
-                    key={m.label}
-                    label={m.label}
-                    value={<>{m.value}{m.note && <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted-soft)", marginLeft: 8 }}>{m.note}</span>}</>}
-                    tip={PROPERTY_MARKET_TIPS[m.label]}
-                    labelStyle={TD_L}
-                    valueStyle={TD_V}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {sectionVisible(activeTemplate, "market_conditions") && (
+            <div style={{ marginTop: 28 }}>
+              <div style={SEC}>Area Market Conditions · {market.area}</div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <tbody>
+                  {marketMetrics.map((m) => (
+                    <TipRow
+                      key={m.label}
+                      label={m.label}
+                      value={<>{m.value}{m.note && <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted-soft)", marginLeft: 8 }}>{m.note}</span>}</>}
+                      tip={PROPERTY_MARKET_TIPS[m.label]}
+                      labelStyle={TD_L}
+                      valueStyle={TD_V}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          {/* Loan calculator */}
-          <div style={{ marginTop: 28 }}>
-            <div style={SEC}>Loan Estimate</div>
-            <LoanCalculator property={property} market={market} />
-          </div>
+          {sectionVisible(activeTemplate, "loan_calculator") && (
+            <div style={{ marginTop: 28 }}>
+              <div style={SEC}>Loan Estimate</div>
+              <LoanCalculator property={property} market={market} />
+            </div>
+          )}
 
-          {includeAI && (
+          {includeAI && sectionVisible(activeTemplate, "ai_summary") && (
             <div style={{ marginTop: 28 }}>
               <div style={SEC}>AI Analysis</div>
               {aiLoading ? (

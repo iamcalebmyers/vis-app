@@ -11,7 +11,9 @@ import {
 } from "../data/mockData.js";
 import { ReportFooterLine } from "../components/WhiteLabelHeader.jsx";
 import ReportAgentHeader from "../components/ReportAgentHeader.jsx";
+import TemplatePicker from "../components/TemplatePicker.jsx";
 import { useAgentInfo } from "../utils/useAgentInfo.js";
+import { sectionVisible } from "../utils/useTemplates.js";
 
 const SEC = { fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", borderBottom: "2px solid var(--white)", paddingBottom: 6, marginBottom: 14 };
 const TD_L = { fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", padding: "10px 0", borderBottom: "1px solid var(--border)" };
@@ -37,6 +39,7 @@ function BackButton({ onClick }) {
 
 function InvestorReport({ data, onBack }) {
   const [agentInfo, setAgentInfo] = useAgentInfo();
+  const [activeTemplate, setActiveTemplate] = useState(null);
   const [includeAI, setIncludeAI] = useState(true);
 
   const property = MOCK_PROPERTY;
@@ -80,6 +83,7 @@ function InvestorReport({ data, onBack }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, background: "var(--bg)", zIndex: 5 }}>
         <BackButton onClick={onBack} />
         <span className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Investor Report</span>
+        <TemplatePicker reportType="investor" selected={activeTemplate} onSelect={setActiveTemplate} />
         <label style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
           <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: includeAI ? "var(--text)" : "var(--muted)", transition: "color 0.15s ease" }}>AI Analysis</span>
           <input type="checkbox" checked={includeAI} onChange={() => setIncludeAI(v => !v)} style={{ display: "none" }} />
@@ -110,81 +114,73 @@ function InvestorReport({ data, onBack }) {
             ))}
           </div>
 
-          <div style={{ marginTop: 28 }}>
-            <div style={{ ...SEC, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>Deal Analysis</span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 700, color: rec.color, background: `${rec.color}20`, padding: "2px 10px", borderRadius: 20, textTransform: "none", letterSpacing: 0 }}>{rec.label}</span>
-            </div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <tbody>
-                {dealRows.map(([label, value]) => (
-                  <TipRow key={label} label={label} value={value} tip={DEAL_TIPS[label]} labelStyle={TD_L} valueStyle={TD_V} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div style={{ marginTop: 28 }}>
-            <div style={SEC}>Returns Breakdown</div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <tbody>
-                {returnsRows.map(([label, value]) => (
-                  <TipRow key={label} label={label} value={value} tip={RETURNS_TIPS[label]} labelStyle={TD_L} valueStyle={TD_V} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div style={{ marginTop: 28 }}>
-            <div style={SEC}>Rental Comp Summary · {rental.estMonthlyRent}/mo est. ({rental.rentRange})</div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <tbody>
-                {rental.comps?.map((c, i) => (
-                  <tr key={i}>
-                    <td style={TD_L}>{c.address} · {c.beds}bd / {c.baths}ba · {c.distance}</td>
-                    <td style={TD_V}>{c.rent}/mo</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {rental.source && <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)", marginTop: 6 }}>Source: {rental.source}</div>}
-          </div>
-
-          <div style={{ marginTop: 28 }}>
-            <div style={SEC}>12-Month Cash Flow Projection</div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <tbody>
-                <TipRow
-                  label="Gross Rent"
-                  value={`$${monthlyRent.toLocaleString()}/mo`}
-                  tip={PROJECTION_TIPS["Gross Rent"]}
-                  labelStyle={TD_L}
-                  valueStyle={TD_V}
-                  extraCells={<td style={{ ...TD_V, paddingLeft: 16 }}>${(monthlyRent * 12).toLocaleString()}/yr</td>}
-                />
-                <TipRow
-                  label="Est. Expenses (mortgage, tax, insurance, HOA)"
-                  value={`−$${monthlyExp.toLocaleString()}/mo`}
-                  tip={PROJECTION_TIPS["Est. Expenses (mortgage, tax, insurance, HOA)"]}
-                  labelStyle={TD_L}
-                  valueStyle={TD_V}
-                  extraCells={<td style={{ ...TD_V, paddingLeft: 16 }}>−${(monthlyExp * 12).toLocaleString()}/yr</td>}
-                />
-              </tbody>
-            </table>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "2px solid var(--white)", marginTop: 2 }}>
-              <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, color: "var(--white)" }}>Net Cash Flow</span>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.01em" }}>{returns.monthlyCashFlow}</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--muted)", marginLeft: 14 }}>${(monthlyCF * 12).toLocaleString()}/yr</span>
+          {sectionVisible(activeTemplate, "deal_analysis") && (
+            <div style={{ marginTop: 28 }}>
+              <div style={{ ...SEC, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>Deal Analysis</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 700, color: rec.color, background: `${rec.color}20`, padding: "2px 10px", borderRadius: 20, textTransform: "none", letterSpacing: 0 }}>{rec.label}</span>
               </div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <tbody>
+                  {dealRows.map(([label, value]) => (
+                    <TipRow key={label} label={label} value={value} tip={DEAL_TIPS[label]} labelStyle={TD_L} valueStyle={TD_V} />
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)" }}>
-              Estimates only. Does not include vacancy, capital expenditures, or property management fees.
-            </div>
-          </div>
+          )}
 
-          {includeAI && (
+          {sectionVisible(activeTemplate, "returns_breakdown") && (
+            <div style={{ marginTop: 28 }}>
+              <div style={SEC}>Returns Breakdown</div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <tbody>
+                  {returnsRows.map(([label, value]) => (
+                    <TipRow key={label} label={label} value={value} tip={RETURNS_TIPS[label]} labelStyle={TD_L} valueStyle={TD_V} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {sectionVisible(activeTemplate, "rental_comps") && (
+            <div style={{ marginTop: 28 }}>
+              <div style={SEC}>Rental Comp Summary · {rental.estMonthlyRent}/mo est. ({rental.rentRange})</div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <tbody>
+                  {rental.comps?.map((c, i) => (
+                    <tr key={i}>
+                      <td style={TD_L}>{c.address} · {c.beds}bd / {c.baths}ba · {c.distance}</td>
+                      <td style={TD_V}>{c.rent}/mo</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {rental.source && <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)", marginTop: 6 }}>Source: {rental.source}</div>}
+            </div>
+          )}
+
+          {sectionVisible(activeTemplate, "cash_flow_projection") && (
+            <div style={{ marginTop: 28 }}>
+              <div style={SEC}>12-Month Cash Flow Projection</div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <tbody>
+                  <TipRow label="Gross Rent" value={`$${monthlyRent.toLocaleString()}/mo`} tip={PROJECTION_TIPS["Gross Rent"]} labelStyle={TD_L} valueStyle={TD_V} extraCells={<td style={{ ...TD_V, paddingLeft: 16 }}>${(monthlyRent * 12).toLocaleString()}/yr</td>} />
+                  <TipRow label="Est. Expenses (mortgage, tax, insurance, HOA)" value={`−$${monthlyExp.toLocaleString()}/mo`} tip={PROJECTION_TIPS["Est. Expenses (mortgage, tax, insurance, HOA)"]} labelStyle={TD_L} valueStyle={TD_V} extraCells={<td style={{ ...TD_V, paddingLeft: 16 }}>−${(monthlyExp * 12).toLocaleString()}/yr</td>} />
+                </tbody>
+              </table>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "2px solid var(--white)", marginTop: 2 }}>
+                <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, color: "var(--white)" }}>Net Cash Flow</span>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.01em" }}>{returns.monthlyCashFlow}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--muted)", marginLeft: 14 }}>${(monthlyCF * 12).toLocaleString()}/yr</span>
+                </div>
+              </div>
+              <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)" }}>Estimates only. Does not include vacancy, capital expenditures, or property management fees.</div>
+            </div>
+          )}
+
+          {includeAI && sectionVisible(activeTemplate, "ai_summary") && (
             <div style={{ marginTop: 28 }}>
               <div style={SEC}>AI Analysis</div>
               <AISummary summary={ai.aiSummary} strengths={ai.keyStrengths} risks={ai.keyRisks} bestSuitedFor={ai.bestSuitedFor} />

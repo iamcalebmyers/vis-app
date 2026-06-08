@@ -5,7 +5,9 @@ import ShareExport from "../components/ShareExport.jsx";
 import { MOCK_MARKET, MOCK_RATE_CARD, MOCK_MARKET_AI } from "../data/mockData.js";
 import { ReportFooterLine } from "../components/WhiteLabelHeader.jsx";
 import ReportAgentHeader from "../components/ReportAgentHeader.jsx";
+import TemplatePicker from "../components/TemplatePicker.jsx";
 import { useAgentInfo } from "../utils/useAgentInfo.js";
+import { sectionVisible } from "../utils/useTemplates.js";
 
 const SEC = { fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", borderBottom: "2px solid var(--white)", paddingBottom: 6, marginBottom: 14 };
 const TD_L = { fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text)", padding: "10px 0", borderBottom: "1px solid var(--border)" };
@@ -64,6 +66,7 @@ function RateSection({ rate, enabled, onToggle }) {
 
 function MarketReport({ data, onBack }) {
   const [agentInfo, setAgentInfo] = useAgentInfo();
+  const [activeTemplate, setActiveTemplate] = useState(null);
   const [includeAI, setIncludeAI] = useState(true);
   const [includeRate, setIncludeRate] = useState(true);
   const market = MOCK_MARKET;
@@ -76,6 +79,7 @@ function MarketReport({ data, onBack }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, background: "var(--bg)", zIndex: 5 }}>
         <BackButton onClick={onBack} />
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Market Report</span>
+        <TemplatePicker reportType="market" selected={activeTemplate} onSelect={setActiveTemplate} />
       </div>
 
       <main style={{ flex: 1, padding: "20px 20px 40px" }}>
@@ -91,18 +95,21 @@ function MarketReport({ data, onBack }) {
             <ReportAgentHeader info={agentInfo} onChange={setAgentInfo} />
           </div>
 
-          {/* AI Analysis */}
-          <div style={{ marginTop: 4, opacity: includeAI ? 1 : 0.3, transition: "opacity 0.15s ease" }}>
-            <div style={{ ...SEC, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>AI Analysis</span>
-              <SectionToggle enabled={includeAI} onToggle={() => setIncludeAI(v => !v)} />
+          {sectionVisible(activeTemplate, "ai_summary") && (
+            <div style={{ marginTop: 4, opacity: includeAI ? 1 : 0.3, transition: "opacity 0.15s ease" }}>
+              <div style={{ ...SEC, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>AI Analysis</span>
+                <SectionToggle enabled={includeAI} onToggle={() => setIncludeAI(v => !v)} />
+              </div>
+              <AISummary summary={ai.aiSummary} strengths={ai.keyStrengths} risks={ai.keyRisks} bestSuitedFor={ai.bestSuitedFor} />
             </div>
-            <AISummary summary={ai.aiSummary} strengths={ai.keyStrengths} risks={ai.keyRisks} bestSuitedFor={ai.bestSuitedFor} />
-          </div>
+          )}
 
-          <MarketDataGrid market={market} />
+          {sectionVisible(activeTemplate, "market_data") && <MarketDataGrid market={market} />}
 
-          <RateSection rate={rate} enabled={includeRate} onToggle={() => setIncludeRate(v => !v)} />
+          {sectionVisible(activeTemplate, "rate_context") && (
+            <RateSection rate={rate} enabled={includeRate} onToggle={() => setIncludeRate(v => !v)} />
+          )}
 
           {/* Footer */}
           <div style={{ marginTop: 28, paddingTop: 14, borderTop: "1px solid var(--border)", fontFamily: "Arial, sans-serif", fontSize: 10, color: "var(--muted)", lineHeight: 1.8 }}>
