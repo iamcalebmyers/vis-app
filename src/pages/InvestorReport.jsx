@@ -11,7 +11,7 @@ import {
 } from "../data/mockData.js";
 import { ReportFooterLine } from "../components/WhiteLabelHeader.jsx";
 import ReportAgentHeader from "../components/ReportAgentHeader.jsx";
-import { useAgent } from "../utils/AgentContext.jsx";
+import { useAgentInfo } from "../utils/useAgentInfo.js";
 
 const SEC = { fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", borderBottom: "2px solid var(--white)", paddingBottom: 6, marginBottom: 14 };
 const TD_L = { fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", padding: "10px 0", borderBottom: "1px solid var(--border)" };
@@ -36,8 +36,7 @@ function BackButton({ onClick }) {
 }
 
 function InvestorReport({ data, onBack }) {
-  const { isAgentDomain, aiName } = useAgent();
-  const [agentInfo, setAgentInfo] = useState({ name: isAgentDomain ? aiName : "", brokerage: "", license: "", email: "", phone: "" });
+  const [agentInfo, setAgentInfo] = useAgentInfo();
   const [includeAI, setIncludeAI] = useState(true);
 
   const property = MOCK_PROPERTY;

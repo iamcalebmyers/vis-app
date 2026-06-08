@@ -7,7 +7,7 @@ import { TipRow } from "../components/ReportTooltip.jsx";
 import { generatePropertySummary } from "../utils/claudeApi.js";
 import { ReportFooterLine } from "../components/WhiteLabelHeader.jsx";
 import ReportAgentHeader from "../components/ReportAgentHeader.jsx";
-import { useAgent } from "../utils/AgentContext.jsx";
+import { useAgentInfo } from "../utils/useAgentInfo.js";
 import { MOCK_PROPERTY, MOCK_MARKET, MOCK_AI_RESPONSE } from "../data/mockData.js";
 import { PROPERTY_MARKET_TIPS } from "../utils/tooltips.js";
 
@@ -54,8 +54,7 @@ function BackButton({ onClick }) {
 }
 
 function PropertyReport({ data, onBack }) {
-  const { isAgentDomain, aiName } = useAgent();
-  const [agentInfo, setAgentInfo] = useState({ name: isAgentDomain ? aiName : "", brokerage: "", license: "", email: "", phone: "" });
+  const [agentInfo, setAgentInfo] = useAgentInfo();
   const [includeAI, setIncludeAI] = useState(true);
   const [factOverrides, setFactOverrides] = useState({});
   function handleOverride(label, value) {

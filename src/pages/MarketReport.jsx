@@ -5,7 +5,7 @@ import ShareExport from "../components/ShareExport.jsx";
 import { MOCK_MARKET, MOCK_RATE_CARD, MOCK_MARKET_AI } from "../data/mockData.js";
 import { ReportFooterLine } from "../components/WhiteLabelHeader.jsx";
 import ReportAgentHeader from "../components/ReportAgentHeader.jsx";
-import { useAgent } from "../utils/AgentContext.jsx";
+import { useAgentInfo } from "../utils/useAgentInfo.js";
 
 const SEC = { fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", borderBottom: "2px solid var(--white)", paddingBottom: 6, marginBottom: 14 };
 const TD_L = { fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text)", padding: "10px 0", borderBottom: "1px solid var(--border)" };
@@ -63,8 +63,7 @@ function RateSection({ rate, enabled, onToggle }) {
 }
 
 function MarketReport({ data, onBack }) {
-  const { isAgentDomain, aiName } = useAgent();
-  const [agentInfo, setAgentInfo] = useState({ name: isAgentDomain ? aiName : "", brokerage: "", license: "", email: "", phone: "" });
+  const [agentInfo, setAgentInfo] = useAgentInfo();
   const [includeAI, setIncludeAI] = useState(true);
   const [includeRate, setIncludeRate] = useState(true);
   const market = MOCK_MARKET;
