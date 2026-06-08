@@ -3,6 +3,12 @@ import { supabase } from "../utils/supabase.js";
 import { hasFeature } from "../utils/tier.js";
 import { loadAgentInfo, saveAgentInfo } from "../utils/useAgentInfo.js";
 
+const PRESET_COLORS = [
+  "#DA6B3A", "#C4572A", "#B84040", "#E8A43A",
+  "#2563EB", "#1A5276", "#0F766E", "#059669",
+  "#7C3AED", "#9D174D", "#64748B", "#374151",
+];
+
 const INPUT = {
   width: "100%",
   boxSizing: "border-box",
@@ -114,11 +120,8 @@ function AgentSettings({ user, userRow }) {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
-      <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 20, color: "var(--white)", marginBottom: 6 }}>
-        Agent settings
-      </div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", marginBottom: 32 }}>
-        These settings apply to your branded subdomain and reports.
+      <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 20, color: "var(--white)", marginBottom: 32 }}>
+        Settings
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -146,6 +149,13 @@ function AgentSettings({ user, userRow }) {
 
         {/* Brand color */}
         <Field label="Brand color" hint="Used on buttons, highlights, and accents across your branded experience.">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8, marginBottom: 12 }}>
+            {PRESET_COLORS.map(color => (
+              <button key={color} onClick={() => setBrandColor(color)}
+                style={{ width: "100%", aspectRatio: "1", borderRadius: 8, background: color, border: brandColor.toLowerCase() === color.toLowerCase() ? "3px solid var(--white)" : "2px solid transparent", cursor: "pointer", transition: "border-color 0.15s", padding: 0 }}
+              />
+            ))}
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <input
               type="color"
