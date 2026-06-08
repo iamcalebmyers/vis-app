@@ -54,22 +54,39 @@ function ColorWheel({ color, onChange }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const img = ctx.createImageData(WHEEL, WHEEL);
-    for (let y = 0; y < WHEEL; y++) {
-      for (let x = 0; x < WHEEL; x++) {
-        const dx = x - R, dy = y - R;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > R) continue;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const size = WHEEL * dpr;
+    canvas.width = size;
+    canvas.height = size;
+    const r = size / 2;
+
+    // Render full square of color data into an offscreen canvas
+    const off = document.createElement("canvas");
+    off.width = size; off.height = size;
+    const offCtx = off.getContext("2d");
+    const img = offCtx.createImageData(size, size);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const dx = x - r, dy = y - r;
         const h = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
-        const s = (dist / R) * 100;
-        const [r, g, b] = hsvToRgb(h, s, hsv[2]);
-        const i = (y * WHEEL + x) * 4;
-        img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
+        const s = Math.min((Math.sqrt(dx * dx + dy * dy) / r) * 100, 100);
+        const [rv, g, b] = hsvToRgb(h, s, hsv[2]);
+        const i = (y * size + x) * 4;
+        img.data[i] = rv; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
       }
     }
-    ctx.putImageData(img, 0, 0);
-  }, [hsv[2], R]);
+    offCtx.putImageData(img, 0, 0);
+
+    // Clip to circle on the main canvas — browser handles anti-aliasing
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, size, size);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(off, 0, 0);
+    ctx.restore();
+  }, [hsv[2]]);
 
   function pick(clientX, clientY) {
     const rect = canvasRef.current.getBoundingClientRect();
