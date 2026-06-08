@@ -7,7 +7,6 @@ import PropertyReport from "./PropertyReport.jsx";
 import MarketReport from "./MarketReport.jsx";
 import InvestorReport from "./InvestorReport.jsx";
 import AgentSettings from "./AgentSettings.jsx";
-import TrainAI from "./TrainAI.jsx";
 import ReportTemplates from "./ReportTemplates.jsx";
 import OverageModal from "../components/OverageModal.jsx";
 import { sendMessage } from "../utils/claudeApi.js";
@@ -241,10 +240,8 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
       )}
 
       {activeTab === "settings" && (
-        <div style={{ flex: 1, overflowY: "auto" }}>
+        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
           <AgentSettings user={user} userRow={userRow} />
-          <div style={{ borderTop: "1px solid var(--border)" }} />
-          <TrainAI user={user} userRow={userRow} />
         </div>
       )}
 
