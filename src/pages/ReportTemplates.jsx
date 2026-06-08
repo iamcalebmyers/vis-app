@@ -180,7 +180,7 @@ function ReportTemplates({ user, userRow }) {
           <div style={{ display: "flex", gap: 8 }}>
             {REPORT_TYPES.map(t => (
               <button key={t.id} onClick={() => setReportType(t.id)}
-                style={{ flex: 1, height: 36, borderRadius: 8, border: `1.5px solid ${reportType === t.id ? "var(--accent)" : "var(--border)"}`, background: reportType === t.id ? "rgba(218,107,58,0.08)" : "var(--border-soft)", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: reportType === t.id ? "var(--accent)" : "var(--muted)", cursor: "pointer", transition: "all 0.15s" }}>
+                style={{ flex: 1, height: 36, borderRadius: 8, border: "none", background: reportType === t.id ? "var(--accent)" : "var(--border-soft)", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: reportType === t.id ? "#fff" : "var(--muted)", cursor: "pointer", transition: "all 0.15s" }}>
                 {t.label}
               </button>
             ))}
