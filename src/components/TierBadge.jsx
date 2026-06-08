@@ -1,26 +1,7 @@
-import { useEffect, useState } from "react";
+import { TIER_LABELS } from "../utils/tier.js";
 
-const LABELS = {
-  buyer: "Buyer",
-  agent: "Agent",
-  enterprise: "Enterprise",
-};
-
-function readTier() {
-  try {
-    const t = localStorage.getItem("vis-tier");
-    return LABELS[t] ? t : "buyer";
-  } catch {
-    return "buyer";
-  }
-}
-
-function TierBadge() {
-  const [tier, setTier] = useState("buyer");
-
-  useEffect(() => {
-    setTier(readTier());
-  }, []);
+function TierBadge({ tier }) {
+  const label = TIER_LABELS[tier] || "Solo";
 
   return (
     <span
@@ -42,7 +23,7 @@ function TierBadge() {
         whiteSpace: "nowrap",
       }}
     >
-      {LABELS[tier]}
+      {label}
     </span>
   );
 }

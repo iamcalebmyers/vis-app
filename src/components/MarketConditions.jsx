@@ -38,7 +38,7 @@ function Metric({ label, value, change }) {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: 22,
-          fontWeight: 800,
+          fontWeight: 600,
           color: "var(--white)",
           letterSpacing: "-0.01em",
           lineHeight: 1.1,

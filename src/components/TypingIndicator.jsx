@@ -1,3 +1,5 @@
+import { useAgent } from "../utils/AgentContext.jsx";
+
 function Dot({ delay }) {
   return (
     <span
@@ -16,75 +18,31 @@ function Dot({ delay }) {
 }
 
 function TypingIndicator() {
+  const { aiName, logoUrl } = useAgent();
+
+  const avatar = logoUrl ? (
+    <img src={logoUrl} alt={aiName} style={{ width: 22, height: 22, borderRadius: 5, objectFit: "cover", flexShrink: 0 }} />
+  ) : (
+    <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 5, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 10, lineHeight: 1, flexShrink: 0 }}>
+      {aiName[0]?.toUpperCase() || "V"}
+    </span>
+  );
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        marginBottom: 20,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          marginBottom: 6,
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 5,
-            background: "var(--accent)",
-            color: "#ffffff",
-            display: "grid",
-            placeItems: "center",
-            fontFamily: "var(--font-mono)",
-            fontWeight: 800,
-            fontSize: 10,
-            lineHeight: 1,
-            flexShrink: 0,
-          }}
-        >
-          V
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
+        {avatar}
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: "var(--white)" }}>
+          {aiName}
         </span>
-        <span
-          style={{
-            fontFamily: "var(--font-sans)",
-            fontSize: 12,
-            fontWeight: 600,
-            color: "var(--white)",
-          }}
-        >
-          Vis
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-sans)",
-            fontSize: 11,
-            color: "var(--muted-faint)",
-          }}
-        >
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted-faint)" }}>
           typing
         </span>
       </div>
       <div
         role="status"
-        aria-label="Vis is typing"
-        style={{
-          padding: "12px 14px",
-          background: "var(--card)",
-          border: "1px solid var(--border)",
-          borderRadius: "4px 14px 14px 14px",
-          boxShadow: "var(--shadow-card)",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-        }}
+        aria-label={`${aiName} is typing`}
+        style={{ padding: "12px 14px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: "4px 14px 14px 14px", boxShadow: "var(--shadow-card)", display: "flex", alignItems: "center", gap: 6 }}
       >
         <Dot delay={0} />
         <Dot delay={0.15} />

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import TierBadge from "./TierBadge.jsx";
 import ThemeSwitcher from "./ThemeSwitcher.jsx";
+import UsageBar from "./UsageBar.jsx";
+import { useAgent } from "../utils/AgentContext.jsx";
 
 const TABS = [
   { id: "chat", label: "Chat" },
@@ -76,7 +78,40 @@ function Tab({ tab, isActive, onClick }) {
   );
 }
 
-function Nav({ active = "chat", onTabChange }) {
+function SignOutButton({ email, onSignOut }) {
+  const [hover, setHover] = useState(false);
+  if (!onSignOut) return null;
+  return (
+    <button type="button" onClick={onSignOut}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      title={email ? `Signed in as ${email}` : "Sign out"}
+      style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: hover ? "var(--white)" : "var(--muted)", transition: "color 0.15s ease", padding: "4px 8px" }}>
+      Sign out
+    </button>
+  );
+}
+
+function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow }) {
+  const { isAgentDomain, aiName, logoUrl } = useAgent();
+
+  const logoMark = isAgentDomain ? (
+    logoUrl
+      ? <img src={logoUrl} alt={aiName} style={{ width: 26, height: 26, borderRadius: 6, objectFit: "cover" }} />
+      : <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: 6, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, lineHeight: 1 }}>{aiName[0]?.toUpperCase() || "A"}</span>
+  ) : (
+    <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: 6, background: "var(--accent)", color: "#ffffff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, lineHeight: 1 }}>V</span>
+  );
+
+  const wordmark = isAgentDomain ? (
+    <span style={{ fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: 15, color: "var(--white)", letterSpacing: "-0.02em", lineHeight: 1 }}>{aiName}</span>
+  ) : (
+    <>
+      <span style={{ fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: 15, color: "var(--white)", letterSpacing: "-0.02em", lineHeight: 1 }}>vis</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted-faint)", lineHeight: 1 }}>.realestate</span>
+    </>
+  );
+
   return (
     <nav
       style={{
@@ -96,46 +131,8 @@ function Nav({ active = "chat", onTabChange }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span
-          aria-hidden="true"
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: 6,
-            background: "var(--accent)",
-            color: "#ffffff",
-            display: "grid",
-            placeItems: "center",
-            fontFamily: "var(--font-mono)",
-            fontWeight: 800,
-            fontSize: 12,
-            lineHeight: 1,
-          }}
-        >
-          V
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-sans)",
-            fontWeight: 800,
-            fontSize: 15,
-            color: "var(--white)",
-            letterSpacing: "-0.02em",
-            lineHeight: 1,
-          }}
-        >
-          vis
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            color: "var(--muted-faint)",
-            lineHeight: 1,
-          }}
-        >
-          .realestate
-        </span>
+        {logoMark}
+        {wordmark}
       </div>
 
       <div style={{ display: "flex", gap: 2 }}>
@@ -150,9 +147,11 @@ function Nav({ active = "chat", onTabChange }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {!isAgentDomain && <UsageBar userRow={userRow} />}
         <ThemeSwitcher />
-        <TierBadge />
+        {!isAgentDomain && <TierBadge tier={userRow?.tier} />}
         <LiveIndicator />
+        {!isAgentDomain && <SignOutButton email={userEmail} onSignOut={onSignOut} />}
       </div>
     </nav>
   );

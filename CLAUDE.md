@@ -19,47 +19,113 @@ quick answers in chat -> expand into full report -> save / share / export
 Agents and brokerages get a fully white labeled version of this product
 under their own subdomain. Their clients see a completely branded AI
 that looks, feels, and responds as if the agent built it. Vis is
-completely invisible to clients on agent and enterprise URLs.
+completely invisible to clients on agent and brokerage URLs.
 
 DO NOT scope creep into a full market dashboard with tickers, live
 charts, or a complex data pipeline. This is a chat interface plus
 AI-generated reports plus white labeled agent experiences. Keep
 everything focused on that.
 
-THREE SUBSCRIPTION TIERS
+FOUR SUBSCRIPTION TIERS
 
-Tier stored in localStorage key: vis-tier (buyer / agent / enterprise)
-Same features, different branding, limits, and customization depth.
+All paid. No free tier. Monthly subscription with usage limit included.
+At 80% usage: soft warning banner. At 100%: modal to confirm overage.
+Overage billed per unit above the limit at a rate set above API cost.
+Prices, limits, and overage rates are configurable in admin without
+touching code (stored in tier_config table).
 
-BUYER/SELLER
+Do not expose raw token counts to users anywhere. Usage is described
+in plain language: Standard (Solo), Heavy (Investor), Professional
+(Agent), Team (Brokerage).
 
-- Full chat, property reports, market reports, loan calculator
+Tier stored in localStorage key: vis-tier (solo / investor / agent /
+brokerage) until auth is live, then read from users table in Supabase.
+
+SOLO — $19/month
+
+- Full AI chat with web search
+- Inline data cards: property, market, loan, rate
+- Property report + market report
+- Loan calculator
+- 5 saved reports
+- PDF export
+- Standard usage limit
 - Vis branding throughout
-- Capped: 10 saved sessions, 10 saved reports, monthly usage limit
-- No white label, no custom URL, no AI training
+- No custom URL, no white label, no investor tools
 
-AGENT
+INVESTOR — $49/month
 
-- Everything in Buyer/Seller
-- Custom AI name (agent chooses, no default)
-- Custom URL: agentname.vis.realestate
-- Agent logo replaces Vis logo everywhere on their URL
-- Agent brand color replaces Vis orange throughout their URL
-- AI training via text box (5000 char) or document upload (10K chars extracted)
-- White labeled reports (Vis invisible)
-- Unlimited saved sessions and reports
-- Higher monthly usage limits
+- Everything in Solo
+- Rental yield estimate card
+- Rent comp card
+- ARV / deal analysis card
+- Cash-on-cash calculator
+- Cap rate calculator
+- Net rental yield calculator
+- Monthly cash flow calculator
+- Multi-property comparison (up to 3)
+- Investor report (full PDF with all metrics)
+- 25 saved reports
+- Report sharing link
+- Heavy usage limit
+
+AGENT — $99/month
+
+- Everything in Investor
+- Custom AI name (agent chooses)
+- Custom subdomain: handle.vis.realestate (auto-provisioned on signup)
+- Agent logo replaces Vis logo on their subdomain
+- Agent brand color replaces Vis orange on their subdomain
+- AI training via text box (5,000 char) or document upload (10,000
+  chars extracted)
+- White labeled reports — Vis completely invisible on custom subdomains
 - Send to Client button
+- Unlimited saved reports
+- Professional usage limit
 
-ENTERPRISE/BROKERAGE
+BROKERAGE — $249/month
 
 - Everything in Agent
-- Brokerage URL: brokeragename.vis.realestate
-- Individual agent sub-URLs: agentname.brokeragename.vis.realestate
-- Brokerage-level AI training baseline applied to all agents
-- Agents layer own training on top of brokerage baseline
-- Brokerage baseline cannot be overridden, only added to
-- Highest usage limits, priority AI speed, brokerage billing
+- Brokerage subdomain: handle.vis.realestate (auto-provisioned)
+- Brokerage-level AI training baseline (Layer 2 — all linked agents
+  inherit, cannot override)
+- Agent management dashboard (add/remove agents, view per-agent usage)
+- Consolidated billing for all linked agents
+- Priority AI speed
+- Team usage limit shared across all agents
+
+SUBDOMAIN MODEL
+
+No nested subdomains. Every Agent and Brokerage gets one clean
+subdomain. Brokerage agents are linked to their brokerage via Supabase
+relationships (brokerage_id on agent_profiles), not via URL nesting.
+
+URL format:
+  Agent:     handle.vis.realestate
+  Brokerage: handle.vis.realestate
+
+Wildcard DNS `*.vis.realestate` is configured once at the registrar
+pointing to Vercel. New subdomains are provisioned automatically via
+the Vercel API when a user claims their handle — no manual DNS changes
+ever needed after initial setup.
+
+Subdomain automation flow:
+1. User enters desired handle during onboarding
+2. App checks handle_registry table — must be globally unique
+3. If available, app calls Vercel API to register handle.vis.realestate
+4. Vercel provisions subdomain (live within seconds)
+5. Supabase stores handle, links to user account, stores branding config
+6. Any visit to handle.vis.realestate reads Supabase, applies branding
+7. Client sees fully branded experience — no Vis references anywhere
+
+Vercel API call (serverless only — VERCEL_API_TOKEN never in client):
+```js
+await fetch(`https://api.vercel.com/v10/projects/${PROJECT_ID}/domains`, {
+  method: "POST",
+  headers: { Authorization: `Bearer ${VERCEL_API_TOKEN}` },
+  body: JSON.stringify({ name: `${handle}.vis.realestate` }),
+});
+```
 
 TECH STACK
 
@@ -67,11 +133,13 @@ TECH STACK
 - Tailwind CSS
 - Claude API with web search tool enabled — entire data + intelligence layer
 - Model: claude-opus-4-7 (use Opus unless told otherwise in a specific session). Max tokens 1500.
-- Google Fonts: DM Sans (text), IBM Plex Mono (numbers)
+- Google Fonts: DM Sans (text), Inter Semibold 600 (numbers)
 - Vercel with wildcard subdomain routing (*.vis.realestate)
+- Vercel API — programmatic subdomain provisioning (VERCEL_API_TOKEN
+  stored as env var, never exposed to client)
 - GitHub version control
-- Supabase (free tier) — agent settings and subdomain registry database
-- localStorage — sessions, saved reports, theme, tier
+- Supabase — auth, database (agent profiles, users, billing, handles)
+- localStorage — sessions, saved reports, theme, tier (pre-auth)
 - html2canvas + jsPDF — PDF export
 - NO MLS API, NO ATTOM, NO Zillow API, NO paid data subscriptions
 
@@ -79,39 +147,66 @@ Do not add libraries without asking the user first.
 
 SUPABASE SCHEMA
 
-Two tables. Keep schema minimal.
+Five tables. Schema is admin-configurable for pricing/limits.
 
 ```
-agents
-id            uuid primary key
-subdomain     text unique        -- e.g. "sarah" for sarah.vis.realestate
-brokerage_id  uuid nullable      -- null if individual agent
-ai_name       text nullable      -- what the agent names their AI
-logo_url      text nullable      -- stored in Supabase storage
-brand_color   text default '#DA6B3A'
-tier          text               -- agent / enterprise
-created_at    timestamp
+users
+id                  uuid references auth.users, primary key
+email               text
+tier                text               -- solo / investor / agent / brokerage
+usage_current       integer default 0  -- current billing period usage units
+usage_limit         integer            -- from tier_config, overridable per user
+overage_rate        numeric            -- per unit above limit
+overage_accrued     numeric default 0  -- current period overage charges
+comped              boolean default false
+comp_expires_at     timestamp nullable
+billing_cycle_start timestamp
+suspended           boolean default false
+created_at          timestamp
+last_active_at      timestamp
 
-agent_training
-id            uuid primary key
-agent_id      uuid references agents(id)
-training_text text               -- raw text from textbox or extracted doc
-updated_at    timestamp
+agent_profiles
+id                  uuid primary key
+user_id             uuid references auth.users
+handle              text unique        -- e.g. "mikejones"
+subdomain           text unique        -- e.g. "mikejones.vis.realestate"
+ai_name             text nullable
+logo_url            text nullable      -- Supabase storage
+brand_color         text default '#DA6B3A'
+training_text       text nullable      -- text box, max 5,000 chars
+training_doc_text   text nullable      -- extracted from upload, max 10,000 chars
+brokerage_id        uuid nullable      -- references brokerage_profiles
+created_at          timestamp
 
-brokerages
-id            uuid primary key
-subdomain     text unique        -- e.g. "kw" for kw.vis.realestate
-name          text
-logo_url      text nullable
-brand_color   text default '#DA6B3A'
-training_text text nullable      -- brokerage baseline training
-created_at    timestamp
+brokerage_profiles
+id                  uuid primary key
+user_id             uuid references auth.users
+handle              text unique
+subdomain           text unique
+ai_name             text nullable
+logo_url            text nullable
+brand_color         text default '#DA6B3A'
+training_baseline   text nullable      -- Layer 2 — inherited by all linked agents
+created_at          timestamp
+
+handle_registry
+handle              text primary key   -- global uniqueness: agents + brokerages
+account_type        text               -- agent / brokerage
+account_id          uuid
+created_at          timestamp
+
+tier_config
+tier                text primary key   -- solo / investor / agent / brokerage
+monthly_price       numeric
+usage_limit         integer
+overage_rate        numeric
+updated_at          timestamp
 ```
 
-On subdomain load: query agents table by subdomain, get branding +
-training. For brokerage sub-agents: combine brokerage training_text
-(first) + agent training_text (appended after) into one system prompt
-block.
+On subdomain load: query agent_profiles or brokerage_profiles by
+subdomain. For agents with a brokerage_id: fetch brokerage_profiles
+too and combine training_baseline (first) + training_text + training_
+doc_text (appended) into the Layer 2 + Layer 3 system prompt blocks.
 
 FILE STRUCTURE
 
@@ -130,10 +225,9 @@ vis-app/
       TypingIndicator.jsx
       GenerateReportButton.jsx
       SessionSidebar.jsx
-      PropertyReport.jsx
-      MarketReport.jsx
       PropertyFacts.jsx
       MarketConditions.jsx
+      MarketDataGrid.jsx
       LoanCalculator.jsx
       AISummary.jsx
       UserEditLayer.jsx
@@ -143,13 +237,19 @@ vis-app/
       ThemeSwitcher.jsx
       SubscriptionGate.jsx
       TierBadge.jsx
+      UsageBar.jsx
+      InvestorCalculator.jsx
     pages/
       Chat.jsx
+      PropertyReport.jsx
+      MarketReport.jsx
+      InvestorReport.jsx
       Reports.jsx
       Saved.jsx
       Settings.jsx
       AgentSettings.jsx
       TrainAI.jsx
+      Admin.jsx
     data/
       mockData.js
     utils/
@@ -157,6 +257,7 @@ vis-app/
       subdomainLoader.js
       formatters.js
       loanMath.js
+      investorMath.js
       docExtractor.js
     theme.js
     App.jsx
@@ -230,11 +331,12 @@ Apply before first render. Default: Charcoal.
 Typography — strict, no exceptions
 
 - DM Sans: ALL labels, body text, buttons, nav, chat messages, summaries
-- IBM Plex Mono: ALL numbers, data values, percentages, dollar amounts,
-  dates in data context, URLs, codes
-- Numbers always mono. Words always DM Sans.
+- Inter Semibold (weight 600): ALL numbers, data values, percentages,
+  dollar amounts, dates in data context, URLs, codes
+- Numbers always Inter 600. Words always DM Sans.
 - DM Sans weights used: 400, 700, 800
-- IBM Plex Mono weights used: 400, 700
+- Inter weights used: 600
+- --font-mono CSS variable resolves to Inter, not a monospace font
 
 Visual rules
 
@@ -296,8 +398,8 @@ BRANDING — TWO MODES
 On vis.realestate (Vis branding)
 
 - Logo mark: 28x28px square, radius 8px, var(--accent) bg, white "V",
-  IBM Plex Mono bold 13px
-- Wordmark: "vis" DM Sans 800 + ".realestate" IBM Plex Mono 10px muted
+  Inter bold 13px
+- Wordmark: "vis" DM Sans 800 + ".realestate" Inter 10px muted
 - AI avatar in chat: orange V square
 - AI name in chat: "Vis"
 - Report header: Vis logo and name
@@ -529,26 +631,22 @@ export const MOCK_AGENT = {
 };
 
 export const MOCK_AI_RESPONSE = {
-  aiSummary: "2847 Riverside Drive presents a solid opportunity in Austin's 78741 ZIP code. The estimated value of $487,500 is supported by recent comparable sales, and at $208 per square foot it sits in line with the neighborhood average. The Austin market has moderated over the past year with days on market rising and price reductions becoming more common, giving buyers more negotiating room than in 2022. The 2019 build means modern systems without near-term renovation risk. The 8/10 school rating and Zone X flood status add durable value that holds through market cycles. At current rates a 20% down payment puts monthly principal and interest near $2,590, improving if rates fall. The main risk is broader market softening with nearly a quarter of area listings taking price cuts.",
-  keyStrengths: [
-    "2019 build - modern systems, no immediate renovation costs",
-    "8/10 school rating at Zavala Elementary",
-    "Zone X flood zone - lowest risk category",
-  ],
-  keyRisks: [
-    "Austin market softening - days on market up 14 days year over year",
-    "24% of area listings have taken price reductions",
-  ],
-  bestSuitedFor: "Families prioritizing school quality and modern construction with long-term holding plans.",
+  // property-specific AI summary (see mockData.js for full content)
+};
+
+export const MOCK_MARKET_AI = {
+  // market-specific AI summary: prose + keyStrengths + keyRisks + bestSuitedFor
+  // (see mockData.js for full content)
 };
 ```
 
 REPORTS
 
-Two default report formats live alongside any custom templates an
-agent builds (see Sessions 21.5 / 21.6 below):
+One report format only — print / document layout (Georgia serif,
+white bg, formal table-driven aesthetic; see docs/vis_reporting.html).
+No modern card layout. No format selector.
 
-A. Modern card layout (default — dark Vis aesthetic):
+Property Report sections (order):
    1. White label header (branding per tier and URL context)
    2. Property header — address, stats row
    3. Property facts block — all key fields, unknown = "—"
@@ -559,21 +657,13 @@ A. Modern card layout (default — dark Vis aesthetic):
    8. Share / export / save
    9. Send to Client (Agent + Enterprise only)
 
-B. Print / document layout (default — Georgia serif, white bg,
-   formal table-driven aesthetic; see docs/vis_reporting.html):
-   Same data, same section order, different visual treatment.
-   Optimized for PDF export and formal sharing.
-
-Market Conditions Report sections (order)
-
+Market Conditions Report sections (order):
 1. White label header
 2. Area header — location, date
-3. Metrics grid — 6 cards with directional change
+3. Market data grid — all fields, same print table style
 4. Rate context — current rate, trend, Fed meeting
-5. AI market summary — 2 paragraphs
+5. AI market summary
 6. Share / export / save
-
-Market Report supports both default formats (A and B) too.
 
 Report footers
 
@@ -594,23 +684,105 @@ Loan data: local only, never stored server-side.
 AI content: always labeled (as agent's AI name on custom URLs).
 All AI-generated estimates labeled clearly as estimates, not appraisals.
 
+INLINE DATA CARD TYPES
+
+All tiers:
+  property — Property snapshot: est. value (accent), price/sqft, days
+             on market, beds/baths, sqft, year built, school rating.
+             Shows Generate Full Report button.
+  loan     — Monthly breakdown: P&I, property tax, HOA, insurance,
+             total monthly (accent). No report button.
+  market   — Market conditions: median price (accent), active listings,
+             days on market, list/sale ratio, price reductions,
+             avg price/sqft. Shows Generate Full Report button.
+  rate     — Rate snapshot: 30yr fixed, monthly payment (accent),
+             15yr fixed, ARM, next Fed meeting, Fed expectation.
+             No report button.
+
+Investor tier and above only:
+  rental   — Rental estimate: est. monthly rent, rent range, nearby
+             rental comps (address, beds/baths, rent). Source note.
+             No report button.
+  deal     — Deal analysis: purchase price, est. ARV, repair estimate,
+             potential equity, recommendation flag (good deal /
+             marginal / pass). Shows Generate Full Report button.
+  returns  — Returns snapshot: gross yield %, net yield %,
+             cash-on-cash %, cap rate %, monthly cash flow.
+             No report button.
+
+Never invent numbers. Only emit a card when Claude has real data from
+its web search. card: null for conversational responses.
+No Vis Score or Market Score anywhere — accent color highlights the
+single most important value per card instead.
+
+INVESTOR TOOLS (Investor tier and above)
+
+All rental data sourced via Claude web search (Zillow, Apartments.com,
+Rentals.com). All calculators are pure math in investorMath.js —
+no external data API required.
+
+Calculators:
+  Cash-on-cash: annual pre-tax cash flow ÷ total cash invested
+  Cap rate: net operating income ÷ property value
+  ARV: Claude pulls sold comps; user provides repair estimate;
+       max offer = 70% of ARV minus repairs (fix-and-flip formula)
+  Gross rental yield: (annual rent ÷ purchase price) × 100
+  Net rental yield: (net annual income ÷ purchase price) × 100
+  Monthly cash flow: rent minus (mortgage + tax + insurance + HOA +
+                     maintenance)
+
+Investor report includes: property snapshot, rental estimate, deal
+analysis, all four return metrics, rental comp summary, 12-month cash
+flow projection. PDF exportable. Shareable via link (Investor+).
+
+Multi-property comparison: up to 3 properties, Claude runs all calcs
+for each, renders comparison table with Generate Full Report button.
+
+ADMIN PANEL
+
+Protected route — accessible only to Vis owner. Separate admin
+password or magic link. Not visible to any users. Built within
+the Vis codebase at /admin.
+
+User management: view all users (name, email, tier, join date, last
+active), search/filter, manually change tier, comp an account (set
+price to $0 for a period), adjust usage limit per user, reset usage
+counter, suspend or reactivate.
+
+Usage & limits: usage % per user, flag at 80% (yellow) and 100%
+(red), overage charges accrued, usage history by month, highest-usage
+users across tiers.
+
+Tier & pricing config: edit monthly price, usage limit, overage rate
+per tier. Changes saved to tier_config table, reflected immediately.
+Price changes apply to new subscribers.
+
+Agent & brokerage management: view all brokerage accounts with linked
+agents, per-agent usage, add/remove agents from brokerage, view
+training content for any account.
+
+Revenue overview: total MRR, subscribers per tier, overage revenue
+this month, new signups, churned users.
+
+System config: maintenance mode toggle, view Fair Housing guardrail
+text (read-only), view and edit Layer 4 Vis base system prompt.
+
 LOCALSTORAGE KEYS
 
 vis-theme          — charcoal / black / light
-vis-tier           — buyer / agent / enterprise
+vis-tier           — solo / investor / agent / brokerage (pre-auth)
 vis-sessions       — array of chat session objects
 vis-saved-reports  — array of saved report objects
-vis-subscription   — subscription status placeholder
 
-Agent settings (logo, brand color, AI name, subdomain) live in
-Supabase, not localStorage. They must be server-side for subdomain
-routing to work.
+After auth is live, tier is read from users table in Supabase.
+Agent branding (logo, brand color, AI name, subdomain) always lives
+in Supabase — required for subdomain routing to work.
 
 CODING RULES — EVERY SESSION
 
 1. Never hardcode hex colors. Always CSS variables.
 2. Never hardcode data in components. Import from mockData.js.
-3. Numbers always IBM Plex Mono. Text always DM Sans. No exceptions.
+3. Numbers always Inter Semibold (600) via var(--font-mono). Text always DM Sans. No exceptions.
 4. Do not add libraries without asking the user first.
 5. Do not modify components unrelated to the current session task.
 6. Keep components under 200 lines. Split if larger.
@@ -625,66 +797,85 @@ CODING RULES — EVERY SESSION
 
 BUILD ORDER
 
-Session 1  — Environment: Vite, React, Tailwind, Supabase, GitHub, Vercel
-Session 2  — Chat shell: thread, bubbles, input bar, typing indicator
-Session 3  — Claude API + web search wired to chat
-Session 4  — Chat session management: save, name, list, reopen
-Session 5  — (removed: suggested prompt chips not wanted in Vis)
-Session 6  — Inline data cards in chat thread
-Session 7  — Generate Full Report button logic
-Session 8  — Property Report view: full layout, mock data
-Session 9  — Property facts block + user edit layer
-Session 10 — Area market conditions block
-Session 11 — (removed: Vis Property Score concept dropped — no scoring
-              anywhere in the product)
-Session 12 — Loan calculator: inputs, monthly breakdown
-Session 13 — AI property summary block
-Session 14 — Market Conditions Report: full layout (modern card)
-Session 14.5 — AI response card emission: update system prompt + parse
-               structured payload so real Claude replies attach a
-               cardType + cardData to the message. Tuned live against
-               the API once the key is in
-Session 14.6 — Print/document report format (default #2): Georgia
-               serif + white bg + table-driven layout, format selector
-               at top of report views, both Property + Market reports
-               support it. Reference: docs/vis_reporting.html
-Session 15 — Three tier system: vis-tier, feature gates per tier
-Session 16 — Supabase schema: agents, agent_training, brokerages tables
-Session 17 — Agent settings page: AI name, logo upload, brand color,
-             subdomain claim and availability check
-Session 18 — AI training page: text box, document upload, doc extraction,
-             save to Supabase, preview button
-Session 19 — Subdomain routing: Vercel wildcard domain config,
-             subdomainLoader.js, AgentContext, branding application
-Session 20 — Agent branded chat UI: logo replaces V, AI name applied,
+Session 1  — Environment: Vite, React, Tailwind, GitHub, Vercel ✓
+Session 2  — Chat shell: thread, bubbles, input bar, typing indicator ✓
+Session 3  — Claude API + web search wired to chat ✓
+Session 4  — Chat session management: save, name, list, reopen ✓
+Session 5  — (removed: suggested prompt chips not wanted)
+Session 6  — Inline data cards in chat thread ✓
+Session 7  — Generate Full Report button logic ✓
+Session 8  — Property Report view: full layout, mock data ✓
+Session 9  — Property facts block + user edit layer ✓
+Session 10 — Area market conditions block ✓
+Session 11 — (removed: Vis Property Score dropped)
+Session 12 — Loan calculator: inputs, monthly breakdown ✓
+Session 13 — AI property summary block ✓
+Session 14.5 — AI response card emission ✓
+Session 15a — Investor cards + math: rental, deal, returns card types
+              added to DataCard.jsx; investorMath.js (cash-on-cash, cap
+              rate, ARV, gross/net yield, monthly cash flow); system
+              prompt updated to emit investor card types
+Session 15b — Investor report + comparison: InvestorReport.jsx (full
+              PDF-ready layout matching print style); multi-property
+              comparison table; InvestorCalculator.jsx component
+Session 16 — Supabase schema: create all 5 tables (users,
+             agent_profiles, brokerage_profiles, handle_registry,
+             tier_config) in Supabase dashboard
+Session 16.5 — Auth: Supabase Auth (email + Google OAuth), login /
+               signup UI, protect chat + report routes, write user row
+               to users table on first login
+Session 16.6 — Onboarding flow: post-signup tier selection screen,
+               payment entry (Stripe Checkout), handle claim for Agent
+               + Brokerage (availability check + Vercel API
+               provisioning), profile setup — user lands in chat
+               only after onboarding is complete
+Session 17 — Stripe integration: Stripe subscriptions wired to tiers,
+             Stripe webhooks update users table (payment failed →
+             suspend, upgraded/downgraded → change tier, cancelled →
+             downgrade), billing portal link in settings, overage
+             billing via Stripe metered add-ons
+Session 17.5 — Tier system + usage: read tier from users table,
+               feature gates per tier, upgrade prompts on locked
+               features, per-API-call usage increment in users table,
+               UsageBar.jsx, 80%/100% warning banners, overage modal
+Session 18 — Agent settings: AI name, logo upload, brand color,
+             handle claim + availability check, Vercel API subdomain
+             provisioning
+Session 19 — AI training: text box, document upload, doc extraction,
+             save to agent_profiles, preview button
+Session 20 — Subdomain routing: subdomainLoader.js, AgentContext,
+             branding application on load
+Session 21 — Agent branded chat UI: logo replaces V, AI name applied,
              brand color applied, Vis invisible
-Session 21 — Agent branded reports: agent logo, name, no Vis mention
-Session 21.5 — Custom template schema + AI-driven generation: define
-               a JSON template schema (sections + which existing
-               components + custom-section primitives); add a "Train
-               Your Template" textarea where the agent describes the
-               report they want; Claude converts the description into
-               a valid template JSON; preview pane renders the result
-Session 21.6 — Custom template storage + picker UI + reuse: Supabase
-               agent_templates table; save / list / delete custom
-               templates per agent; format/template picker at top of
-               every report view shows the 2 defaults (Modern card +
-               Print document) plus the agent's saved custom templates
-Session 22 — Enterprise brokerage URL + brokerage training baseline
-Session 23 — Agent sub-URLs under brokerage subdomain
-Session 24 — Combined system prompt: brokerage layer + agent layer
-Session 25 — White label report footers: no Vis on agent/enterprise
-Session 26 — Send to Client button (Agent + Enterprise)
-Session 27 — Buyer tier branding + usage limit UI
-Session 28 — Share / export / save: link, PDF, save to sessions
-Session 29 — Settings page: theme, account, subscription status
-Session 30 — Subscription gate: paywall, upgrade prompts on limit hit
-Session 31 — Theme system polish (the in-nav cycle switcher was pulled
-              forward into the UI redesign; this session can add system
-              preference detection, per-tier defaults, smarter UI like
-              a dropdown with live previews, etc.)
+Session 22 — Agent branded reports: agent logo, name, no Vis mention
+Session 22.5 — Custom report templates: JSON schema, AI-driven
+               generation from agent description, preview pane
+Session 22.6 — Template storage + picker: agent_templates table,
+               save/list/delete, picker at top of report views
+Session 23 — Brokerage tier: brokerage_profiles, linked agents,
+             training baseline (Layer 2), agent management dashboard
+Session 24 — Combined system prompt: brokerage Layer 2 + agent Layer 3
+Session 25 — White label report footers: no Vis on agent/brokerage
+Session 26 — Send to Client button (Agent + Brokerage)
+Session 27 — Share / export / save: PDF export, shareable link
+             generation, save to saved reports
+Session 27.5 — Client-facing shared report view: public read-only
+               report page (no login required), rendered from a
+               share token stored in Supabase, shows agent branding
+               if shared from an agent account, Vis invisible on
+               agent shares
+Session 28 — Settings page: theme switcher, account info, billing
+             portal link, subscription status, usage summary
+Session 29 — Admin panel: user management, tier config, revenue
+             overview, agent management, system config, maintenance
+             mode toggle
+Session 30 — Subscription gate: paywall UI, upgrade prompts on
+             locked feature hit, upsell copy per tier
+Session 31 — Theme system polish: system preference detection,
+             per-tier defaults, theme dropdown with live previews
 Session 32 — Mobile optimization: responsive pass all pages
-Session 33 — Performance + error handling: loading states, fallbacks
+Session 33 — Performance + error handling: loading states, fallbacks,
+             error boundaries
 Session 34 — Beta deployment + feedback collection
 Session 35 — Bug fixes + launch prep
 
@@ -692,47 +883,78 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: UI redesign — Light theme as default, new chat
-patterns
-Current status: Whole app moved to the new warm-light aesthetic.
-Light is the default theme at :root; Charcoal + True Black are
-opt-in via [data-theme]. New tokens (--card-tint, --border-soft,
---muted-soft, --muted-faint, --shadow-card, --accent-soft). Nav has
-frosted backdrop + LIVE indicator. AI messages now show V avatar +
-"Vis" name + relative timestamp above the bubble; bubbles use
-asymmetric 4/14/14/14 radius with subtle shadow. ChatInput has
-persistent disclaimer below. SessionSidebar in cream with dashed
-"+ New chat" button. DataCard has tinted accent column on the
-headline stat. GenerateReportButton is outlined (fills on hover).
-Reports keep the same structure, now light. Empty state hero
-unchanged in spirit, just light. Session 11 (VisScore) remains
-removed.
-Next task: Session 9 — Property facts inline edit layer (let user
-correct or annotate any field; user additions labelled "added by
-user")
-Known issues / pending: ANTHROPIC_API_KEY still not configured;
-chat-side AI replies surface a graceful error bubble until added.
-File-structure deviation: PropertyReport.jsx + MarketReport.jsx live
-in src/pages/ (page-shaped views) rather than src/components/ as the
-spec lists them. All sub-components are in src/components/ per spec.
-Known issues / pending:
-  - **PENDING: ANTHROPIC_API_KEY not yet set.** User stepped away
-    before adding the key. To resume: open
-    /Users/calebmyers/projects/vis-app/.env.local in any editor and
-    paste the key after `ANTHROPIC_API_KEY=`, then run
-    `vercel env add ANTHROPIC_API_KEY` for Production / Preview /
-    Development, then `vercel --prod` to redeploy. Until then, every
-    chat send returns a graceful "ANTHROPIC_API_KEY missing" error
-    bubble — UI works, model calls don't.
-  - Test locally with `npm run dev:api` (not `npm run dev`) — vite
-    alone cannot serve /api functions.
-  - Web search is the only tool wired. Layer 2 (brokerage training)
-    and Layer 3 (agent training) are accepted as inputs to api/chat
-    but always null until Supabase + AgentContext arrive (Sessions
-    16-19).
+Last completed: Session 15b — Investor report (standalone page)
+Current status: MarketReport.jsx rebuilt in PropertyReport print style
+(Georgia serif header, same card container, SEC section headers, table
+rows). MarketDataGrid.jsx: 3 sections (Home Price & Affordability,
+Market Trends, Demographics), 30 fields total. Fields with no data
+omit entirely. Per-field toggles dim rows to 30% opacity (still
+visible, space held); export will capture all at full opacity. Sources
+are dynamic — read from market[fieldKey + "Source"] with no hard-coded
+fallback. If AI returns source alongside data, it shows; no source
+field = no source shown. Section-level toggles for AI Analysis and
+Rate Context (same opacity pattern). MOCK_MARKET_AI added with
+market-specific prose summary, tailwinds, risks, best-suited-for.
+PropertyReport footer sources now dynamic from property.dataSources
+array (AI populates only what it used). Risk & Climate attribution
+reads from property.riskDataSource — no hard-coded "First Street".
+Both reports: zero hard-coded source strings anywhere.
+Session 12 — Loan calculator with real inputs: src/utils/loanMath.js
+created (calcMonthlyPI standard mortgage formula, calcInsurance at
+0.75%/yr ÷ 12, calcPTI payment-to-income, fmtUSD, parseDollars).
+LoanCalculator.jsx fully rewritten with live interactive inputs:
+purchase price (pre-filled from property.listPrice or estimatedValue),
+down payment (% or $ toggle, derived value shown below), term selector
+(30yr/15yr/ARM button group), rate (pre-filled from market.currentRate30yr
+/ currentRate15yr / currentRateArm — switches when term changes, user
+can override). Breakdown: P&I, tax (property.annualTax ÷ 12), HOA
+(property.hoaMonthly), insurance — all live. Optional income field
+renders payment-to-income % sentence. PropertyReport inline loan table
+replaced with <LoanCalculator property={property} market={market} />.
+MOCK_MARKET expanded with currentRate15yr and currentRateArm numeric
+fields. All loan data is local only — never sent to server.
+Next task: Session 16 — Supabase schema
 
-Done so far (covers both Session 1 work from prior commit and
-Session 2 from this commit):
+Known issues / pending:
+  - ANTHROPIC_API_KEY not yet set. Add to .env.local and run
+    `vercel env add ANTHROPIC_API_KEY` for deploys. Run locally
+    with `npm run dev:api` (not `npm run dev`).
+  - Layer 2 and Layer 3 always null until Supabase + AgentContext
+    (Sessions 20+).
+  - PropertyReport.jsx + MarketReport.jsx live in src/pages/ per
+    convention — file structure spec updated to match.
+
+Done so far:
+
+  Session 9 — Property facts block + user edit layer:
+    - src/components/PropertyFacts.jsx: full rewrite. 8 grouped
+      sections (Public Facts, Sale History, Parking & Garage,
+      Interior, Exterior, Financial, HOA & Community, Location &
+      Scores, Risk & Climate). 4-column print table layout. Fields
+      with no data omitted entirely. Inline editing on every row:
+      hover reveals ✎ pencil, click turns value into input, save on
+      Enter/blur, Escape cancels, "edited" badge on overridden fields.
+      Clearing override reverts to original AI value. Accepts
+      overrides (object) and onOverride (fn) props.
+    - src/components/UserEditLayer.jsx: new component. Section below
+      PropertyFacts. Dashed "+ Add a fact or note" button creates new
+      label/value input pairs. Each row tagged "added by you". Delete
+      with × on hover. Accepts facts array + onAdd/onChange/onDelete.
+    - src/pages/PropertyReport.jsx: full rewrite to print-only layout.
+      Removed card layout entirely. Cover photo (conditional on
+      photoUrl). Georgia serif header. Estimated value block with
+      appreciation since purchase. Inline market metrics. Inline loan
+      table. AI Analysis section gated by sliding toggle in sticky
+      bar. Required attribution footer. factOverrides + userFacts
+      state wired to PropertyFacts and UserEditLayer.
+    - src/data/mockData.js: MOCK_PROPERTY expanded from 17 to ~80
+      fields covering all Redfin/Zillow property detail fields.
+      saleHistory array added. photoUrl field added (null by default).
+    - index.html + index.css + all data components: number/data font
+      changed from IBM Plex Mono to Inter Semibold (600). --font-mono
+      CSS variable now resolves to Inter.
+
+Done so far (pre-Session 9):
   Session 1 — env + design system:
     - Vite + React 19 + Tailwind v4 (@tailwindcss/vite) scaffold
     - GitHub linked (iamcalebmyers/vis-app), Vercel project linked

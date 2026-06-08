@@ -4,6 +4,9 @@ import {
   MOCK_LOAN_CARD,
   MOCK_MARKET_CARD,
   MOCK_RATE_CARD,
+  MOCK_RENTAL_CARD,
+  MOCK_DEAL_CARD,
+  MOCK_RETURNS_CARD,
 } from "../data/mockData.js";
 
 const cardOuter = {
@@ -67,7 +70,7 @@ function StatBlock({ label, value, sublabel, accent }) {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: accent ? 26 : 20,
-          fontWeight: 700,
+          fontWeight: 600,
           color: accent ? "var(--accent)" : "var(--white)",
           lineHeight: 1,
           marginBottom: 3,
@@ -123,7 +126,7 @@ function FactPill({ label, value }) {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: 12,
-          fontWeight: 700,
+          fontWeight: 600,
           color: "var(--white)",
           whiteSpace: "nowrap",
         }}
@@ -193,7 +196,7 @@ function TotalRow({ label, value }) {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: 22,
-          fontWeight: 800,
+          fontWeight: 600,
           color: "var(--accent)",
           letterSpacing: "-0.01em",
         }}
@@ -338,11 +341,98 @@ function RateCard({ data }) {
   );
 }
 
+const REC_STYLE = {
+  good:     { bg: "rgba(5,150,105,0.12)",  text: "#059669", label: "Good Deal" },
+  marginal: { bg: "rgba(217,119,6,0.12)",  text: "#d97706", label: "Marginal"  },
+  pass:     { bg: "rgba(220,38,38,0.12)",  text: "#dc2626", label: "Pass"      },
+};
+
+function RentalCard({ data }) {
+  return (
+    <div style={cardOuter}>
+      <div style={cardHeader}><span style={headerLabel}>Rental Estimate</span></div>
+      <div style={{ padding: "14px 14px 14px" }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted-faint)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Est. Monthly Rent</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 28, fontWeight: 600, color: "var(--accent)", letterSpacing: "-0.01em", lineHeight: 1 }}>{data.estMonthlyRent}</div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", marginTop: 4 }}>Range: {data.rentRange}</div>
+        </div>
+        {data.comps?.length > 0 && (
+          <div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted-faint)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>Nearby Rentals</div>
+            {data.comps.map((c, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < data.comps.length - 1 ? "1px solid var(--border-soft)" : "none" }}>
+                <div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text)" }}>{c.address}</div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)" }}>{c.beds}bd · {c.baths}ba · {c.distance}</div>
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "var(--white)" }}>{c.rent}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {data.source && (
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--muted-faint)", marginTop: 10 }}>Source: {data.source}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DealCard({ data, showButton, onGenerateReport }) {
+  const rec = REC_STYLE[data.recommendation] || REC_STYLE.marginal;
+  return (
+    <div style={cardOuter}>
+      <div style={{ ...cardHeader, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={headerLabel}>Deal Analysis</span>
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 700, color: rec.text, background: rec.bg, padding: "2px 8px", borderRadius: 20 }}>{rec.label}</span>
+      </div>
+      <div style={{ padding: "14px 14px 14px" }}>
+        <div style={statRow}>
+          <StatBlock label="Purchase Price" value={data.purchasePrice} />
+          <StatBlock label="Est. ARV" value={data.estARV} />
+          <StatBlock label="Repair Est." value={data.repairEstimate} />
+        </div>
+        <div style={grid2}>
+          <FactPill label="Potential Equity" value={data.potentialEquity} />
+          <FactPill label="Max Offer (70%)" value={data.maxOffer} />
+        </div>
+        {showButton && (
+          <GenerateReportButton onClick={() => onGenerateReport && onGenerateReport("deal", data)} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReturnsCard({ data }) {
+  return (
+    <div style={cardOuter}>
+      <div style={cardHeader}><span style={headerLabel}>Returns Snapshot</span></div>
+      <div style={{ padding: "14px 14px 14px" }}>
+        <div style={grid2}>
+          <StatBlock label="Gross Yield" value={data.grossYield} />
+          <StatBlock label="Net Yield" value={data.netYield} />
+          <StatBlock label="Cash-on-Cash" value={data.cashOnCash} />
+          <StatBlock label="Cap Rate" value={data.capRate} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "2px solid var(--white)", marginTop: 12 }}>
+          <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 14, color: "var(--white)" }}>Monthly Cash Flow</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 24, color: "var(--accent)", letterSpacing: "-0.01em" }}>{data.monthlyCashFlow}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const DEFAULT_DATA = {
   property: MOCK_PROPERTY_CARD,
   loan: MOCK_LOAN_CARD,
   market: MOCK_MARKET_CARD,
   rate: MOCK_RATE_CARD,
+  rental: MOCK_RENTAL_CARD,
+  deal: MOCK_DEAL_CARD,
+  returns: MOCK_RETURNS_CARD,
 };
 
 function DataCard({ type, data, showButton = false, onGenerateReport }) {
@@ -370,6 +460,18 @@ function DataCard({ type, data, showButton = false, onGenerateReport }) {
       );
     case "rate":
       return <RateCard data={finalData} />;
+    case "rental":
+      return <RentalCard data={finalData} />;
+    case "deal":
+      return (
+        <DealCard
+          data={finalData}
+          showButton={showButton}
+          onGenerateReport={onGenerateReport}
+        />
+      );
+    case "returns":
+      return <ReturnsCard data={finalData} />;
     default:
       return null;
   }

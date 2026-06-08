@@ -1,58 +1,28 @@
 import DataCard from "./DataCard.jsx";
 import { relativeTime } from "../utils/formatters.js";
+import { useAgent } from "../utils/AgentContext.jsx";
 
-function AiAvatar({ size = 22 }) {
+function AiAvatar({ size = 22, logoUrl, aiName = "Vis" }) {
+  if (logoUrl) {
+    return (
+      <img src={logoUrl} alt={aiName} style={{ width: size, height: size, borderRadius: 5, objectFit: "cover", flexShrink: 0 }} />
+    );
+  }
   return (
-    <span
-      aria-hidden="true"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 5,
-        background: "var(--accent)",
-        color: "#ffffff",
-        display: "grid",
-        placeItems: "center",
-        fontFamily: "var(--font-mono)",
-        fontWeight: 800,
-        fontSize: 10,
-        lineHeight: 1,
-        flexShrink: 0,
-      }}
-    >
-      V
+    <span aria-hidden="true" style={{ width: size, height: size, borderRadius: 5, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 10, lineHeight: 1, flexShrink: 0 }}>
+      {aiName[0]?.toUpperCase() || "V"}
     </span>
   );
 }
 
-function AiHeader({ aiName = "Vis", createdAt }) {
+function AiHeader({ aiName = "Vis", logoUrl, createdAt }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 7,
-        marginBottom: 6,
-      }}
-    >
-      <AiAvatar />
-      <span
-        style={{
-          fontFamily: "var(--font-sans)",
-          fontSize: 12,
-          fontWeight: 600,
-          color: "var(--white)",
-        }}
-      >
+    <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
+      <AiAvatar aiName={aiName} logoUrl={logoUrl} />
+      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: "var(--white)" }}>
         {aiName}
       </span>
-      <span
-        style={{
-          fontFamily: "var(--font-sans)",
-          fontSize: 11,
-          color: "var(--muted-faint)",
-        }}
-      >
+      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted-faint)" }}>
         {createdAt ? relativeTime(createdAt) : "just now"}
       </span>
     </div>
@@ -69,6 +39,7 @@ function ChatMessage({
   onGenerateReport,
   createdAt,
 }) {
+  const { aiName, logoUrl } = useAgent();
   const isUser = role === "user";
   const body = text ?? content ?? "";
   const hasCard = !isUser && Boolean(cardType);
@@ -82,7 +53,7 @@ function ChatMessage({
         marginBottom: 20,
       }}
     >
-      {!isUser && <AiHeader createdAt={createdAt} />}
+      {!isUser && <AiHeader aiName={aiName} logoUrl={logoUrl} createdAt={createdAt} />}
       <div
         style={{
           maxWidth: isUser ? "72%" : hasCard ? "92%" : "88%",
