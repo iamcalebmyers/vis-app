@@ -3,7 +3,7 @@ import { supabase } from "../utils/supabase.js";
 import { hasFeature } from "../utils/tier.js";
 import { loadAgentInfo, saveAgentInfo } from "../utils/useAgentInfo.js";
 
-const WHEEL = 220;
+const WHEEL = 150;
 const DEFAULT_COLOR = "#DA6B3A";
 
 function getContrastColor(hex) {
@@ -127,7 +127,7 @@ function ColorWheel({ color, onChange }) {
   const pureColor = hsvToHex(hsv[0], hsv[1], 100);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 14 }}>
       {/* Wheel */}
       <div style={{ position: "relative", width: WHEEL, height: WHEEL }}>
         <div
@@ -385,7 +385,7 @@ function AgentSettings({ user, userRow }) {
         )}
 
         <button onClick={handleSave} disabled={saving || uploading}
-          style={{ height: 42, borderRadius: 8, background: saved ? "#16a34a" : "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: saved ? "#fff" : "var(--accent-text)", cursor: saving || uploading ? "not-allowed" : "pointer", opacity: saving || uploading ? 0.7 : 1, transition: "background 0.2s ease, color 0.2s ease" }}>
+          style={{ height: 42, borderRadius: 8, background: saved ? "#16a34a" : "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: "#fff", cursor: saving || uploading ? "not-allowed" : "pointer", opacity: saving || uploading ? 0.7 : 1, transition: "background 0.2s ease" }}>
           {saving ? "Saving…" : saved ? "Saved!" : "Save settings"}
         </button>
       </div>
