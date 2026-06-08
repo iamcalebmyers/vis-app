@@ -3,11 +3,28 @@ import { supabase } from "../utils/supabase.js";
 import { hasFeature } from "../utils/tier.js";
 import { loadAgentInfo, saveAgentInfo } from "../utils/useAgentInfo.js";
 
-const PRESET_COLORS = [
-  "#DA6B3A", "#C4572A", "#B84040", "#E8A43A",
-  "#2563EB", "#1A5276", "#0F766E", "#059669",
-  "#7C3AED", "#9D174D", "#64748B", "#374151",
-];
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return "#" + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, "0")).join("");
+}
+
+function hexToHue(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return 0;
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  if (max === min) return 0;
+  const d = max - min;
+  let h;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return Math.round(h * 360);
+}
 
 const INPUT = {
   width: "100%",
@@ -60,6 +77,10 @@ function AgentSettings({ user, userRow }) {
       }
     });
   }, [user?.id, canAccess]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--accent", brandColor);
+  }, [brandColor]);
 
   async function handleLogoUpload(e) {
     const file = e.target.files?.[0];
@@ -149,20 +170,20 @@ function AgentSettings({ user, userRow }) {
 
         {/* Brand color */}
         <Field label="Brand color" hint="Used on buttons, highlights, and accents across your branded experience.">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8, marginBottom: 12 }}>
-            {PRESET_COLORS.map(color => (
-              <button key={color} onClick={() => setBrandColor(color)}
-                style={{ width: "100%", aspectRatio: "1", borderRadius: 8, background: color, border: brandColor.toLowerCase() === color.toLowerCase() ? "3px solid var(--white)" : "2px solid transparent", cursor: "pointer", transition: "border-color 0.15s", padding: 0 }}
-              />
-            ))}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <input
-              type="color"
-              value={brandColor}
-              onChange={e => setBrandColor(e.target.value)}
-              style={{ width: 44, height: 44, borderRadius: 8, border: "1px solid var(--border)", cursor: "pointer", padding: 2, background: "var(--border-soft)" }}
-            />
+          <style>{`
+            .hue-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; border-radius: 14px; outline: none; cursor: pointer; background: linear-gradient(to right, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0080ff, #8000ff, #ff00ff, #ff0000); border: 1px solid var(--border); }
+            .hue-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: ${brandColor}; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.35); cursor: pointer; }
+            .hue-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: ${brandColor}; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.35); cursor: pointer; border: none; }
+          `}</style>
+          <input
+            type="range"
+            min={0}
+            max={359}
+            value={hexToHue(brandColor)}
+            onChange={e => setBrandColor(hslToHex(parseInt(e.target.value), 72, 48))}
+            className="hue-slider"
+          />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
             <input
               value={brandColor}
               onChange={e => setBrandColor(e.target.value)}
