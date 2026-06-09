@@ -1,8 +1,70 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 import { supabase } from "../utils/supabase.js";
 import { hasFeature } from "../utils/tier.js";
 import { loadAgentInfo, saveAgentInfo } from "../utils/useAgentInfo.js";
 import TrainAI from "./TrainAI.jsx";
+import TeamView from "./TeamView.jsx";
+
+/* ─── Logo cropper modal ─── */
+function LogoCropper({ src, onDone, onCancel }) {
+  const [crop, setCrop] = useState();
+  const [completedCrop, setCompletedCrop] = useState(null);
+  const imgRef = useRef(null);
+
+  function onImageLoad(e) {
+    const { width, height } = e.currentTarget;
+    const side = Math.round(Math.min(width, height) * 0.8);
+    const x = Math.round((width - side) / 2);
+    const y = Math.round((height - side) / 2);
+    const px = { unit: "px", x, y, width: side, height: side };
+    setCrop(px);
+    setCompletedCrop(px);
+  }
+
+  async function handleApply() {
+    const image = imgRef.current;
+    const c = completedCrop;
+    if (!image || !c?.width || !c?.height) return;
+    const canvas = document.createElement("canvas");
+    const size = 400;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    ctx.drawImage(
+      image,
+      c.x * scaleX, c.y * scaleY,
+      c.width * scaleX, c.height * scaleY,
+      0, 0, size, size
+    );
+    canvas.toBlob(blob => { if (blob) onDone(blob); }, "image/png", 0.95);
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: "28px 28px 24px", width: 480, maxWidth: "90vw", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 16, color: "var(--white)" }}>Crop your logo</div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", marginTop: -12 }}>Drag to reposition. The crop is always square.</div>
+        <div style={{ display: "flex", justifyContent: "center", maxHeight: 360, overflow: "auto", background: "var(--border-soft)", borderRadius: 8, padding: 12 }}>
+          <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={c => setCompletedCrop(c)} aspect={1} circularCrop style={{ maxWidth: "100%" }}>
+            <img ref={imgRef} src={src} onLoad={onImageLoad} style={{ maxWidth: "100%", maxHeight: 320, display: "block" }} alt="crop preview" />
+          </ReactCrop>
+        </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button onClick={onCancel} style={{ height: 38, padding: "0 18px", borderRadius: 8, background: "var(--border-soft)", border: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--muted)", cursor: "pointer" }}>
+            Cancel
+          </button>
+          <button onClick={handleApply} style={{ height: 38, padding: "0 20px", borderRadius: 8, background: "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>
+            Use this crop
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ─── Color wheel helpers ─── */
 const WHEEL = 150;
@@ -154,15 +216,20 @@ function ErrorBox({ children }) {
 }
 
 /* ─── Sidebar nav definition ─── */
-const BASE_NAV = [
+const AGENT_NAV = [
   { id: "profile",  label: "Profile",  tip: "Set your AI's name and the greeting clients see when they open the chat." },
   { id: "branding", label: "Branding", tip: "Choose your brand color and upload a logo for reports and your client-facing experience." },
   { id: "contact",  label: "Contact",  tip: "Your name, brokerage, and contact info — auto-filled in the header of every report." },
   { id: "train",    label: "Train AI", tip: "Write instructions that shape how your AI responds. Upload a doc or type it directly." },
   { id: "clients",  label: "Clients",  tip: "Invite clients to your branded AI chat. They get a private login and can only access the chat." },
+  { id: "team",     label: "Manage Users", tip: "Visual overview of your agents and clients as a connected tree." },
 ];
 const BROKERAGE_NAV = [
-  { id: "agents", label: "Agents", tip: "Add, remove, and view agents linked to your brokerage account." },
+  { id: "profile",  label: "Profile",  tip: "Set your AI's name and the greeting clients see when they open the chat." },
+  { id: "branding", label: "Branding", tip: "Choose your brand color and upload a logo for reports and your client-facing experience." },
+  { id: "contact",  label: "Contact",  tip: "Your name, brokerage, and contact info — auto-filled in the header of every report." },
+  { id: "train",    label: "Train AI", tip: "Write instructions that shape how your AI responds. Upload a doc or type it directly." },
+  { id: "team",     label: "Manage Users", tip: "Visual overview of your agents and clients as a connected tree." },
 ];
 
 /* ─── Main component ─── */
@@ -170,7 +237,7 @@ function AgentSettings({ user, userRow }) {
   const tier = userRow?.tier || "solo";
   const canAccess = hasFeature(tier, "agent");
   const isBrokerage = hasFeature(tier, "brokerage");
-  const nav = isBrokerage ? [...BASE_NAV, ...BROKERAGE_NAV] : BASE_NAV;
+  const nav = isBrokerage ? BROKERAGE_NAV : AGENT_NAV;
 
   const [section, setSection] = useState("profile");
   const [tooltip, setTooltip] = useState(null);
@@ -184,6 +251,7 @@ function AgentSettings({ user, userRow }) {
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [cropSrc, setCropSrc] = useState(null);
   const fileRef = useRef();
   const [reportInfo, setReportInfo] = useState(loadAgentInfo);
   const [greeting, setGreeting] = useState(() => loadAgentInfo().greeting || "");
@@ -200,6 +268,21 @@ function AgentSettings({ user, userRow }) {
   /* Brokerage state */
   const [brokerageProfile, setBrokerageProfile] = useState(null);
   const [linkedAgents, setLinkedAgents] = useState([]);
+  const [agentClients, setAgentClients] = useState({}); // { agentId: [clients] }
+  // invite agent (email)
+  const [inviteAgentEmail, setInviteAgentEmail] = useState("");
+  const [inviteAgentName, setInviteAgentName] = useState("");
+  const [invitingAgent, setInvitingAgent] = useState(false);
+  const [inviteAgentError, setInviteAgentError] = useState(null);
+  const [inviteAgentSuccess, setInviteAgentSuccess] = useState(false);
+  // invite client to specific agent
+  const [inviteAgentId, setInviteAgentId] = useState(null);
+  const [agentInviteEmail, setAgentInviteEmail] = useState("");
+  const [agentInviteName, setAgentInviteName] = useState("");
+  const [agentInviting, setAgentInviting] = useState(false);
+  const [agentInviteError, setAgentInviteError] = useState(null);
+  const [agentInviteSuccess, setAgentInviteSuccess] = useState(false);
+  // add by handle
   const [agentHandleInput, setAgentHandleInput] = useState("");
   const [addingAgent, setAddingAgent] = useState(false);
   const [addAgentError, setAddAgentError] = useState(null);
@@ -208,7 +291,21 @@ function AgentSettings({ user, userRow }) {
   useEffect(() => {
     if (!canAccess || !user?.id) return;
     supabase.from("agent_profiles").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      if (data) { setProfile(data); setAiName(data.ai_name || ""); setBrandColor(data.brand_color || DEFAULT_COLOR); setLogoUrl(data.logo_url || null); }
+      if (!data) return;
+      setProfile(data);
+      setAiName(data.ai_name || "");
+      setBrandColor(data.brand_color || DEFAULT_COLOR);
+      setLogoUrl(data.logo_url || null);
+      if (data.contact_name || data.contact_phone || data.contact_email) {
+        setReportInfo(prev => ({
+          ...prev,
+          name: data.contact_name || prev.name,
+          brokerage: data.contact_brokerage || prev.brokerage,
+          license: data.contact_license || prev.license,
+          phone: data.contact_phone || prev.phone,
+          email: data.contact_email || prev.email,
+        }));
+      }
     });
   }, [user?.id, canAccess]);
 
@@ -219,16 +316,25 @@ function AgentSettings({ user, userRow }) {
       .then(({ data }) => { if (data) setClients(data); });
   }, [section, profile?.id]);
 
-  /* Load brokerage profile + linked agents */
+  /* Load brokerage profile + linked agents + their clients */
   useEffect(() => {
     if (!isBrokerage || !user?.id) return;
     supabase.from("brokerage_profiles").select("*").eq("user_id", user.id).maybeSingle().then(async ({ data }) => {
       if (!data) return;
       setBrokerageProfile(data);
-      setTrainingBaseline(data.training_baseline || "");
+      if (data.logo_url) setLogoUrl(data.logo_url);
+      if (data.ai_name) setAiName(data.ai_name);
+      if (data.brand_color) setBrandColor(data.brand_color);
       const { data: agents } = await supabase.from("agent_profiles")
         .select("id, handle, ai_name, user_id").eq("brokerage_id", data.id);
-      if (agents) setLinkedAgents(agents);
+      const list = agents || [];
+      setLinkedAgents(list);
+      const map = {};
+      await Promise.all(list.map(async a => {
+        const { data: cls } = await supabase.from("client_profiles").select("*").eq("agent_id", a.id);
+        map[a.id] = cls || [];
+      }));
+      setAgentClients(map);
     });
   }, [user?.id, isBrokerage]);
 
@@ -239,24 +345,42 @@ function AgentSettings({ user, userRow }) {
   }, [brandColor]);
 
   /* ─── Handlers ─── */
-  async function handleLogoUpload(e) {
+  function handleLogoUpload(e) {
     const file = e.target.files?.[0]; if (!file) return;
     if (file.size > 5 * 1024 * 1024) { setError("Logo must be under 5MB."); return; }
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  async function handleCropDone(blob) {
+    setCropSrc(null);
     setUploading(true); setError(null);
-    const path = `${user.id}/logo.${file.name.split(".").pop()}`;
-    const { error: upErr } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
+    const path = `${user.id}/logo.png`;
+    const { error: upErr } = await supabase.storage.from("logos").upload(path, blob, { upsert: true, contentType: "image/png" });
     if (upErr) { setError("Upload failed: " + upErr.message); setUploading(false); return; }
     const { data: { publicUrl } } = supabase.storage.from("logos").getPublicUrl(path);
-    setLogoUrl(publicUrl); setUploading(false);
+    setLogoUrl(publicUrl + "?t=" + Date.now()); setUploading(false);
   }
 
   async function handleSave() {
     if (!aiName.trim()) { setError("AI name is required."); return; }
     setSaving(true); setError(null);
     const updates = { user_id: user.id, ai_name: aiName.trim(), brand_color: brandColor, logo_url: logoUrl };
-    const { error: saveErr } = profile
-      ? await supabase.from("agent_profiles").update(updates).eq("user_id", user.id)
-      : await supabase.from("agent_profiles").insert(updates);
+    let saveErr;
+    if (isBrokerage) {
+      const { error } = brokerageProfile
+        ? await supabase.from("brokerage_profiles").update(updates).eq("user_id", user.id)
+        : await supabase.from("brokerage_profiles").insert(updates);
+      saveErr = error;
+    } else {
+      const { error } = profile
+        ? await supabase.from("agent_profiles").update(updates).eq("user_id", user.id)
+        : await supabase.from("agent_profiles").insert(updates);
+      saveErr = error;
+    }
     if (saveErr) { setError("Save failed: " + saveErr.message); }
     else {
       saveAgentInfo({ ...loadAgentInfo(), ...reportInfo, greeting, logoUrl: logoUrl || "" });
@@ -265,8 +389,20 @@ function AgentSettings({ user, userRow }) {
     setSaving(false);
   }
 
-  function handleSaveContact() {
+  async function handleSaveContact() {
     saveAgentInfo({ ...loadAgentInfo(), ...reportInfo, greeting, logoUrl: logoUrl || "" });
+    const contactFields = {
+      contact_name: reportInfo.name || null,
+      contact_brokerage: reportInfo.brokerage || null,
+      contact_license: reportInfo.license || null,
+      contact_phone: reportInfo.phone || null,
+      contact_email: reportInfo.email || null,
+    };
+    if (isBrokerage && brokerageProfile) {
+      await supabase.from("brokerage_profiles").update(contactFields).eq("user_id", user.id);
+    } else if (!isBrokerage && profile) {
+      await supabase.from("agent_profiles").update(contactFields).eq("user_id", user.id);
+    }
     setSavedContact(true); setTimeout(() => setSavedContact(false), 2000);
   }
 
@@ -312,6 +448,41 @@ function AgentSettings({ user, userRow }) {
     setAddingAgent(false);
   }
 
+  async function handleInviteAgent() {
+    if (!inviteAgentEmail.trim()) return;
+    setInvitingAgent(true); setInviteAgentError(null); setInviteAgentSuccess(false);
+    const res = await fetch("/api/invite-agent", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: inviteAgentEmail.trim(), name: inviteAgentName.trim(), brokerageProfileId: brokerageProfile?.id }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) { setInviteAgentError(data.error || "Invite failed."); }
+    else { setInviteAgentSuccess(true); setInviteAgentEmail(""); setInviteAgentName(""); setTimeout(() => setInviteAgentSuccess(false), 3000); }
+    setInvitingAgent(false);
+  }
+
+  async function handleInviteToAgent(agentId, agentHandle) {
+    if (!agentInviteEmail.trim()) return;
+    setAgentInviting(true); setAgentInviteError(null); setAgentInviteSuccess(false);
+    const res = await fetch("/api/invite-client", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: agentInviteEmail.trim(), name: agentInviteName.trim(), agentProfileId: agentId, agentHandle }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) { setAgentInviteError(data.error || "Invite failed."); }
+    else {
+      setAgentClients(prev => ({ ...prev, [agentId]: [data.client, ...(prev[agentId] || [])] }));
+      setAgentInviteEmail(""); setAgentInviteName("");
+      setAgentInviteSuccess(true); setTimeout(() => { setAgentInviteSuccess(false); setInviteAgentId(null); }, 1500);
+    }
+    setAgentInviting(false);
+  }
+
+  async function handleRemoveAgentClient(clientId, agentId) {
+    await supabase.from("client_profiles").delete().eq("id", clientId);
+    setAgentClients(prev => ({ ...prev, [agentId]: prev[agentId].filter(c => c.id !== clientId) }));
+  }
+
   async function handleRemoveAgent(agentId) {
     await supabase.from("agent_profiles").update({ brokerage_id: null }).eq("id", agentId);
     setLinkedAgents(prev => prev.filter(a => a.id !== agentId));
@@ -335,13 +506,8 @@ function AgentSettings({ user, userRow }) {
       <nav style={{ width: 180, flexShrink: 0, borderRight: "1px solid var(--border)", background: "var(--border-soft)", display: "flex", flexDirection: "column", padding: "32px 0" }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "0 20px", marginBottom: 16 }}>Settings</div>
 
-        {BASE_NAV.map(n => <NavItem key={n.id} n={n} active={section === n.id} onClick={() => { setSection(n.id); setError(null); }} onTip={setTooltip} />)}
+        {nav.map(n => <NavItem key={n.id} n={n} active={section === n.id} onClick={() => { setSection(n.id); setError(null); }} onTip={setTooltip} />)}
 
-        {isBrokerage && <>
-          <div style={{ margin: "16px 20px 10px", borderTop: "1px solid var(--border)" }} />
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "0 20px", marginBottom: 10 }}>Brokerage</div>
-          {BROKERAGE_NAV.map(n => <NavItem key={n.id} n={n} active={section === n.id} onClick={() => { setSection(n.id); setError(null); }} onTip={setTooltip} />)}
-        </>}
       </nav>
 
       {/* Hover tooltip */}
@@ -380,6 +546,8 @@ function AgentSettings({ user, userRow }) {
         )}
 
         {/* ── Branding ── */}
+        {cropSrc && <LogoCropper src={cropSrc} onDone={handleCropDone} onCancel={() => { setCropSrc(null); }} />}
+
         {section === "branding" && (
           <div style={{ maxWidth: 480, padding: "40px 48px" }}>
             <SectionHead title="Branding" sub="Colors and logo shown on your branded experience." />
@@ -526,73 +694,10 @@ function AgentSettings({ user, userRow }) {
           </div>
         )}
 
-        {/* ── Agents (brokerage only) ── */}
-        {section === "agents" && (
-          <div style={{ maxWidth: 560, padding: "40px 48px" }}>
-            <SectionHead title="Linked agents" sub="Agents linked to your brokerage inherit your training baseline and appear under your account." />
+        {/* ── Team ── */}
+        {section === "team" && <TeamView user={user} userRow={userRow} />}
 
-            {!brokerageProfile && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 18px", marginBottom: 28 }}>
-                Save your Baseline training first to create your brokerage profile, then come back to add agents.
-              </div>
-            )}
-
-            {/* Linked agents list */}
-            {linkedAgents.length > 0 && (
-              <div style={{ marginBottom: 32 }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Linked agents ({linkedAgents.length})</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {linkedAgents.map(agent => (
-                    <div key={agent.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--accent-soft)", border: "1px solid var(--border)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-                        <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 14, color: "var(--accent)" }}>{(agent.ai_name || agent.handle || "?")[0].toUpperCase()}</span>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--white)" }}>{agent.ai_name || "(no AI name set)"}</div>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{agent.handle}.vis.realestate</div>
-                      </div>
-                      <button onClick={() => handleRemoveAgent(agent.id)}
-                        style={{ background: "none", border: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", cursor: "pointer", padding: "4px 8px", borderRadius: 4 }}
-                        onMouseEnter={e => e.target.style.color = "#dc2626"}
-                        onMouseLeave={e => e.target.style.color = "var(--muted)"}>
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {linkedAgents.length === 0 && brokerageProfile && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", marginBottom: 28 }}>No agents linked yet.</div>
-            )}
-
-            {/* Add agent */}
-            {brokerageProfile && (
-              <div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Add agent by handle</div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <div style={{ flex: 1, position: "relative" }}>
-                    <input
-                      value={agentHandleInput}
-                      onChange={e => { setAgentHandleInput(e.target.value); setAddAgentError(null); }}
-                      onKeyDown={e => e.key === "Enter" && handleAddAgent()}
-                      placeholder="agenthandle"
-                      style={{ ...INPUT }}
-                    />
-                    <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted-faint)", pointerEvents: "none" }}>.vis.realestate</span>
-                  </div>
-                  <button onClick={handleAddAgent} disabled={addingAgent || !agentHandleInput.trim()}
-                    style={{ height: 44, padding: "0 20px", borderRadius: 8, background: "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: addingAgent || !agentHandleInput.trim() ? "not-allowed" : "pointer", opacity: addingAgent || !agentHandleInput.trim() ? 0.6 : 1, whiteSpace: "nowrap" }}>
-                    {addingAgent ? "Adding…" : "Add agent"}
-                  </button>
-                </div>
-                {addAgentError && <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626" }}>{addAgentError}</div>}
-                <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted-faint)" }}>The agent must have an active Vis account and their handle already claimed.</div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* ── Agents + Clients (brokerage only) ── */}
 
       </div>
     </div>

@@ -10,6 +10,11 @@ const DEFAULT = {
   trainingText: null,
   trainingDocText: null,
   brokerageTraining: null,
+  contactName: null,
+  contactBrokerage: null,
+  contactLicense: null,
+  contactPhone: null,
+  contactEmail: null,
   loading: true,
 };
 

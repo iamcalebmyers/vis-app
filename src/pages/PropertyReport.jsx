@@ -226,8 +226,7 @@ function PropertyReport({ data, onBack }) {
             {property.dataSources?.length > 0 && (
               <div>Data sources: {property.dataSources.join(" · ")}</div>
             )}
-            <ReportFooterLine agentInfo={agentInfo} />
-            <div>AI-gathered data — accuracy not guaranteed. Always verify with a licensed agent or appraiser.</div>
+            <ReportFooterLine />
           </div>
         </div>
 

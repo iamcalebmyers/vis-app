@@ -114,8 +114,7 @@ function MarketReport({ data, onBack }) {
           {/* Footer */}
           <div style={{ marginTop: 28, paddingTop: 14, borderTop: "1px solid var(--border)", fontFamily: "Arial, sans-serif", fontSize: 10, color: "var(--muted)", lineHeight: 1.8 }}>
             <div>Data sources: Zillow ZHVI · Realtor.com · US Census Bureau ACS · NCEI</div>
-            <ReportFooterLine agentInfo={agentInfo} />
-            <div>AI-gathered data — accuracy not guaranteed. Rate data is indicative only; always confirm with a licensed lender.</div>
+            <ReportFooterLine />
           </div>
         </div>
 

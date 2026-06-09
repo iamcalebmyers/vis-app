@@ -188,8 +188,7 @@ function InvestorReport({ data, onBack }) {
           )}
 
           <div style={{ marginTop: 28, paddingTop: 14, borderTop: "1px solid var(--border)", fontFamily: "Arial, sans-serif", fontSize: 10, color: "var(--muted)", lineHeight: 1.8 }}>
-            <ReportFooterLine agentInfo={agentInfo} />
-            <div>AI-gathered data — accuracy not guaranteed. Always verify with a licensed agent, appraiser, or financial advisor.</div>
+            <ReportFooterLine />
           </div>
         </div>
 

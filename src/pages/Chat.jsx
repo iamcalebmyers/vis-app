@@ -363,6 +363,12 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
               <div style={{ width: "100%", maxWidth: 760 }}>
                 <ChatInput onSend={handleSend} disabled={false} autoFocus />
               </div>
+              <button
+                onClick={() => setMessages(DEMO_MESSAGES.map(m => ({ ...m, createdAt: m.createdAt ?? Date.now() })))}
+                style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted-faint)", background: "none", border: "none", cursor: "pointer", padding: "4px 8px", textDecoration: "underline" }}
+              >
+                Load test cards
+              </button>
             </div>
           )}
         </div>

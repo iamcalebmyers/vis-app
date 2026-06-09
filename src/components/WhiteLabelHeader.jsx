@@ -30,22 +30,13 @@ export function ReportBrandMark() {
   );
 }
 
-export function ReportFooterLine({ agentInfo }) {
-  const { isAgentDomain, aiName } = useAgent();
-
-  if (isAgentDomain) {
-    const parts = [aiName];
-    if (agentInfo?.brokerage) parts.push(agentInfo.brokerage);
-    if (agentInfo?.phone) parts.push(agentInfo.phone);
-    return <div>{parts.join(" · ")} — for informational purposes only, not financial or legal advice.</div>;
-  }
-
-  const parts = [];
-  if (agentInfo?.name) parts.push(agentInfo.name);
-  if (agentInfo?.brokerage) parts.push(agentInfo.brokerage);
-  if (agentInfo?.phone) parts.push(agentInfo.phone);
-  const prefix = parts.length > 0 ? parts.join(" · ") + " — " : "";
-  return <div>{prefix}For informational purposes only, not financial or legal advice.</div>;
+export function ReportFooterLine() {
+  return (
+    <div>
+      <div>For informational purposes only, not financial or legal advice.</div>
+      <div>AI-gathered data — accuracy not guaranteed. Always verify with a licensed agent, appraiser, or financial advisor.</div>
+    </div>
+  );
 }
 
 function WhiteLabelHeader({ reportType = "Property Report" }) {

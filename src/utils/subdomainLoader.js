@@ -19,7 +19,7 @@ export function detectSubdomain() {
 export async function loadAgentConfig(handle) {
   const { data } = await supabase
     .from("agent_profiles")
-    .select("ai_name, logo_url, brand_color, training_text, training_doc_text, brokerage_id")
+    .select("ai_name, logo_url, brand_color, training_text, training_doc_text, brokerage_id, contact_name, contact_brokerage, contact_license, contact_phone, contact_email")
     .eq("handle", handle)
     .maybeSingle();
 
@@ -44,5 +44,10 @@ export async function loadAgentConfig(handle) {
     trainingText: data.training_text || null,
     trainingDocText: data.training_doc_text || null,
     brokerageTraining,
+    contactName: data.contact_name || null,
+    contactBrokerage: data.contact_brokerage || null,
+    contactLicense: data.contact_license || null,
+    contactPhone: data.contact_phone || null,
+    contactEmail: data.contact_email || null,
   };
 }
