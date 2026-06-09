@@ -1,166 +1,109 @@
-import { useState, useEffect } from "react";
-import { supabase } from "../utils/supabase.js";
+import { useState } from "react";
 
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).catch(() => {});
-}
+const BTN_PRIMARY = {
+  width: "100%", height: 44, borderRadius: 8, background: "var(--accent)",
+  border: "none", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700,
+  color: "#fff", cursor: "pointer", transition: "opacity 0.15s",
+};
+const BTN_SECONDARY = {
+  width: "100%", height: 40, borderRadius: 8, background: "var(--border-soft)",
+  border: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 13,
+  fontWeight: 600, color: "var(--text)", cursor: "pointer", transition: "background 0.15s",
+};
 
-function SendToClientModal({ reportType, reportData, user, onClose }) {
-  const [profile, setProfile] = useState(null);
-  const [clients, setClients] = useState([]);
-  const [loadingClients, setLoadingClients] = useState(true);
-  const [selectedId, setSelectedId] = useState(null);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
-  const [copied, setCopied] = useState(false);
+function SendToClientModal({ onExportPDF, reportType, onClose }) {
+  const [status, setStatus] = useState("idle"); // idle | exporting | done | error
 
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase
-      .from("agent_profiles")
-      .select("id, handle")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!data) { setLoadingClients(false); return; }
-        setProfile(data);
-        supabase
-          .from("client_profiles")
-          .select("id, name, email")
-          .eq("agent_id", data.id)
-          .order("created_at", { ascending: false })
-          .then(({ data: c }) => {
-            setClients(c || []);
-            if (c?.length === 1) setSelectedId(c[0].id);
-            setLoadingClients(false);
-          });
-      });
-  }, [user?.id]);
+  const label =
+    reportType === "market" ? "Market Report"
+    : reportType === "investor" ? "Investor Report"
+    : "Property Report";
 
-  async function handleSend() {
-    if (!profile || !selectedId) return;
-    setSending(true);
-    setError(null);
+  async function handleDownload() {
+    setStatus("exporting");
     try {
-      const res = await fetch("/api/send-report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reportType,
-          reportData,
-          agentProfileId: profile.id,
-          clientId: selectedId,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to send.");
-      const client = clients.find(c => c.id === selectedId);
-      setResult({ url: json.url, client });
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSending(false);
+      await onExportPDF();
+      setStatus("done");
+    } catch {
+      setStatus("error");
     }
   }
 
-  function handleCopy() {
-    copyToClipboard(result.url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
   function handleMailto() {
-    const label = reportType === "property" ? "Property Report" : reportType === "market" ? "Market Report" : "Investor Report";
     const subject = encodeURIComponent(`Your ${label}`);
-    const body = encodeURIComponent(`Hi${result.client?.name ? ` ${result.client.name}` : ""},\n\nI've put together a report for you. You can view it here:\n\n${result.url}\n\nLet me know if you have any questions.`);
-    window.open(`mailto:${result.client?.email || ""}?subject=${subject}&body=${body}`);
+    const body = encodeURIComponent(
+      `Hi,\n\nPlease find your ${label} attached.\n\nLet me know if you have any questions.`
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`);
   }
-
-  const OVERLAY = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 };
-  const MODAL = { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, width: 440, maxWidth: "100%", display: "flex", flexDirection: "column", gap: 0, overflow: "hidden" };
-  const HEADER = { padding: "22px 24px 16px", borderBottom: "1px solid var(--border)" };
-  const BODY = { padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 };
-  const FOOTER = { padding: "16px 24px", borderTop: "1px solid var(--border)", display: "flex", gap: 10, justifyContent: "flex-end" };
 
   return (
-    <div style={OVERLAY} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={MODAL}>
-        <div style={HEADER}>
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, width: 400, maxWidth: "100%", overflow: "hidden" }}>
+
+        <div style={{ padding: "22px 24px 18px", borderBottom: "1px solid var(--border)" }}>
           <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 16, color: "var(--white)" }}>
-            Send report to client
+            Send to client
           </div>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
-            Select a client to generate a shareable report link.
+            Download the PDF then attach it to an email or text.
           </div>
         </div>
 
-        <div style={BODY}>
-          {result ? (
-            /* Confirmation state */
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "12px 14px", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8 }}>
-                <div style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {result.url}
-                </div>
-                <button onClick={handleCopy} style={{ flexShrink: 0, height: 30, padding: "0 12px", borderRadius: 6, background: copied ? "#16a34a" : "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", transition: "background 0.2s", whiteSpace: "nowrap" }}>
-                  {copied ? "Copied!" : "Copy link"}
-                </button>
+        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {status === "idle" && (
+            <button style={BTN_PRIMARY} onClick={handleDownload}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+              Download PDF
+            </button>
+          )}
+
+          {status === "exporting" && (
+            <div style={{ ...BTN_PRIMARY, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.7, cursor: "default" }}>
+              Generating PDF…
+            </div>
+          )}
+
+          {status === "done" && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)", borderRadius: 8 }}>
+                <span style={{ fontSize: 16 }}>✓</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "#16a34a" }}>
+                  PDF saved to your device
+                </span>
               </div>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-                The link is ready — open it in your email to send it to {result.client?.name || result.client?.email || "the client"}.
+              <button style={BTN_SECONDARY} onClick={handleMailto}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--card)"}
+                onMouseLeave={e => e.currentTarget.style.background = "var(--border-soft)"}>
+                Open email app
+              </button>
+            </>
+          )}
+
+          {status === "error" && (
+            <>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "#dc2626", padding: "4px 0" }}>
+                PDF generation failed — try again.
               </div>
-              <button onClick={handleMailto} style={{ height: 42, borderRadius: 8, background: "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", opacity: 1, transition: "opacity 0.15s" }}
+              <button style={BTN_PRIMARY} onClick={handleDownload}
                 onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
                 onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
-                Open in email app
+                Retry
               </button>
-            </div>
-          ) : loadingClients ? (
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", padding: "8px 0" }}>Loading clients…</div>
-          ) : !profile ? (
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", padding: "8px 0" }}>Complete your profile setup first.</div>
-          ) : clients.length === 0 ? (
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", padding: "8px 0" }}>
-              No clients yet — invite clients from Settings → Clients.
-            </div>
-          ) : (
-            /* Client picker */
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Choose a client</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflowY: "auto" }}>
-                {clients.map(c => {
-                  const selected = selectedId === c.id;
-                  return (
-                    <div key={c.id} onClick={() => setSelectedId(c.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: selected ? "var(--accent-soft)" : "var(--border-soft)", border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`, borderRadius: 8, cursor: "pointer", transition: "border-color 0.15s, background 0.15s" }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 8, background: selected ? "var(--accent)" : "var(--border)", display: "grid", placeItems: "center", flexShrink: 0, transition: "background 0.15s" }}>
-                        <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 13, color: selected ? "#fff" : "var(--muted)" }}>
-                          {(c.name || c.email)[0].toUpperCase()}
-                        </span>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {c.name && <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--white)", marginBottom: 1 }}>{c.name}</div>}
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>
-                      </div>
-                      {selected && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />}
-                    </div>
-                  );
-                })}
-              </div>
-              {error && <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626" }}>{error}</div>}
-            </div>
+            </>
           )}
         </div>
 
-        <div style={FOOTER}>
-          <button onClick={onClose} style={{ height: 38, padding: "0 18px", borderRadius: 8, background: "var(--border-soft)", border: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--muted)", cursor: "pointer" }}>
-            {result ? "Done" : "Cancel"}
+        <div style={{ padding: "0 24px 20px" }}>
+          <button style={{ ...BTN_SECONDARY, opacity: 0.8 }} onClick={onClose}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--card)"}
+            onMouseLeave={e => e.currentTarget.style.background = "var(--border-soft)"}>
+            {status === "done" ? "Done" : "Cancel"}
           </button>
-          {!result && !loadingClients && clients.length > 0 && (
-            <button onClick={handleSend} disabled={sending || !selectedId} style={{ height: 38, padding: "0 22px", borderRadius: 8, background: "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: sending || !selectedId ? "not-allowed" : "pointer", opacity: sending || !selectedId ? 0.55 : 1, transition: "opacity 0.15s" }}>
-              {sending ? "Generating…" : "Send"}
-            </button>
-          )}
         </div>
       </div>
     </div>

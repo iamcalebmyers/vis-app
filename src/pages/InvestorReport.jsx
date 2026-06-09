@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { exportReportPDF } from "../utils/pdfExport.js";
 import SendToClientModal from "../components/SendToClientModal.jsx";
 import AISummary from "../components/AISummary.jsx";
 import ShareExport from "../components/ShareExport.jsx";
@@ -43,6 +44,12 @@ function InvestorReport({ data, onBack, user, userRow }) {
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [includeAI, setIncludeAI] = useState(true);
   const [showSendModal, setShowSendModal] = useState(false);
+  const reportRef = useRef();
+
+  async function handleExportPDF() {
+    if (!reportRef.current) return;
+    await exportReportPDF(reportRef.current, "investor-report.pdf");
+  }
 
   const property = MOCK_PROPERTY;
   const deal = data || {};
@@ -96,7 +103,7 @@ function InvestorReport({ data, onBack, user, userRow }) {
       </div>
 
       <main style={{ flex: 1, padding: "20px 20px 40px" }}>
-        <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
+        <div ref={reportRef} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 16, borderBottom: "3px solid var(--white)", marginBottom: 20 }}>
             <div>
@@ -195,14 +202,13 @@ function InvestorReport({ data, onBack, user, userRow }) {
         </div>
 
         <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-          <ShareExport userRow={userRow} onSendToClient={() => setShowSendModal(true)} />
+          <ShareExport userRow={userRow} onExport={handleExportPDF} onSendToClient={() => setShowSendModal(true)} />
         </div>
       </main>
       {showSendModal && (
         <SendToClientModal
           reportType="investor"
-          reportData={data}
-          user={user}
+          onExportPDF={handleExportPDF}
           onClose={() => setShowSendModal(false)}
         />
       )}

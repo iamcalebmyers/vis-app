@@ -89,7 +89,7 @@ function ShareExport({ onShare, onExport, onSave, onSendToClient, userRow }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <SecondaryButton onClick={onShare}>Share link</SecondaryButton>
         <SecondaryButton onClick={onExport}>Export PDF</SecondaryButton>
-        <SecondaryButton onClick={onSave}>Save</SecondaryButton>
+        <SecondaryButton onClick={onSave}>Save report</SecondaryButton>
       </div>
       {canSendToClient && (
         <PrimaryButton onClick={onSendToClient}>Send to client</PrimaryButton>

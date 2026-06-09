@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { exportReportPDF } from "../utils/pdfExport.js";
 import SendToClientModal from "../components/SendToClientModal.jsx";
 import AISummary from "../components/AISummary.jsx";
 import ShareExport from "../components/ShareExport.jsx";
@@ -62,6 +63,13 @@ function PropertyReport({ data, onBack, user, userRow }) {
   const [includeAI, setIncludeAI] = useState(true);
   const [factOverrides, setFactOverrides] = useState({});
   const [showSendModal, setShowSendModal] = useState(false);
+  const reportRef = useRef();
+
+  async function handleExportPDF() {
+    if (!reportRef.current) return;
+    const addr = property.address?.replace(/\s+/g, "-").toLowerCase() || "property";
+    await exportReportPDF(reportRef.current, `${addr}-report.pdf`);
+  }
   function handleOverride(label, value) {
     setFactOverrides(prev => {
       if (value === undefined) { const n = { ...prev }; delete n[label]; return n; }
@@ -143,7 +151,7 @@ function PropertyReport({ data, onBack, user, userRow }) {
       </div>
 
       <main style={{ flex: 1, padding: "20px 20px 40px" }}>
-        <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
+        <div ref={reportRef} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
 
           {property.photoUrl && (
             <img src={property.photoUrl} alt="Property exterior" style={{ width: "100%", height: 260, objectFit: "cover", display: "block", marginBottom: 24 }} />
@@ -233,14 +241,13 @@ function PropertyReport({ data, onBack, user, userRow }) {
         </div>
 
         <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-          <ShareExport userRow={userRow} onSendToClient={() => setShowSendModal(true)} />
+          <ShareExport userRow={userRow} onExport={handleExportPDF} onSendToClient={() => setShowSendModal(true)} />
         </div>
       </main>
       {showSendModal && (
         <SendToClientModal
           reportType="property"
-          reportData={data}
-          user={user}
+          onExportPDF={handleExportPDF}
           onClose={() => setShowSendModal(false)}
         />
       )}
