@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SendToClientModal from "../components/SendToClientModal.jsx";
 import MarketDataGrid from "../components/MarketDataGrid.jsx";
 import AISummary from "../components/AISummary.jsx";
 import ShareExport from "../components/ShareExport.jsx";
@@ -64,11 +65,12 @@ function RateSection({ rate, enabled, onToggle }) {
   );
 }
 
-function MarketReport({ data, onBack }) {
+function MarketReport({ data, onBack, user, userRow }) {
   const [agentInfo, setAgentInfo] = useAgentInfo();
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [includeAI, setIncludeAI] = useState(true);
   const [includeRate, setIncludeRate] = useState(true);
+  const [showSendModal, setShowSendModal] = useState(false);
   const market = MOCK_MARKET;
   const rate = MOCK_RATE_CARD;
   const ai = MOCK_MARKET_AI;
@@ -119,9 +121,17 @@ function MarketReport({ data, onBack }) {
         </div>
 
         <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-          <ShareExport />
+          <ShareExport userRow={userRow} onSendToClient={() => setShowSendModal(true)} />
         </div>
       </main>
+      {showSendModal && (
+        <SendToClientModal
+          reportType="market"
+          reportData={data}
+          user={user}
+          onClose={() => setShowSendModal(false)}
+        />
+      )}
     </div>
   );
 }

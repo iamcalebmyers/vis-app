@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SendToClientModal from "../components/SendToClientModal.jsx";
 import AISummary from "../components/AISummary.jsx";
 import ShareExport from "../components/ShareExport.jsx";
 import PropertyFacts from "../components/PropertyFacts.jsx";
@@ -55,11 +56,12 @@ function BackButton({ onClick }) {
   );
 }
 
-function PropertyReport({ data, onBack }) {
+function PropertyReport({ data, onBack, user, userRow }) {
   const [agentInfo, setAgentInfo] = useAgentInfo();
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [includeAI, setIncludeAI] = useState(true);
   const [factOverrides, setFactOverrides] = useState({});
+  const [showSendModal, setShowSendModal] = useState(false);
   function handleOverride(label, value) {
     setFactOverrides(prev => {
       if (value === undefined) { const n = { ...prev }; delete n[label]; return n; }
@@ -231,9 +233,17 @@ function PropertyReport({ data, onBack }) {
         </div>
 
         <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-          <ShareExport />
+          <ShareExport userRow={userRow} onSendToClient={() => setShowSendModal(true)} />
         </div>
       </main>
+      {showSendModal && (
+        <SendToClientModal
+          reportType="property"
+          reportData={data}
+          user={user}
+          onClose={() => setShowSendModal(false)}
+        />
+      )}
     </div>
   );
 }

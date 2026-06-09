@@ -305,16 +305,22 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
               <PropertyReport
                 data={activeReport.data}
                 onBack={handleCloseReport}
+                user={user}
+                userRow={userRow}
               />
             ) : activeReport.type === "market" ? (
               <MarketReport
                 data={activeReport.data}
                 onBack={handleCloseReport}
+                user={user}
+                userRow={userRow}
               />
             ) : activeReport.type === "deal" ? (
               <InvestorReport
                 data={activeReport.data}
                 onBack={handleCloseReport}
+                user={user}
+                userRow={userRow}
               />
             ) : null
           ) : hasContent ? (

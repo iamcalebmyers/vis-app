@@ -1,17 +1,7 @@
-// Session 8: action bar at the foot of a report. Buttons are stubbed.
-// Session 19 wires share link / PDF export / save.
-// Session 20 wires the Send to Client primary CTA.
-// Tier check reads vis-tier from localStorage; full feature gating
-// system lands in Session 15.
+import { hasFeature } from "../utils/tier.js";
 
 function readTier() {
-  try {
-    const t = localStorage.getItem("vis-tier");
-    if (t === "agent" || t === "enterprise" || t === "buyer") return t;
-    return "buyer";
-  } catch {
-    return "buyer";
-  }
+  try { return localStorage.getItem("vis-tier") || "solo"; } catch { return "solo"; }
 }
 
 function SecondaryButton({ children, onClick }) {
@@ -77,9 +67,9 @@ function PrimaryButton({ children, onClick }) {
   );
 }
 
-function ShareExport({ onShare, onExport, onSave, onSendToClient }) {
-  const tier = readTier();
-  const canSendToClient = tier === "agent" || tier === "enterprise";
+function ShareExport({ onShare, onExport, onSave, onSendToClient, userRow }) {
+  const tier = userRow?.tier || readTier();
+  const canSendToClient = hasFeature(tier, "agent");
 
   return (
     <section

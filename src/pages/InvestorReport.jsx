@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SendToClientModal from "../components/SendToClientModal.jsx";
 import AISummary from "../components/AISummary.jsx";
 import ShareExport from "../components/ShareExport.jsx";
 import { TipRow } from "../components/ReportTooltip.jsx";
@@ -37,10 +38,11 @@ function BackButton({ onClick }) {
   );
 }
 
-function InvestorReport({ data, onBack }) {
+function InvestorReport({ data, onBack, user, userRow }) {
   const [agentInfo, setAgentInfo] = useAgentInfo();
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [includeAI, setIncludeAI] = useState(true);
+  const [showSendModal, setShowSendModal] = useState(false);
 
   const property = MOCK_PROPERTY;
   const deal = data || {};
@@ -193,9 +195,17 @@ function InvestorReport({ data, onBack }) {
         </div>
 
         <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-          <ShareExport />
+          <ShareExport userRow={userRow} onSendToClient={() => setShowSendModal(true)} />
         </div>
       </main>
+      {showSendModal && (
+        <SendToClientModal
+          reportType="investor"
+          reportData={data}
+          user={user}
+          onClose={() => setShowSendModal(false)}
+        />
+      )}
     </div>
   );
 }
