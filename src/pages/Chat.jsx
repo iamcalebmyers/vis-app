@@ -6,7 +6,7 @@ import SessionSidebar from "../components/SessionSidebar.jsx";
 import PropertyReport from "./PropertyReport.jsx";
 import MarketReport from "./MarketReport.jsx";
 import InvestorReport from "./InvestorReport.jsx";
-import AgentSettings from "./AgentSettings.jsx";
+import Settings from "./Settings.jsx";
 import ReportTemplates from "./ReportTemplates.jsx";
 import OverageModal from "../components/OverageModal.jsx";
 import { sendMessage } from "../utils/claudeApi.js";
@@ -273,7 +273,7 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
 
       {activeTab === "settings" && (
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-          <AgentSettings user={user} userRow={userRow} />
+          <Settings user={user} userRow={userRow} onSignOut={onSignOut} />
         </div>
       )}
 
