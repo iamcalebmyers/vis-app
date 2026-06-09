@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { exportReportPDF } from "../utils/pdfExport.js";
+import { useReportActions } from "../utils/useReportActions.js";
 import SendToClientModal from "../components/SendToClientModal.jsx";
+import ShareLinkModal from "../components/ShareLinkModal.jsx";
 import AISummary from "../components/AISummary.jsx";
 import ShareExport from "../components/ShareExport.jsx";
 import PropertyFacts from "../components/PropertyFacts.jsx";
@@ -65,6 +67,10 @@ function PropertyReport({ data, onBack, user, userRow }) {
   const [showSendModal, setShowSendModal] = useState(false);
   const reportRef = useRef();
 
+  const property = MOCK_PROPERTY;
+  const { shareLoading, shareUrl, showShareModal, setShowShareModal, saved, saveError, handleShare, handleSave } =
+    useReportActions("property", data, user, userRow);
+
   async function handleExportPDF() {
     if (!reportRef.current) return;
     const addr = property.address?.replace(/\s+/g, "-").toLowerCase() || "property";
@@ -77,7 +83,6 @@ function PropertyReport({ data, onBack, user, userRow }) {
     });
   }
 
-  const property = MOCK_PROPERTY;
   const market = MOCK_MARKET;
   const [ai, setAi] = useState(MOCK_AI_RESPONSE);
   const [aiLoading, setAiLoading] = useState(true);
@@ -241,15 +246,23 @@ function PropertyReport({ data, onBack, user, userRow }) {
         </div>
 
         <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-          <ShareExport userRow={userRow} onExport={handleExportPDF} onSendToClient={() => setShowSendModal(true)} />
+          <ShareExport
+            userRow={userRow}
+            onShare={handleShare}
+            onExport={handleExportPDF}
+            onSave={() => handleSave(property.address)}
+            onSendToClient={() => setShowSendModal(true)}
+            shareLoading={shareLoading}
+            saved={saved}
+            saveError={saveError}
+          />
         </div>
       </main>
       {showSendModal && (
-        <SendToClientModal
-          reportType="property"
-          onExportPDF={handleExportPDF}
-          onClose={() => setShowSendModal(false)}
-        />
+        <SendToClientModal reportType="property" onExportPDF={handleExportPDF} onClose={() => setShowSendModal(false)} />
+      )}
+      {showShareModal && shareUrl && (
+        <ShareLinkModal url={shareUrl} onClose={() => setShowShareModal(false)} />
       )}
     </div>
   );

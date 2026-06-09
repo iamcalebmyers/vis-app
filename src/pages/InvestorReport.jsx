@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import { exportReportPDF } from "../utils/pdfExport.js";
+import { useReportActions } from "../utils/useReportActions.js";
 import SendToClientModal from "../components/SendToClientModal.jsx";
+import ShareLinkModal from "../components/ShareLinkModal.jsx";
 import AISummary from "../components/AISummary.jsx";
 import ShareExport from "../components/ShareExport.jsx";
 import { TipRow } from "../components/ReportTooltip.jsx";
@@ -45,13 +47,16 @@ function InvestorReport({ data, onBack, user, userRow }) {
   const [includeAI, setIncludeAI] = useState(true);
   const [showSendModal, setShowSendModal] = useState(false);
   const reportRef = useRef();
+  const property = MOCK_PROPERTY;
+
+  const { shareLoading, shareUrl, showShareModal, setShowShareModal, saved, saveError, handleShare, handleSave } =
+    useReportActions("investor", data, user, userRow);
 
   async function handleExportPDF() {
     if (!reportRef.current) return;
-    await exportReportPDF(reportRef.current, "investor-report.pdf");
+    const addr = property.address?.replace(/\s+/g, "-").toLowerCase() || "property";
+    await exportReportPDF(reportRef.current, `${addr}-investor-report.pdf`);
   }
-
-  const property = MOCK_PROPERTY;
   const deal = data || {};
   const rental = MOCK_RENTAL_CARD;
   const returns = MOCK_RETURNS_CARD;
@@ -202,15 +207,23 @@ function InvestorReport({ data, onBack, user, userRow }) {
         </div>
 
         <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
-          <ShareExport userRow={userRow} onExport={handleExportPDF} onSendToClient={() => setShowSendModal(true)} />
+          <ShareExport
+            userRow={userRow}
+            onShare={handleShare}
+            onExport={handleExportPDF}
+            onSave={() => handleSave(`${property.address} — Investor`)}
+            onSendToClient={() => setShowSendModal(true)}
+            shareLoading={shareLoading}
+            saved={saved}
+            saveError={saveError}
+          />
         </div>
       </main>
       {showSendModal && (
-        <SendToClientModal
-          reportType="investor"
-          onExportPDF={handleExportPDF}
-          onClose={() => setShowSendModal(false)}
-        />
+        <SendToClientModal reportType="investor" onExportPDF={handleExportPDF} onClose={() => setShowSendModal(false)} />
+      )}
+      {showShareModal && shareUrl && (
+        <ShareLinkModal url={shareUrl} onClose={() => setShowShareModal(false)} />
       )}
     </div>
   );
