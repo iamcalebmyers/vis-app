@@ -233,13 +233,13 @@ const BROKERAGE_NAV = [
 ];
 
 /* ─── Main component ─── */
-function AgentSettings({ user, userRow }) {
+function AgentSettings({ user, userRow, hideSidebar = false, defaultSection = "profile" }) {
   const tier = userRow?.tier || "solo";
   const canAccess = hasFeature(tier, "agent");
   const isBrokerage = hasFeature(tier, "brokerage");
   const nav = isBrokerage ? BROKERAGE_NAV : AGENT_NAV;
 
-  const [section, setSection] = useState("profile");
+  const [section, setSection] = useState(defaultSection);
   const [tooltip, setTooltip] = useState(null);
 
   /* Agent profile state */
@@ -503,15 +503,15 @@ function AgentSettings({ user, userRow }) {
     <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
       {/* Sidebar */}
-      <nav style={{ width: 180, flexShrink: 0, borderRight: "1px solid var(--border)", background: "var(--border-soft)", display: "flex", flexDirection: "column", padding: "32px 0" }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "0 20px", marginBottom: 16 }}>Settings</div>
-
-        {nav.map(n => <NavItem key={n.id} n={n} active={section === n.id} onClick={() => { setSection(n.id); setError(null); }} onTip={setTooltip} />)}
-
-      </nav>
+      {!hideSidebar && (
+        <nav style={{ width: 180, flexShrink: 0, borderRight: "1px solid var(--border)", background: "var(--border-soft)", display: "flex", flexDirection: "column", padding: "32px 0" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "0 20px", marginBottom: 16 }}>Settings</div>
+          {nav.map(n => <NavItem key={n.id} n={n} active={section === n.id} onClick={() => { setSection(n.id); setError(null); }} onTip={setTooltip} />)}
+        </nav>
+      )}
 
       {/* Hover tooltip */}
-      {tooltip && (
+      {!hideSidebar && tooltip && (
         <div style={{ position: "fixed", top: tooltip.top, left: tooltip.left, transform: "translateY(-50%)", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 14px", width: 200, zIndex: 1000, pointerEvents: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.18)" }}>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{tooltip.text}</div>
         </div>
