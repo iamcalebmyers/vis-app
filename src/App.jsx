@@ -2,10 +2,18 @@ import { useState, useEffect } from "react";
 import Chat from "./pages/Chat.jsx";
 import Auth from "./pages/Auth.jsx";
 import Onboarding, { HandleStep } from "./pages/Onboarding.jsx";
+import SharedReport from "./pages/SharedReport.jsx";
 import { supabase } from "./utils/supabase.js";
 import { signOut } from "./utils/auth.js";
 
 function App() {
+  // Public report view — no auth required
+  const path = window.location.pathname;
+  if (path.startsWith("/report/")) {
+    const token = path.slice("/report/".length).split("/")[0];
+    if (token) return <SharedReport token={token} />;
+  }
+
   const [session, setSession] = useState(undefined);
   const [userRow, setUserRow] = useState(undefined);
   const [clientProfile, setClientProfile] = useState(undefined);
