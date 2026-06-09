@@ -8,6 +8,7 @@ import { signOut } from "./utils/auth.js";
 function App() {
   const [session, setSession] = useState(undefined);
   const [userRow, setUserRow] = useState(undefined);
+  const [clientProfile, setClientProfile] = useState(undefined);
   const [checkoutState, setCheckoutState] = useState(null); // null | "verifying" | "handle" | "done"
   const [verifiedTier, setVerifiedTier] = useState(null);
 
@@ -71,12 +72,19 @@ function App() {
   }, []);
 
   async function fetchUserRow(userId) {
+    const { data: cp } = await supabase.from("client_profiles").select("*").eq("user_id", userId).maybeSingle();
+    if (cp) {
+      setClientProfile(cp);
+      setUserRow(null);
+      return;
+    }
+    setClientProfile(null);
     const { data } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
     setUserRow(data || null);
   }
 
   // Loading
-  if (session === undefined || (session && userRow === undefined) || checkoutState === "verifying") {
+  if (session === undefined || (session && userRow === undefined && clientProfile === undefined) || checkoutState === "verifying") {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--bg)" }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -87,6 +95,11 @@ function App() {
   }
 
   if (!session) return <Auth />;
+
+  // Client account — skip onboarding, show stripped-down chat
+  if (clientProfile) {
+    return <Chat user={session.user} clientProfile={clientProfile} isClient onSignOut={signOut} />;
+  }
 
   // Returning from Stripe — handle claim step for Agent/Brokerage
   if (checkoutState === "handle") {

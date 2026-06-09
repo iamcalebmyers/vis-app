@@ -4,6 +4,7 @@ import { hasFeature } from "../utils/tier.js";
 import { loadAgentInfo, saveAgentInfo } from "../utils/useAgentInfo.js";
 import TrainAI from "./TrainAI.jsx";
 
+/* ─── Color wheel helpers ─── */
 const WHEEL = 150;
 const DEFAULT_COLOR = "#DA6B3A";
 
@@ -23,8 +24,7 @@ function hexToHsv(hex) {
   const g = parseInt(hex.slice(3, 5), 16) / 255;
   const b = parseInt(hex.slice(5, 7), 16) / 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-  const v = max;
-  const s = max === 0 ? 0 : d / max;
+  const v = max, s = max === 0 ? 0 : d / max;
   let h = 0;
   if (d !== 0) {
     if (max === r) h = ((g - b) / d % 6) / 6;
@@ -47,35 +47,25 @@ function ColorWheel({ color, onChange }) {
   }, [color]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
-    const size = WHEEL * dpr;
+    const canvas = canvasRef.current; if (!canvas) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3), size = WHEEL * dpr;
     canvas.width = size; canvas.height = size;
     const r = size / 2;
-    const off = document.createElement("canvas");
-    off.width = size; off.height = size;
-    const offCtx = off.getContext("2d");
-    const img = offCtx.createImageData(size, size);
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const dx = x - r, dy = y - r;
-        const h = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
-        const s = Math.min((Math.sqrt(dx * dx + dy * dy) / r) * 100, 100);
-        const [rv, g, b] = hsvToRgb(h, s, hsv[2]);
-        const i = (y * size + x) * 4;
-        img.data[i] = rv; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
-      }
+    const off = document.createElement("canvas"); off.width = size; off.height = size;
+    const offCtx = off.getContext("2d"), img = offCtx.createImageData(size, size);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const dx = x - r, dy = y - r;
+      const h = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
+      const s = Math.min((Math.sqrt(dx * dx + dy * dy) / r) * 100, 100);
+      const [rv, g, b] = hsvToRgb(h, s, hsv[2]);
+      const i = (y * size + x) * 4;
+      img.data[i] = rv; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
     }
     offCtx.putImageData(img, 0, 0);
     const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, size, size);
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(r, r, r, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(off, 0, 0);
-    ctx.restore();
+    ctx.clearRect(0, 0, size, size); ctx.save();
+    ctx.beginPath(); ctx.arc(r, r, r, 0, Math.PI * 2); ctx.clip();
+    ctx.drawImage(off, 0, 0); ctx.restore();
   }, [hsv[2]]);
 
   function pick(clientX, clientY) {
@@ -86,22 +76,16 @@ function ColorWheel({ color, onChange }) {
     const dist = Math.min(Math.sqrt(dx * dx + dy * dy), R - 1);
     const h = Math.round(((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360);
     const s = Math.round((dist / R) * 100);
-    const next = [h, s, hsv[2]];
-    setHsv(next);
-    lastColor.current = hsvToHex(h, s, hsv[2]);
-    onChange(lastColor.current);
+    const next = [h, s, hsv[2]]; setHsv(next);
+    lastColor.current = hsvToHex(h, s, hsv[2]); onChange(lastColor.current);
   }
   function onBrightness(v) {
-    const next = [hsv[0], hsv[1], v];
-    setHsv(next);
-    lastColor.current = hsvToHex(hsv[0], hsv[1], v);
-    onChange(lastColor.current);
+    const next = [hsv[0], hsv[1], v]; setHsv(next);
+    lastColor.current = hsvToHex(hsv[0], hsv[1], v); onChange(lastColor.current);
   }
 
-  const angle = hsv[0] * Math.PI / 180;
-  const idist = (hsv[1] / 100) * (R - 2);
-  const ix = R + idist * Math.cos(angle);
-  const iy = R + idist * Math.sin(angle);
+  const angle = hsv[0] * Math.PI / 180, idist = (hsv[1] / 100) * (R - 2);
+  const ix = R + idist * Math.cos(angle), iy = R + idist * Math.sin(angle);
   const pureColor = hsvToHex(hsv[0], hsv[1], 100);
 
   return (
@@ -110,11 +94,9 @@ function ColorWheel({ color, onChange }) {
         <div style={{ position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden", cursor: "crosshair", boxShadow: "0 2px 12px rgba(0,0,0,0.25)" }}
           onMouseDown={e => { dragging.current = true; pick(e.clientX, e.clientY); }}
           onMouseMove={e => { if (dragging.current) pick(e.clientX, e.clientY); }}
-          onMouseUp={() => { dragging.current = false; }}
-          onMouseLeave={() => { dragging.current = false; }}
+          onMouseUp={() => { dragging.current = false; }} onMouseLeave={() => { dragging.current = false; }}
           onTouchStart={e => { e.preventDefault(); pick(e.touches[0].clientX, e.touches[0].clientY); }}
-          onTouchMove={e => { e.preventDefault(); pick(e.touches[0].clientX, e.touches[0].clientY); }}
-        >
+          onTouchMove={e => { e.preventDefault(); pick(e.touches[0].clientX, e.touches[0].clientY); }}>
           <canvas ref={canvasRef} width={WHEEL} height={WHEEL} style={{ display: "block", width: "100%", height: "100%" }} />
         </div>
         <div style={{ position: "absolute", left: ix, top: iy, width: 18, height: 18, borderRadius: "50%", border: "3px solid #fff", boxShadow: "0 1px 5px rgba(0,0,0,0.45)", transform: "translate(-50%,-50%)", pointerEvents: "none", background: color }} />
@@ -132,6 +114,7 @@ function ColorWheel({ color, onChange }) {
   );
 }
 
+/* ─── Shared UI primitives ─── */
 const INPUT = {
   width: "100%", boxSizing: "border-box", padding: "10px 14px",
   background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8,
@@ -148,28 +131,51 @@ function Field({ label, hint, children }) {
   );
 }
 
-function SaveBtn({ onClick, saving, saved, disabled }) {
+function SaveBtn({ onClick, saving, saved, disabled, label = "Save" }) {
   return (
     <button onClick={onClick} disabled={disabled || saving}
-      style={{ height: 42, padding: "0 24px", borderRadius: 8, background: saved ? "#16a34a" : "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: "#fff", cursor: disabled || saving ? "not-allowed" : "pointer", opacity: disabled || saving ? 0.7 : 1, transition: "background 0.2s ease" }}>
-      {saving ? "Saving…" : saved ? "Saved!" : "Save"}
+      style={{ height: 42, padding: "0 24px", borderRadius: 8, background: saved ? "#16a34a" : "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: "#fff", cursor: disabled || saving ? "not-allowed" : "pointer", opacity: disabled || saving ? 0.7 : 1, transition: "background 0.2s" }}>
+      {saving ? "Saving…" : saved ? "Saved!" : label}
     </button>
   );
 }
 
-const NAV = [
+function SectionHead({ title, sub }) {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 20, color: "var(--white)", marginBottom: 6 }}>{title}</div>
+      {sub && <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function ErrorBox({ children }) {
+  return <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "#dc2626", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6, padding: "8px 12px" }}>{children}</div>;
+}
+
+/* ─── Sidebar nav definition ─── */
+const BASE_NAV = [
   { id: "profile",  label: "Profile",  tip: "Set your AI's name and the greeting clients see when they open the chat." },
   { id: "branding", label: "Branding", tip: "Choose your brand color and upload a logo for reports and your client-facing experience." },
   { id: "contact",  label: "Contact",  tip: "Your name, brokerage, and contact info — auto-filled in the header of every report." },
   { id: "train",    label: "Train AI", tip: "Write instructions that shape how your AI responds. Upload a doc or type it directly." },
+  { id: "clients",  label: "Clients",  tip: "Invite clients to your branded AI chat. They get a private login and can only access the chat." },
+];
+const BROKERAGE_NAV = [
+  { id: "agents", label: "Agents", tip: "Add, remove, and view agents linked to your brokerage account." },
 ];
 
+/* ─── Main component ─── */
 function AgentSettings({ user, userRow }) {
   const tier = userRow?.tier || "solo";
   const canAccess = hasFeature(tier, "agent");
-  const [section, setSection] = useState("profile");
-  const [tooltip, setTooltip] = useState(null); // { text, top, left }
+  const isBrokerage = hasFeature(tier, "brokerage");
+  const nav = isBrokerage ? [...BASE_NAV, ...BROKERAGE_NAV] : BASE_NAV;
 
+  const [section, setSection] = useState("profile");
+  const [tooltip, setTooltip] = useState(null);
+
+  /* Agent profile state */
   const [profile, setProfile] = useState(null);
   const [aiName, setAiName] = useState("");
   const [brandColor, setBrandColor] = useState(DEFAULT_COLOR);
@@ -183,6 +189,22 @@ function AgentSettings({ user, userRow }) {
   const [greeting, setGreeting] = useState(() => loadAgentInfo().greeting || "");
   const [savedContact, setSavedContact] = useState(false);
 
+  /* Clients state */
+  const [clients, setClients] = useState([]);
+  const [clientName, setClientName] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState(null);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
+
+  /* Brokerage state */
+  const [brokerageProfile, setBrokerageProfile] = useState(null);
+  const [linkedAgents, setLinkedAgents] = useState([]);
+  const [agentHandleInput, setAgentHandleInput] = useState("");
+  const [addingAgent, setAddingAgent] = useState(false);
+  const [addAgentError, setAddAgentError] = useState(null);
+
+  /* Load agent profile */
   useEffect(() => {
     if (!canAccess || !user?.id) return;
     supabase.from("agent_profiles").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
@@ -190,22 +212,42 @@ function AgentSettings({ user, userRow }) {
     });
   }, [user?.id, canAccess]);
 
+  /* Load clients when on clients section */
+  useEffect(() => {
+    if (section !== "clients" || !profile?.id) return;
+    supabase.from("client_profiles").select("*").eq("agent_id", profile.id).order("created_at", { ascending: false })
+      .then(({ data }) => { if (data) setClients(data); });
+  }, [section, profile?.id]);
+
+  /* Load brokerage profile + linked agents */
+  useEffect(() => {
+    if (!isBrokerage || !user?.id) return;
+    supabase.from("brokerage_profiles").select("*").eq("user_id", user.id).maybeSingle().then(async ({ data }) => {
+      if (!data) return;
+      setBrokerageProfile(data);
+      setTrainingBaseline(data.training_baseline || "");
+      const { data: agents } = await supabase.from("agent_profiles")
+        .select("id, handle, ai_name, user_id").eq("brokerage_id", data.id);
+      if (agents) setLinkedAgents(agents);
+    });
+  }, [user?.id, isBrokerage]);
+
+  /* Apply brand color live */
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", brandColor);
     document.documentElement.style.setProperty("--accent-text", "#fff");
   }, [brandColor]);
 
+  /* ─── Handlers ─── */
   async function handleLogoUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]; if (!file) return;
     if (file.size > 5 * 1024 * 1024) { setError("Logo must be under 5MB."); return; }
     setUploading(true); setError(null);
     const path = `${user.id}/logo.${file.name.split(".").pop()}`;
     const { error: upErr } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
     if (upErr) { setError("Upload failed: " + upErr.message); setUploading(false); return; }
     const { data: { publicUrl } } = supabase.storage.from("logos").getPublicUrl(path);
-    setLogoUrl(publicUrl);
-    setUploading(false);
+    setLogoUrl(publicUrl); setUploading(false);
   }
 
   async function handleSave() {
@@ -228,6 +270,54 @@ function AgentSettings({ user, userRow }) {
     setSavedContact(true); setTimeout(() => setSavedContact(false), 2000);
   }
 
+  async function handleInviteClient() {
+    if (!clientEmail.trim() || !profile?.id) return;
+    setInviting(true); setInviteError(null); setInviteSuccess(false);
+    const res = await fetch("/api/invite-client", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: clientEmail.trim(), name: clientName.trim(), agentProfileId: profile.id, agentHandle: profile.handle }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      setInviteError(data.error || "Invite failed.");
+    } else {
+      setClients(prev => [data.client, ...prev.filter(c => c.id !== data.client.id)]);
+      setClientEmail(""); setClientName(""); setInviteSuccess(true);
+      setTimeout(() => setInviteSuccess(false), 3000);
+    }
+    setInviting(false);
+  }
+
+  async function handleRemoveClient(clientId) {
+    await supabase.from("client_profiles").delete().eq("id", clientId);
+    setClients(prev => prev.filter(c => c.id !== clientId));
+  }
+
+  async function handleAddAgent() {
+    const handle = agentHandleInput.trim().toLowerCase();
+    if (!handle || !brokerageProfile) return;
+    setAddingAgent(true); setAddAgentError(null);
+    const { data, error: err } = await supabase.from("agent_profiles")
+      .update({ brokerage_id: brokerageProfile.id })
+      .eq("handle", handle)
+      .select("id, handle, ai_name, user_id")
+      .single();
+    if (err || !data) {
+      setAddAgentError("No agent found with that handle, or they need to set up their Vis account first.");
+    } else {
+      setLinkedAgents(prev => [...prev.filter(a => a.id !== data.id), data]);
+      setAgentHandleInput("");
+    }
+    setAddingAgent(false);
+  }
+
+  async function handleRemoveAgent(agentId) {
+    await supabase.from("agent_profiles").update({ brokerage_id: null }).eq("id", agentId);
+    setLinkedAgents(prev => prev.filter(a => a.id !== agentId));
+  }
+
+  /* ─── Access gate ─── */
   if (!canAccess) {
     return (
       <div style={{ maxWidth: 560, margin: "60px auto", padding: "0 24px", textAlign: "center" }}>
@@ -237,24 +327,24 @@ function AgentSettings({ user, userRow }) {
     );
   }
 
+  /* ─── Layout ─── */
   return (
     <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
       {/* Sidebar */}
       <nav style={{ width: 180, flexShrink: 0, borderRight: "1px solid var(--border)", background: "var(--border-soft)", display: "flex", flexDirection: "column", padding: "32px 0" }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "0 20px", marginBottom: 16 }}>Settings</div>
-        {NAV.map(n => (
-          <button key={n.id}
-            onClick={() => { setSection(n.id); setError(null); }}
-            onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setTooltip({ text: n.tip, top: r.top + r.height / 2, left: r.right + 12 }); }}
-            onMouseLeave={() => setTooltip(null)}
-            style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 20px", background: "transparent", border: "none", borderLeft: section === n.id ? "2px solid var(--accent)" : "2px solid transparent", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: section === n.id ? 600 : 400, color: section === n.id ? "var(--white)" : "var(--muted)", cursor: "pointer", transition: "color 0.15s, border-color 0.15s" }}>
-            {n.label}
-          </button>
-        ))}
+
+        {BASE_NAV.map(n => <NavItem key={n.id} n={n} active={section === n.id} onClick={() => { setSection(n.id); setError(null); }} onTip={setTooltip} />)}
+
+        {isBrokerage && <>
+          <div style={{ margin: "16px 20px 10px", borderTop: "1px solid var(--border)" }} />
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "0 20px", marginBottom: 10 }}>Brokerage</div>
+          {BROKERAGE_NAV.map(n => <NavItem key={n.id} n={n} active={section === n.id} onClick={() => { setSection(n.id); setError(null); }} onTip={setTooltip} />)}
+        </>}
       </nav>
 
-      {/* Hover tooltip — fixed so it's never clipped */}
+      {/* Hover tooltip */}
       {tooltip && (
         <div style={{ position: "fixed", top: tooltip.top, left: tooltip.left, transform: "translateY(-50%)", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 14px", width: 200, zIndex: 1000, pointerEvents: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.18)" }}>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{tooltip.text}</div>
@@ -264,15 +354,16 @@ function AgentSettings({ user, userRow }) {
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto" }}>
 
+        {/* ── Profile ── */}
         {section === "profile" && (
           <div style={{ maxWidth: 480, padding: "40px 48px" }}>
             <SectionHead title="Profile" sub="Your AI's name and how it greets clients." />
             <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
               {profile?.handle && (
                 <Field label="Your subdomain" hint="This cannot be changed after it's claimed.">
-                  <div style={{ ...INPUT, background: "var(--card)", color: "var(--muted)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ ...INPUT, background: "var(--card)", display: "flex", alignItems: "center", gap: 4 }}>
                     <span style={{ color: "var(--white)", fontFamily: "var(--font-mono)", fontSize: 13 }}>{profile.handle}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}>.vis.realestate</span>
+                    <span style={{ color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: 13 }}>.vis.realestate</span>
                   </div>
                 </Field>
               )}
@@ -288,6 +379,7 @@ function AgentSettings({ user, userRow }) {
           </div>
         )}
 
+        {/* ── Branding ── */}
         {section === "branding" && (
           <div style={{ maxWidth: 480, padding: "40px 48px" }}>
             <SectionHead title="Branding" sub="Colors and logo shown on your branded experience." />
@@ -324,6 +416,7 @@ function AgentSettings({ user, userRow }) {
           </div>
         )}
 
+        {/* ── Contact ── */}
         {section === "contact" && (
           <div style={{ maxWidth: 480, padding: "40px 48px" }}>
             <SectionHead title="Contact info" sub="Auto-fills the agent header on every report. Still editable per-report." />
@@ -344,8 +437,161 @@ function AgentSettings({ user, userRow }) {
           </div>
         )}
 
-        {section === "train" && (
-          <TrainAI user={user} userRow={userRow} />
+        {/* ── Train AI ── */}
+        {section === "train" && <TrainAI user={user} userRow={userRow} />}
+
+        {/* ── Clients ── */}
+        {section === "clients" && (
+          <div style={{ maxWidth: 560, padding: "40px 48px" }}>
+            <SectionHead title="Clients" sub="Invite clients to your branded AI chat. They receive a private login and see only the chat — no settings or reports tabs." />
+
+            {!canAccess && (
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 18px" }}>
+                Client management is available on the Agent plan and above.
+              </div>
+            )}
+
+            {canAccess && !profile && (
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 18px" }}>
+                Complete your Profile setup first so clients can be linked to your account.
+              </div>
+            )}
+
+            {canAccess && profile && <>
+              {/* Client list */}
+              {clients.length > 0 && (
+                <div style={{ marginBottom: 36 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>
+                    Active clients ({clients.length})
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {clients.map(client => (
+                      <div key={client.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 8, background: "var(--accent-soft)", border: "1px solid var(--border)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                          <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 13, color: "var(--accent)" }}>
+                            {(client.name || client.email)[0].toUpperCase()}
+                          </span>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {client.name && <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--white)", marginBottom: 1 }}>{client.name}</div>}
+                          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{client.email}</div>
+                        </div>
+                        <button onClick={() => handleRemoveClient(client.id)}
+                          style={{ background: "none", border: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", cursor: "pointer", padding: "4px 8px", borderRadius: 4, flexShrink: 0 }}
+                          onMouseEnter={e => e.target.style.color = "#dc2626"}
+                          onMouseLeave={e => e.target.style.color = "var(--muted)"}>
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {clients.length === 0 && (
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", marginBottom: 32 }}>No clients invited yet.</div>
+              )}
+
+              {/* Invite form */}
+              <div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>Invite a client</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <input
+                    value={clientName}
+                    onChange={e => setClientName(e.target.value)}
+                    placeholder="Client name (optional)"
+                    style={{ ...INPUT }}
+                  />
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <input
+                      value={clientEmail}
+                      onChange={e => { setClientEmail(e.target.value); setInviteError(null); }}
+                      onKeyDown={e => e.key === "Enter" && handleInviteClient()}
+                      placeholder="client@email.com"
+                      type="email"
+                      style={{ ...INPUT, flex: 1 }}
+                    />
+                    <button onClick={handleInviteClient} disabled={inviting || !clientEmail.trim()}
+                      style={{ height: 44, padding: "0 20px", borderRadius: 8, background: inviteSuccess ? "#16a34a" : "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: inviting || !clientEmail.trim() ? "not-allowed" : "pointer", opacity: inviting || !clientEmail.trim() ? 0.6 : 1, whiteSpace: "nowrap", transition: "background 0.2s" }}>
+                      {inviting ? "Sending…" : inviteSuccess ? "Sent!" : "Send invite"}
+                    </button>
+                  </div>
+                  {inviteError && <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626" }}>{inviteError}</div>}
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted-faint)", lineHeight: 1.5 }}>
+                    Client receives an email with a link to {profile.handle ? `${profile.handle}.vis.realestate` : "your chat page"}. They can only access the chat — no settings or admin features.
+                  </div>
+                </div>
+              </div>
+            </>}
+          </div>
+        )}
+
+        {/* ── Agents (brokerage only) ── */}
+        {section === "agents" && (
+          <div style={{ maxWidth: 560, padding: "40px 48px" }}>
+            <SectionHead title="Linked agents" sub="Agents linked to your brokerage inherit your training baseline and appear under your account." />
+
+            {!brokerageProfile && (
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 18px", marginBottom: 28 }}>
+                Save your Baseline training first to create your brokerage profile, then come back to add agents.
+              </div>
+            )}
+
+            {/* Linked agents list */}
+            {linkedAgents.length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Linked agents ({linkedAgents.length})</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {linkedAgents.map(agent => (
+                    <div key={agent.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--accent-soft)", border: "1px solid var(--border)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                        <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 14, color: "var(--accent)" }}>{(agent.ai_name || agent.handle || "?")[0].toUpperCase()}</span>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--white)" }}>{agent.ai_name || "(no AI name set)"}</div>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>{agent.handle}.vis.realestate</div>
+                      </div>
+                      <button onClick={() => handleRemoveAgent(agent.id)}
+                        style={{ background: "none", border: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", cursor: "pointer", padding: "4px 8px", borderRadius: 4 }}
+                        onMouseEnter={e => e.target.style.color = "#dc2626"}
+                        onMouseLeave={e => e.target.style.color = "var(--muted)"}>
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {linkedAgents.length === 0 && brokerageProfile && (
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", marginBottom: 28 }}>No agents linked yet.</div>
+            )}
+
+            {/* Add agent */}
+            {brokerageProfile && (
+              <div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Add agent by handle</div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <div style={{ flex: 1, position: "relative" }}>
+                    <input
+                      value={agentHandleInput}
+                      onChange={e => { setAgentHandleInput(e.target.value); setAddAgentError(null); }}
+                      onKeyDown={e => e.key === "Enter" && handleAddAgent()}
+                      placeholder="agenthandle"
+                      style={{ ...INPUT }}
+                    />
+                    <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted-faint)", pointerEvents: "none" }}>.vis.realestate</span>
+                  </div>
+                  <button onClick={handleAddAgent} disabled={addingAgent || !agentHandleInput.trim()}
+                    style={{ height: 44, padding: "0 20px", borderRadius: 8, background: "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: addingAgent || !agentHandleInput.trim() ? "not-allowed" : "pointer", opacity: addingAgent || !agentHandleInput.trim() ? 0.6 : 1, whiteSpace: "nowrap" }}>
+                    {addingAgent ? "Adding…" : "Add agent"}
+                  </button>
+                </div>
+                {addAgentError && <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626" }}>{addAgentError}</div>}
+                <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted-faint)" }}>The agent must have an active Vis account and their handle already claimed.</div>
+              </div>
+            )}
+          </div>
         )}
 
       </div>
@@ -353,17 +599,15 @@ function AgentSettings({ user, userRow }) {
   );
 }
 
-function SectionHead({ title, sub }) {
+function NavItem({ n, active, onClick, onTip }) {
   return (
-    <div style={{ marginBottom: 32 }}>
-      <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 20, color: "var(--white)", marginBottom: 6 }}>{title}</div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>{sub}</div>
-    </div>
+    <button onClick={onClick}
+      onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); onTip({ text: n.tip, top: r.top + r.height / 2, left: r.right + 12 }); }}
+      onMouseLeave={() => onTip(null)}
+      style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 20px", background: "transparent", border: "none", borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: active ? 600 : 400, color: active ? "var(--white)" : "var(--muted)", cursor: "pointer", transition: "color 0.15s, border-color 0.15s" }}>
+      {n.label}
+    </button>
   );
-}
-
-function ErrorBox({ children }) {
-  return <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "#dc2626", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6, padding: "8px 12px" }}>{children}</div>;
 }
 
 export default AgentSettings;

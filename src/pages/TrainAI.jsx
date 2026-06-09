@@ -58,8 +58,10 @@ function SectionLabel({ label, counter }) {
 function TrainAI({ user, userRow }) {
   const tier = userRow?.tier || "solo";
   const canAccess = hasFeature(tier, "agent");
+  const isBrokerage = hasFeature(tier, "brokerage");
 
   const [hasProfile, setHasProfile] = useState(false);
+  const [brokerageProfileId, setBrokerageProfileId] = useState(null);
   const [trainingText, setTrainingText] = useState("");
   const [docText, setDocText] = useState("");
   const [extracting, setExtracting] = useState(false);
@@ -75,15 +77,18 @@ function TrainAI({ user, userRow }) {
 
   useEffect(() => {
     if (!canAccess || !user?.id) return;
-    supabase.from("agent_profiles").select("training_text, training_doc_text").eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setHasProfile(true);
-          setTrainingText(data.training_text || "");
-          setDocText(data.training_doc_text || "");
-        }
-      });
-  }, [user?.id, canAccess]);
+    if (isBrokerage) {
+      supabase.from("brokerage_profiles").select("id, training_baseline").eq("user_id", user.id).maybeSingle()
+        .then(({ data }) => {
+          if (data) { setHasProfile(true); setBrokerageProfileId(data.id); setTrainingText(data.training_baseline || ""); }
+        });
+    } else {
+      supabase.from("agent_profiles").select("training_text, training_doc_text").eq("user_id", user.id).maybeSingle()
+        .then(({ data }) => {
+          if (data) { setHasProfile(true); setTrainingText(data.training_text || ""); setDocText(data.training_doc_text || ""); }
+        });
+    }
+  }, [user?.id, canAccess, isBrokerage]);
 
   async function handleFileUpload(e) {
     const file = e.target.files?.[0];
@@ -93,7 +98,11 @@ function TrainAI({ user, userRow }) {
     setExtractError(null);
     try {
       const text = await extractText(file);
-      setDocText(text.slice(0, DOC_LIMIT));
+      if (isBrokerage) {
+        setTrainingText(prev => (prev + "\n\n" + text).slice(0, TEXT_LIMIT));
+      } else {
+        setDocText(text.slice(0, DOC_LIMIT));
+      }
     } catch (err) {
       setExtractError(err.message);
     } finally {
@@ -105,16 +114,34 @@ function TrainAI({ user, userRow }) {
   async function saveField(field, value, setSaving, setSaved) {
     setSaving(true);
     setSaveError(null);
-    const payload = { user_id: user.id, [field]: value };
-    const { error } = hasProfile
-      ? await supabase.from("agent_profiles").update(payload).eq("user_id", user.id)
-      : await supabase.from("agent_profiles").insert({ user_id: user.id, training_text: trainingText, training_doc_text: docText });
-    if (error) {
-      setSaveError("Save failed: " + error.message);
+
+    if (isBrokerage) {
+      const payload = { training_baseline: trainingText };
+      const { error } = hasProfile && brokerageProfileId
+        ? await supabase.from("brokerage_profiles").update(payload).eq("id", brokerageProfileId)
+        : await supabase.from("brokerage_profiles").insert({ user_id: user.id, training_baseline: trainingText });
+      if (error) {
+        setSaveError("Save failed: " + error.message);
+      } else {
+        if (!hasProfile) {
+          const { data } = await supabase.from("brokerage_profiles").select("id").eq("user_id", user.id).single();
+          if (data) { setHasProfile(true); setBrokerageProfileId(data.id); }
+        }
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
     } else {
-      if (!hasProfile) setHasProfile(true);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      const payload = { user_id: user.id, [field]: value };
+      const { error } = hasProfile
+        ? await supabase.from("agent_profiles").update(payload).eq("user_id", user.id)
+        : await supabase.from("agent_profiles").insert({ user_id: user.id, training_text: trainingText, training_doc_text: docText });
+      if (error) {
+        setSaveError("Save failed: " + error.message);
+      } else {
+        if (!hasProfile) setHasProfile(true);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
     }
     setSaving(false);
   }
@@ -155,16 +182,30 @@ function TrainAI({ user, userRow }) {
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px 60px" }}>
       <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 20, color: "var(--white)", marginBottom: 6 }}>Train your AI</div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", marginBottom: 32, lineHeight: 1.6 }}>
-        Tell your AI about your market, clients, and style. This shapes how it responds on your branded URL.
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", marginBottom: isBrokerage ? 16 : 32, lineHeight: 1.6 }}>
+        {isBrokerage
+          ? "Set brokerage-wide AI instructions. Every agent linked to your account will follow these automatically — they cannot override them."
+          : "Tell your AI about your market, clients, and style. This shapes how it responds."}
       </div>
 
+      {isBrokerage && (
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start", background: "rgba(218,107,58,0.08)", border: "1px solid rgba(218,107,58,0.25)", borderRadius: 8, padding: "12px 16px", marginBottom: 28 }}>
+          <span style={{ fontSize: 15, lineHeight: 1, marginTop: 1 }}>⚡</span>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>
+            <strong style={{ color: "var(--white)" }}>Brokerage-wide.</strong>{" "}
+            All sub-account responses will follow this training first, before any individual agent instructions.
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: 32 }}>
-        <SectionLabel label="Training text" counter={<Counter n={trainingText.length} limit={TEXT_LIMIT} />} />
+        <SectionLabel label={isBrokerage ? "Baseline training" : "Training text"} counter={<Counter n={trainingText.length} limit={TEXT_LIMIT} />} />
         <textarea
           value={trainingText}
           onChange={e => setTrainingText(e.target.value.slice(0, TEXT_LIMIT))}
-          placeholder="Tell your AI about your market, your clients, your preferred tone, local knowledge, anything you want it to know..."
+          placeholder={isBrokerage
+            ? "e.g. We are Apex Realty. Always lead with professionalism and our white-glove service. Never mention competitor brokerages. Our agents specialize in luxury and investment properties..."
+            : "Tell your AI about your market, your clients, your preferred tone, local knowledge, anything you want it to know..."}
           style={{ ...TEXTAREA, minHeight: 160 }}
         />
         <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
@@ -175,7 +216,12 @@ function TrainAI({ user, userRow }) {
       </div>
 
       <div style={{ marginBottom: 32 }}>
-        <SectionLabel label="Document upload" counter={<Counter n={docText.length} limit={DOC_LIMIT} />} />
+        <SectionLabel label="Document upload" counter={<Counter n={isBrokerage ? trainingText.length : docText.length} limit={isBrokerage ? TEXT_LIMIT : DOC_LIMIT} />} />
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", marginBottom: 10, lineHeight: 1.5 }}>
+          {isBrokerage
+            ? "Upload a company handbook, scripts, or guidelines — text will be appended to your baseline above."
+            : "Upload a document with guidelines, scripts, or personality notes for your AI — PDF, DOCX, or TXT."}
+        </div>
         <div style={{ marginBottom: 10 }}>
           <button onClick={() => fileRef.current?.click()} disabled={extracting}
             style={{ height: 36, padding: "0 16px", borderRadius: 7, background: "var(--card)", border: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--white)", cursor: extracting ? "not-allowed" : "pointer", opacity: extracting ? 0.6 : 1 }}>
@@ -184,17 +230,19 @@ function TrainAI({ user, userRow }) {
           <input ref={fileRef} type="file" accept=".pdf,.docx,.txt" style={{ display: "none" }} onChange={handleFileUpload} />
         </div>
         {extractError && <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626", marginBottom: 8 }}>{extractError}</div>}
-        <textarea
-          value={docText}
-          onChange={e => setDocText(e.target.value.slice(0, DOC_LIMIT))}
-          placeholder="Extracted document text appears here. You can edit it before saving."
-          style={{ ...TEXTAREA, minHeight: 120 }}
-        />
-        <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
-          <button onClick={() => saveField("training_doc_text", docText, setSavingDoc, setSavedDoc)} disabled={savingDoc} style={BTN(savingDoc, savedDoc)}>
-            {savingDoc ? "Saving…" : savedDoc ? "Saved!" : "Save"}
-          </button>
-        </div>
+        {!isBrokerage && <>
+          <textarea
+            value={docText}
+            onChange={e => setDocText(e.target.value.slice(0, DOC_LIMIT))}
+            placeholder="Extracted document text appears here. You can edit it before saving."
+            style={{ ...TEXTAREA, minHeight: 120 }}
+          />
+          <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={() => saveField("training_doc_text", docText, setSavingDoc, setSavedDoc)} disabled={savingDoc} style={BTN(savingDoc, savedDoc)}>
+              {savingDoc ? "Saving…" : savedDoc ? "Saved!" : "Save"}
+            </button>
+          </div>
+        </>}
       </div>
 
       {saveError && (
@@ -212,7 +260,7 @@ function TrainAI({ user, userRow }) {
           "{SAMPLE_Q}"
         </div>
         <button onClick={handlePreview} disabled={previewing}
-          style={{ height: 38, padding: "0 20px", borderRadius: 7, background: "transparent", border: "1.5px solid var(--accent)", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--accent)", cursor: previewing ? "not-allowed" : "pointer", opacity: previewing ? 0.7 : 1 }}>
+          style={{ height: 42, padding: "0 20px", borderRadius: 8, background: "var(--accent)", border: "none", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: "#fff", cursor: previewing ? "not-allowed" : "pointer", opacity: previewing ? 0.7 : 1, transition: "opacity 0.15s" }}>
           {previewing ? "Generating…" : "Preview AI response"}
         </button>
         {preview && (

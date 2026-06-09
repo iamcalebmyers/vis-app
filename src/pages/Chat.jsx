@@ -18,6 +18,12 @@ import {
   saveSession,
   makeSessionName,
 } from "../utils/sessions.js";
+import {
+  loadClientSessions,
+  loadClientMessages,
+  saveClientSession,
+  appendClientMessage,
+} from "../utils/clientSessions.js";
 import { DEMO_MESSAGES } from "../data/demoMessages.js";
 
 const NAV_HEIGHT = 48;
@@ -69,9 +75,9 @@ function toApiMessages(messages) {
   return messages.map((m) => ({ role: m.role, content: m.content }));
 }
 
-function Chat({ user, userRow, onSignOut, onRefreshUser }) {
+function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile }) {
   const agentCtx = useAgent();
-  const [sessions, setSessions] = useState(() => loadSessions());
+  const [sessions, setSessions] = useState(() => isClient ? [] : loadSessions());
   const [activeSession, setActiveSession] = useState(null);
   const [messages, setMessages] = useState(loadInitialMessages);
   const [typing, setTyping] = useState(false);
@@ -80,6 +86,12 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
   const [activeTab, setActiveTab] = useState("chat");
   const pendingMessageRef = useRef(null);
 
+  // Load client sessions from Supabase
+  useEffect(() => {
+    if (!isClient || !clientProfile?.id) return;
+    loadClientSessions(clientProfile.id).then(setSessions);
+  }, [isClient, clientProfile?.id]);
+
   const tier = userRow?.tier || "solo";
   const pct = usagePct(userRow?.usage_current, userRow?.usage_limit);
   const atLimit = userRow?.usage_limit && (userRow?.usage_current || 0) >= userRow.usage_limit;
@@ -87,15 +99,11 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
   const hasContent = messages.length > 0 || typing;
 
   useEffect(() => {
-    if (!activeSession || messages.length === 0) return;
-    const updated = {
-      ...activeSession,
-      messages,
-      updatedAt: Date.now(),
-    };
+    if (!activeSession || messages.length === 0 || isClient) return;
+    const updated = { ...activeSession, messages, updatedAt: Date.now() };
     saveSession(updated);
     setSessions(loadSessions());
-  }, [activeSession, messages]);
+  }, [activeSession, messages, isClient]);
 
   function handleNewChat() {
     setActiveSession(null);
@@ -104,14 +112,26 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
     setActiveReport(null);
   }
 
-  function handleSelectSession(id) {
+  async function handleSelectSession(id) {
+    if (isClient) {
+      const msgs = await loadClientMessages(id);
+      setMessages(msgs.map(m => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        cardType: m.card_type || null,
+        cardData: m.card_data || null,
+        showButton: m.card_type === "property" || m.card_type === "market" || m.card_type === "deal",
+        createdAt: new Date(m.created_at).getTime(),
+      })));
+      setActiveSession({ id, name: sessions.find(s => s.id === id)?.name || "Chat", createdAt: Date.now() });
+      setTyping(false);
+      setActiveReport(null);
+      return;
+    }
     const found = sessions.find((s) => s.id === id);
     if (!found) return;
-    setActiveSession({
-      id: found.id,
-      name: found.name,
-      createdAt: found.createdAt,
-    });
+    setActiveSession({ id: found.id, name: found.name, createdAt: found.createdAt });
     setMessages(found.messages || []);
     setTyping(false);
     setActiveReport(null);
@@ -146,6 +166,11 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
     setMessages(next);
     setTyping(true);
 
+    // For clients: create session in Supabase on first message
+    if (isClient && clientProfile && !activeSession) {
+      await saveClientSession(session, clientProfile.id, clientProfile.agent_id);
+    }
+
     try {
       const agentTraining = [agentCtx.trainingText, agentCtx.trainingDocText].filter(Boolean).join("\n\n") || null;
       const { reply, card } = await sendMessage(toApiMessages(next), {
@@ -157,21 +182,28 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
 
       // Feature gate: investor cards require investor+ tier
       const isInvestorCard = card?.type && INVESTOR_CARD_TYPES.has(card.type);
-      const canSeeCard = !isInvestorCard || hasFeature(tier, "investor");
+      const canSeeCard = !isClient && (!isInvestorCard || hasFeature(tier, "investor"));
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "ai",
-          content: reply,
-          cardType: canSeeCard ? (card?.type || null) : null,
-          cardData: canSeeCard ? (card?.data || null) : null,
-          showButton: canSeeCard && (card?.type === "property" || card?.type === "market" || card?.type === "deal"),
-          upgradeRequired: !canSeeCard ? "investor" : null,
-          createdAt: Date.now(),
-        },
-      ]);
+      const aiMsg = {
+        id: crypto.randomUUID(),
+        role: "ai",
+        content: reply,
+        cardType: canSeeCard ? (card?.type || null) : null,
+        cardData: canSeeCard ? (card?.data || null) : null,
+        showButton: canSeeCard && (card?.type === "property" || card?.type === "market" || card?.type === "deal"),
+        upgradeRequired: !canSeeCard && isInvestorCard ? "investor" : null,
+        createdAt: Date.now(),
+      };
+
+      setMessages((prev) => [...prev, aiMsg]);
+
+      // Save to Supabase for clients
+      if (isClient && clientProfile) {
+        await appendClientMessage(userMsg, session.id);
+        await appendClientMessage(aiMsg, session.id);
+        await saveClientSession(session, clientProfile.id, clientProfile.agent_id);
+        loadClientSessions(clientProfile.id).then(setSessions);
+      }
 
       if (onRefreshUser) onRefreshUser();
     } catch (err) {
@@ -226,7 +258,7 @@ function Chat({ user, userRow, onSignOut, onRefreshUser }) {
           onCancel={handleOverageCancel}
         />
       )}
-      <Nav active={activeTab} onTabChange={setActiveTab} userEmail={user?.email} onSignOut={onSignOut} userRow={userRow} />
+      <Nav active={activeTab} onTabChange={setActiveTab} userEmail={user?.email} onSignOut={onSignOut} userRow={userRow} isClient={isClient} />
       {pct >= 80 && pct < 100 && (
         <div style={{ background: "rgba(245,158,11,0.1)", borderBottom: "1px solid rgba(245,158,11,0.3)", padding: "7px 24px", fontFamily: "var(--font-sans)", fontSize: 12, color: "#f59e0b", display: "flex", alignItems: "center", gap: 8 }}>
           <span>You've used {pct}% of your monthly AI queries.</span>

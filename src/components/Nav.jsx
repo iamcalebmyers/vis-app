@@ -92,8 +92,9 @@ function SignOutButton({ email, onSignOut }) {
   );
 }
 
-function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow }) {
+function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow, isClient }) {
   const { isAgentDomain, aiName, logoUrl } = useAgent();
+  const visibleTabs = isClient ? TABS.filter(t => t.id === "chat") : TABS;
 
   const logoMark = isAgentDomain ? (
     logoUrl
@@ -136,7 +137,7 @@ function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow }) {
       </div>
 
       <div style={{ display: "flex", gap: 2 }}>
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <Tab
             key={tab.id}
             tab={tab}
@@ -147,11 +148,11 @@ function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {!isAgentDomain && <UsageBar userRow={userRow} />}
+        {!isAgentDomain && !isClient && <UsageBar userRow={userRow} />}
         <ThemeSwitcher />
-        {!isAgentDomain && <TierBadge tier={userRow?.tier} />}
+        {!isAgentDomain && !isClient && <TierBadge tier={userRow?.tier} />}
         <LiveIndicator />
-        {!isAgentDomain && <SignOutButton email={userEmail} onSignOut={onSignOut} />}
+        <SignOutButton email={userEmail} onSignOut={onSignOut} />
       </div>
     </nav>
   );
