@@ -330,6 +330,8 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
                 typing={typing}
                 session={activeSession}
                 onGenerateReport={handleGenerateReport}
+                user={user}
+                userRow={userRow}
               />
               <div
                 style={{

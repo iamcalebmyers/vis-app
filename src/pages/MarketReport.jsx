@@ -135,6 +135,7 @@ function MarketReport({ data, onBack, user, userRow }) {
 
         <div style={{ maxWidth: 900, margin: "16px auto 0" }}>
           <ShareExport
+            user={user}
             userRow={userRow}
             onShare={handleShare}
             onExport={handleExportPDF}

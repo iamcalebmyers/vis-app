@@ -1,78 +1,111 @@
+import { useState } from "react";
 import { hasFeature } from "../utils/tier.js";
+import { UpgradeModal } from "./SubscriptionGate.jsx";
 
 function readTier() {
   try { return localStorage.getItem("vis-tier") || "solo"; } catch { return "solo"; }
 }
 
-function SecondaryButton({ children, onClick, active, disabled }) {
+function LockIcon() {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5, flexShrink: 0 }}>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function SecondaryButton({ children, onClick, active, disabled, locked }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button type="button" onClick={onClick} disabled={disabled}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
-        height: 36,
-        padding: "0 14px",
-        background: active ? "var(--accent-soft)" : "var(--border-soft)",
-        color: active ? "var(--accent)" : "var(--text)",
-        border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
-        borderRadius: 7,
-        fontFamily: "var(--font-sans)",
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.6 : 1,
-        transition: "color 0.15s ease, background 0.15s ease",
-      }}
-      onMouseEnter={(e) => { if (!disabled && !active) { e.currentTarget.style.color = "var(--white)"; e.currentTarget.style.background = "var(--card)"; } }}
-      onMouseLeave={(e) => { if (!disabled && !active) { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "var(--border-soft)"; } }}
-    >
+        height: 36, padding: "0 14px", display: "flex", alignItems: "center",
+        background: locked ? "var(--border-soft)" : active ? "var(--accent-soft)" : (hov ? "var(--card)" : "var(--border-soft)"),
+        color: locked ? "var(--muted)" : active ? "var(--accent)" : (hov ? "var(--white)" : "var(--text)"),
+        border: `1px solid ${locked ? "var(--border)" : active ? "var(--accent)" : "var(--border)"}`,
+        borderRadius: 7, fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600,
+        cursor: (disabled || locked) ? "pointer" : "pointer",
+        opacity: disabled ? 0.6 : 1, transition: "color 0.15s ease, background 0.15s ease",
+      }}>
+      {locked && <LockIcon />}
       {children}
     </button>
   );
 }
 
-function PrimaryButton({ children, onClick }) {
+function PrimaryButton({ children, onClick, locked }) {
+  const [hov, setHov] = useState(false);
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ height: 36, padding: "0 18px", background: "var(--accent)", color: "#ffffff", border: "none", borderRadius: 7, fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: 1, transition: "opacity 0.15s ease" }}
-      onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
-    >
+    <button type="button" onClick={onClick}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        height: 36, padding: "0 18px", display: "flex", alignItems: "center",
+        background: locked ? "var(--border-soft)" : (hov ? "rgba(218,107,58,0.85)" : "var(--accent)"),
+        color: locked ? "var(--muted)" : "#fff",
+        border: locked ? "1px solid var(--border)" : "none",
+        borderRadius: 7, fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 700,
+        cursor: "pointer", transition: "background 0.15s ease",
+      }}>
+      {locked && <LockIcon />}
       {children}
     </button>
   );
 }
 
-function ShareExport({ onShare, onExport, onSave, onSendToClient, userRow, shareLoading, saved, saveError }) {
+function ShareExport({ onShare, onExport, onSave, onSendToClient, userRow, user, shareLoading, saved, saveError }) {
   const tier = userRow?.tier || readTier();
-  const canShare = hasFeature(tier, "investor");
+  const canShare        = hasFeature(tier, "investor");
   const canSendToClient = hasFeature(tier, "agent");
 
+  const [upgradeModal, setUpgradeModal] = useState(null); // "investor" | "agent" | null
+
   return (
-    <section style={{ display: "flex", flexDirection: "column", gap: 8, padding: 16, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, marginBottom: 16 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {canShare && (
-            <SecondaryButton onClick={onShare} disabled={shareLoading}>
-              {shareLoading ? "Generating…" : "Share link"}
+    <>
+      <section style={{ display: "flex", flexDirection: "column", gap: 8, padding: 16, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, marginBottom: 16 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {canShare ? (
+              <SecondaryButton onClick={onShare} disabled={shareLoading}>
+                {shareLoading ? "Generating…" : "Share link"}
+              </SecondaryButton>
+            ) : (
+              <SecondaryButton locked onClick={() => setUpgradeModal("investor")}>
+                Share link
+              </SecondaryButton>
+            )}
+            <SecondaryButton onClick={onExport}>Export PDF</SecondaryButton>
+            <SecondaryButton onClick={onSave} active={saved}>
+              {saved ? "Saved ✓" : "Save report"}
             </SecondaryButton>
+          </div>
+          {canSendToClient ? (
+            <PrimaryButton onClick={onSendToClient}>Send to client</PrimaryButton>
+          ) : (
+            <PrimaryButton locked onClick={() => setUpgradeModal("agent")}>Send to client</PrimaryButton>
           )}
-          <SecondaryButton onClick={onExport}>Export PDF</SecondaryButton>
-          <SecondaryButton onClick={onSave} active={saved}>
-            {saved ? "Saved ✓" : "Save report"}
-          </SecondaryButton>
         </div>
-        {canSendToClient && (
-          <PrimaryButton onClick={onSendToClient}>Send to client</PrimaryButton>
+        {saveError && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "8px 12px", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 7 }}>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted-soft)" }}>{saveError}</span>
+            <button onClick={() => setUpgradeModal("investor")}
+              style={{ flexShrink: 0, height: 26, padding: "0 10px", borderRadius: 6, background: "var(--accent-soft)", border: "1px solid var(--accent)", fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 700, color: "var(--accent)", cursor: "pointer" }}>
+              Upgrade →
+            </button>
+          </div>
         )}
-      </div>
-      {saveError && (
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626" }}>{saveError}</div>
+      </section>
+
+      {upgradeModal && (
+        <UpgradeModal
+          requiredTier={upgradeModal}
+          user={user}
+          userRow={userRow}
+          onClose={() => setUpgradeModal(null)}
+        />
       )}
-    </section>
+    </>
   );
 }
 

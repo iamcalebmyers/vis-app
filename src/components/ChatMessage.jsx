@@ -1,4 +1,5 @@
 import DataCard from "./DataCard.jsx";
+import SubscriptionGate from "./SubscriptionGate.jsx";
 import { relativeTime } from "../utils/formatters.js";
 import { useAgent } from "../utils/AgentContext.jsx";
 
@@ -36,13 +37,17 @@ function ChatMessage({
   cardType,
   cardData,
   showButton,
+  upgradeRequired,
   onGenerateReport,
   createdAt,
+  user,
+  userRow,
 }) {
   const { aiName, logoUrl } = useAgent();
   const isUser = role === "user";
   const body = text ?? content ?? "";
   const hasCard = !isUser && Boolean(cardType);
+  const hasGate = !isUser && Boolean(upgradeRequired);
 
   return (
     <div
@@ -56,7 +61,7 @@ function ChatMessage({
       {!isUser && <AiHeader aiName={aiName} logoUrl={logoUrl} createdAt={createdAt} />}
       <div
         style={{
-          maxWidth: isUser ? "72%" : hasCard ? "92%" : "88%",
+          maxWidth: isUser ? "72%" : (hasCard || hasGate) ? "92%" : "88%",
           padding: isUser ? "9px 14px" : "12px 14px",
           background: isUser ? "var(--accent)" : "var(--card)",
           border: isUser ? "none" : "1px solid var(--border)",
@@ -77,6 +82,13 @@ function ChatMessage({
             data={cardData}
             showButton={showButton}
             onGenerateReport={onGenerateReport}
+          />
+        )}
+        {hasGate && (
+          <SubscriptionGate
+            requiredTier={upgradeRequired}
+            user={user}
+            userRow={userRow}
           />
         )}
       </div>

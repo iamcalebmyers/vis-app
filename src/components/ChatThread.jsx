@@ -40,7 +40,7 @@ function PageTitle({ session }) {
   );
 }
 
-function ChatThread({ messages, typing, onGenerateReport, session }) {
+function ChatThread({ messages, typing, onGenerateReport, session, user, userRow }) {
   const endRef = useRef(null);
 
   useEffect(() => {
@@ -73,8 +73,11 @@ function ChatThread({ messages, typing, onGenerateReport, session }) {
             cardType={m.cardType}
             cardData={m.cardData}
             showButton={m.showButton}
+            upgradeRequired={m.upgradeRequired}
             createdAt={m.createdAt}
             onGenerateReport={onGenerateReport}
+            user={user}
+            userRow={userRow}
           />
         ))}
         {typing && <TypingIndicator />}
