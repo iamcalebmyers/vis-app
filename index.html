@@ -18,10 +18,22 @@
     <script>
       (function () {
         try {
-          var t = localStorage.getItem('vis-theme');
-          if (t === 'charcoal' || t === 'black') {
-            document.documentElement.dataset.theme = t;
+          var stored = localStorage.getItem('vis-theme');
+          var theme = stored;
+          if (!theme || theme === 'system') {
+            // Fall back to tier default, then system preference
+            var tier = localStorage.getItem('vis-tier') || 'solo';
+            var tierDefault = tier === 'brokerage' ? 'black'
+              : (tier === 'investor' || tier === 'agent') ? 'charcoal'
+              : 'system';
+            theme = tierDefault === 'system'
+              ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'charcoal' : 'light')
+              : tierDefault;
           }
+          if (theme === 'charcoal' || theme === 'black') {
+            document.documentElement.dataset.theme = theme;
+          }
+          // light = no dataset.theme needed (default :root vars)
         } catch (e) {}
       })();
     </script>

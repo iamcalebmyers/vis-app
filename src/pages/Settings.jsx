@@ -1,16 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AgentSettings from "./AgentSettings.jsx";
 import TeamView from "./TeamView.jsx";
 import { hasFeature, usagePct, USAGE_LABELS } from "../utils/tier.js";
-import { getStoredTheme, setTheme } from "../theme.js";
+import { getStoredTheme, setTheme, getSystemTheme } from "../theme.js";
 
 const TIER_PRICES = { solo: 19, investor: 49, agent: 99, brokerage: 249 };
 const TIER_NAMES  = { solo: "Solo", investor: "Investor", agent: "Agent", brokerage: "Brokerage" };
 
-const THEMES = [
-  { id: "charcoal", label: "Charcoal", bg: "#111111", card: "#3D3D3D" },
-  { id: "black",    label: "Black",    bg: "#000000", card: "#1a1a1a" },
-  { id: "light",    label: "Light",    bg: "#f7f6f3", card: "#ffffff" },
+const THEME_OPTIONS = [
+  {
+    id: "system",
+    label: "System",
+    sub: "Follows your OS setting",
+    preview: null, // rendered dynamically
+  },
+  {
+    id: "charcoal",
+    label: "Charcoal",
+    sub: "Dark, warm grey",
+    bg: "#111111", nav: "#1a1a1a", card: "#3d3d3d", border: "#525252",
+    text: "#d8d8d8", muted: "#888", accent: "#DA6B3A",
+  },
+  {
+    id: "black",
+    label: "Black",
+    sub: "True black OLED",
+    bg: "#000000", nav: "#111111", card: "#1a1a1a", border: "#3d3d3d",
+    text: "#e8e8e8", muted: "#777", accent: "#DA6B3A",
+  },
+  {
+    id: "light",
+    label: "Light",
+    sub: "Warm cream",
+    bg: "#f7f6f3", nav: "#ffffff", card: "#ffffff", border: "#e8e6e3",
+    text: "#2a2825", muted: "#9b8ea0", accent: "#DA6B3A",
+  },
 ];
 
 const PROFILE_ITEMS = [
@@ -63,29 +87,88 @@ function AccountSection({ user, userRow, onSignOut }) {
   );
 }
 
-function AppearanceSection() {
-  const [current, setCurrent] = useState(getStoredTheme());
-  function pick(id) { setTheme(id); setCurrent(id); }
+function ThemePreview({ t, systemResolved }) {
+  // For "system" option, show a split half-light / half-dark preview
+  if (t.id === "system") {
+    return (
+      <div style={{ height: 88, borderRadius: "8px 8px 0 0", overflow: "hidden", display: "flex" }}>
+        {/* Light half */}
+        <div style={{ flex: 1, background: "#f7f6f3", padding: "8px 6px 6px", display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ height: 7, background: "#ffffff", borderRadius: 3, border: "1px solid #e8e6e3" }} />
+          <div style={{ height: 18, background: "#ffffff", borderRadius: 4, border: "1px solid #e8e6e3" }} />
+          <div style={{ height: 10, background: "#DA6B3A", borderRadius: 3, width: "60%" }} />
+        </div>
+        {/* Divider */}
+        <div style={{ width: 1, background: "#aaa" }} />
+        {/* Dark half */}
+        <div style={{ flex: 1, background: "#111111", padding: "8px 6px 6px", display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ height: 7, background: "#1a1a1a", borderRadius: 3, border: "1px solid #525252" }} />
+          <div style={{ height: 18, background: "#3d3d3d", borderRadius: 4 }} />
+          <div style={{ height: 10, background: "#DA6B3A", borderRadius: 3, width: "60%" }} />
+        </div>
+      </div>
+    );
+  }
   return (
-    <div style={{ maxWidth: 520, padding: "40px 48px" }}>
+    <div style={{ height: 88, background: t.bg, borderRadius: "8px 8px 0 0", overflow: "hidden", padding: "8px 10px 0", display: "flex", flexDirection: "column", gap: 5 }}>
+      {/* Nav bar */}
+      <div style={{ height: 8, background: t.nav, borderRadius: 3, border: `1px solid ${t.border}`, width: "100%" }} />
+      {/* AI bubble */}
+      <div style={{ display: "flex", gap: 4, alignItems: "flex-start" }}>
+        <div style={{ width: 10, height: 10, borderRadius: 3, background: t.accent, flexShrink: 0, marginTop: 2 }} />
+        <div style={{ flex: 1, height: 22, background: t.card, borderRadius: "2px 6px 6px 6px", border: `1px solid ${t.border}` }} />
+      </div>
+      {/* User bubble */}
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ width: "55%", height: 14, background: t.accent, borderRadius: "6px 6px 2px 6px" }} />
+      </div>
+    </div>
+  );
+}
+
+function AppearanceSection({ userRow }) {
+  const [current, setCurrent] = useState(getStoredTheme());
+  const [systemResolved, setSystemResolved] = useState(getSystemTheme());
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    function update() { setSystemResolved(mq.matches ? "charcoal" : "light"); }
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  function pick(id) { setTheme(id); setCurrent(id); }
+
+  const tier = userRow?.tier || "solo";
+
+  return (
+    <div style={{ maxWidth: 580, padding: "40px 48px" }}>
       <SectionHead title="Appearance" sub="Choose how Vis looks on your device." />
-      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-        {THEMES.map(t => {
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
+        {THEME_OPTIONS.map(t => {
           const active = current === t.id;
+          const isSystemActive = t.id === "system" && current === "system";
           return (
             <button key={t.id} onClick={() => pick(t.id)}
-              style={{ width: 120, padding: 0, border: `2px solid ${active ? "var(--accent)" : "var(--border)"}`, borderRadius: 10, overflow: "hidden", cursor: "pointer", background: "none", transition: "border-color 0.15s", outline: "none" }}>
-              <div style={{ height: 72, background: t.bg, display: "flex", alignItems: "flex-end", padding: "8px 8px 10px", gap: 6 }}>
-                <div style={{ flex: 1, height: 28, background: t.card, borderRadius: 4 }} />
-                <div style={{ width: 24, height: 24, borderRadius: 4, background: "#DA6B3A" }} />
-              </div>
-              <div style={{ padding: "8px 10px", background: "var(--card)", textAlign: "left" }}>
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: active ? 700 : 500, color: active ? "var(--accent)" : "var(--muted)" }}>{t.label}</div>
+              style={{ padding: 0, border: `2px solid ${active ? "var(--accent)" : "var(--border)"}`, borderRadius: 10, overflow: "hidden", cursor: "pointer", background: "none", transition: "border-color 0.15s, transform 0.1s", outline: "none", textAlign: "left" }}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = "var(--muted)"; }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = "var(--border)"; }}>
+              <ThemePreview t={t} systemResolved={systemResolved} />
+              <div style={{ padding: "8px 10px 10px", background: "var(--card)" }}>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: active ? 700 : 600, color: active ? "var(--accent)" : "var(--white)" }}>{t.label}</div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                  {t.id === "system" ? (systemResolved === "charcoal" ? "Currently dark" : "Currently light") : t.sub}
+                </div>
               </div>
             </button>
           );
         })}
       </div>
+      {current === "system" && (
+        <div style={{ marginTop: 14, fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", padding: "10px 14px", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8 }}>
+          Vis will switch automatically when your OS changes between light and dark mode.
+        </div>
+      )}
     </div>
   );
 }
@@ -206,7 +289,7 @@ function Settings({ user, userRow, onSignOut }) {
       {/* Content */}
       <div style={{ flex: 1, overflow: "auto" }}>
         {section === "account"    && <AccountSection user={user} userRow={userRow} onSignOut={onSignOut} />}
-        {section === "appearance" && <AppearanceSection />}
+        {section === "appearance" && <AppearanceSection userRow={userRow} />}
         {section === "billing"    && <BillingSection user={user} userRow={userRow} />}
         {section === "team"       && <TeamView user={user} userRow={userRow} />}
         {PROFILE_ITEMS.some(i => i.id === section) && (
