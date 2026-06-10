@@ -44,9 +44,7 @@ function AgentMark({ agent }) {
 function VisMark() {
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--accent)", display: "grid", placeItems: "center" }}>
-        <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 13, color: "#fff" }}>V</span>
-      </div>
+      <img src="/vis-logo.png" alt="Vis" style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover" }} />
       <span style={{ fontFamily: "DM Sans, sans-serif", fontWeight: 800, fontSize: 18, color: "#1a1a18" }}>vis<span style={{ fontFamily: "Inter, sans-serif", fontWeight: 400, fontSize: 10, color: "#9b8ea0" }}>.realestate</span></span>
     </div>
   );

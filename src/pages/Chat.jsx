@@ -48,9 +48,9 @@ function Hero({ isAgentDomain, aiName, logoUrl, greeting, localLogoUrl }) {
     effectiveLogo
       ? <img src={effectiveLogo} alt={aiName} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
       : <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 18, lineHeight: 1 }}>{aiName[0]?.toUpperCase() || "A"}</span>
-  ) : effectiveLogo ? (
-    <img src={effectiveLogo} alt="logo" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
-  ) : null;
+  ) : (
+    <img src={effectiveLogo || "/vis-logo.png"} alt="Vis" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center" }}>

@@ -5,7 +5,7 @@ const DEFAULT = {
   isAgentDomain: false,
   handle: null,
   aiName: "Vis",
-  logoUrl: null,
+  logoUrl: "/vis-logo.png",
   brandColor: "#DA6B3A",
   trainingText: null,
   trainingDocText: null,

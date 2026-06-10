@@ -19,9 +19,7 @@ export function ReportBrandMark() {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{ width: 24, height: 24, borderRadius: 6, background: "var(--accent)", display: "grid", placeItems: "center" }}>
-        <span style={{ color: "#fff", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 11 }}>V</span>
-      </div>
+      <img src="/vis-logo.png" alt="Vis" style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover" }} />
       <div style={{ lineHeight: 1 }}>
         <span style={{ fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: 15, color: "var(--white)" }}>vis</span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", marginLeft: 2 }}>.realestate</span>

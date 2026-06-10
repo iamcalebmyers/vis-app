@@ -3,12 +3,16 @@ import Chat from "./pages/Chat.jsx";
 import Auth from "./pages/Auth.jsx";
 import Onboarding, { HandleStep } from "./pages/Onboarding.jsx";
 import SharedReport from "./pages/SharedReport.jsx";
+import Admin from "./pages/Admin.jsx";
 import { supabase } from "./utils/supabase.js";
 import { signOut } from "./utils/auth.js";
 
 function App() {
-  // Public report view — no auth required
+  // Admin panel — separate auth, no Supabase session required
   const path = window.location.pathname;
+  if (path === "/admin" || path.startsWith("/admin/")) return <Admin />;
+
+  // Public report view — no auth required
   if (path.startsWith("/report/")) {
     const token = path.slice("/report/".length).split("/")[0];
     if (token) return <SharedReport token={token} />;

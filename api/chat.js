@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 
+export const maxDuration = 60;
+
 const MODEL = "claude-opus-4-7";
 const MAX_TOKENS = 1500;
 

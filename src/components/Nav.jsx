@@ -101,7 +101,7 @@ function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow, isCl
       ? <img src={logoUrl} alt={aiName} style={{ width: 26, height: 26, borderRadius: 6, objectFit: "cover" }} />
       : <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: 6, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, lineHeight: 1 }}>{aiName[0]?.toUpperCase() || "A"}</span>
   ) : (
-    <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: 6, background: "var(--accent)", color: "#ffffff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, lineHeight: 1 }}>V</span>
+    <img src="/vis-logo.png" alt="Vis" style={{ width: 26, height: 26, borderRadius: 6, objectFit: "cover" }} />
   );
 
   const wordmark = isAgentDomain ? (
