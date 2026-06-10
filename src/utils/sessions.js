@@ -1,5 +1,7 @@
 const STORAGE_KEY = "vis-sessions";
 const MAX_NAME_LENGTH = 40;
+const MAX_SESSIONS = 50;
+const MAX_MESSAGES_PER_SESSION = 30;
 
 function safeRead() {
   try {
@@ -12,11 +14,25 @@ function safeRead() {
   }
 }
 
+function trimSession(session) {
+  if (!session.messages || session.messages.length <= MAX_MESSAGES_PER_SESSION) return session;
+  return { ...session, messages: session.messages.slice(-MAX_MESSAGES_PER_SESSION) };
+}
+
 function safeWrite(sessions) {
+  // Keep only the most recent sessions, trimmed
+  const trimmed = sessions
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+    .slice(0, MAX_SESSIONS)
+    .map(trimSession);
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
   } catch {
-    // localStorage may be full or blocked; fail silently
+    // If still too full, drop the oldest half and retry
+    try {
+      const half = trimmed.slice(0, Math.floor(MAX_SESSIONS / 2));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(half));
+    } catch {}
   }
 }
 
