@@ -125,9 +125,9 @@ function InviteForm({ agentProfileId, agentHandle, onDone }) {
   async function send() {
     if (!email.trim()) return;
     setLoading(true); setErr(null);
-    const res = await fetch("/api/invite-client", {
+    const res = await fetch("/api/actions", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.trim(), name: name.trim(), agentProfileId, agentHandle }),
+      body: JSON.stringify({ action: "invite-client", email: email.trim(), name: name.trim(), agentProfileId, agentHandle }),
     });
     const data = await res.json();
     if (!res.ok || data.error) { setErr(data.error || "Invite failed."); setLoading(false); return; }
@@ -231,9 +231,9 @@ function TeamView({ user, userRow }) {
   async function sendRootAgentInvite() {
     if (!rootAgentEmail.trim()) return;
     setRootAgentSending(true); setRootAgentErr(null);
-    const res = await fetch("/api/invite-agent", {
+    const res = await fetch("/api/actions", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: rootAgentEmail.trim(), name: rootAgentName.trim(), brokerageProfileId: rootProfile?.id }),
+      body: JSON.stringify({ action: "invite-agent", email: rootAgentEmail.trim(), name: rootAgentName.trim(), brokerageProfileId: rootProfile?.id }),
     });
     const data = await res.json();
     if (!res.ok || data.error) { setRootAgentErr(data.error || "Invite failed."); }
@@ -245,9 +245,9 @@ function TeamView({ user, userRow }) {
     const target = agents.length === 1 ? agents[0] : agents.find(a => a.id === rootClientAgent);
     if (!rootClientEmail.trim() || !target) return;
     setRootClientSending(true); setRootClientErr(null);
-    const res = await fetch("/api/invite-client", {
+    const res = await fetch("/api/actions", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: rootClientEmail.trim(), name: rootClientName.trim(), agentProfileId: target.id, agentHandle: target.handle }),
+      body: JSON.stringify({ action: "invite-client", email: rootClientEmail.trim(), name: rootClientName.trim(), agentProfileId: target.id, agentHandle: target.handle }),
     });
     const data = await res.json();
     if (!res.ok || data.error) { setRootClientErr(data.error || "Invite failed."); }

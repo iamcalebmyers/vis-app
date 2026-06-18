@@ -184,7 +184,7 @@ function BillingSection({ user, userRow }) {
     if (!user?.id) return;
     setLoading(true); setError(null);
     try {
-      const res = await fetch("/api/billing-portal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+      const res = await fetch("/api/billing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "portal", userId: user.id }) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Could not open billing portal.");
       window.location.href = json.url;

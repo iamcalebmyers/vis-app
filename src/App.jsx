@@ -48,10 +48,10 @@ function App() {
 
     if (checkout === "success" && sessionId) {
       setCheckoutState("verifying");
-      fetch("/api/verify-checkout", {
+      fetch("/api/billing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ action: "verify", sessionId }),
       })
         .then(r => r.json())
         .then(async data => {

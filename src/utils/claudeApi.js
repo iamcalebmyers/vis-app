@@ -152,10 +152,10 @@ export async function fetchComparisonProperty(address) {
 export async function createTopupSession({ amount, userId, email }) {
   let response;
   try {
-    response = await fetch("/api/create-topup-session", {
+    response = await fetch("/api/billing", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount, userId, email }),
+      body: JSON.stringify({ action: "topup", amount, userId, email }),
     });
   } catch {
     throw new Error("Network error starting checkout. Check your connection.");

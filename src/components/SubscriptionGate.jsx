@@ -65,10 +65,10 @@ export function UpgradeModal({ requiredTier, user, userRow, onClose }) {
     }
     setLoading(true); setError(null);
     try {
-      const res = await fetch("/api/create-checkout-session", {
+      const res = await fetch("/api/billing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, userId: user.id, email: user.email, tier: requiredTier }),
+        body: JSON.stringify({ action: "checkout", priceId, userId: user.id, email: user.email, tier: requiredTier }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Could not start checkout.");

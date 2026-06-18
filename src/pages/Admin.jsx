@@ -101,7 +101,7 @@ function UsersSection({ token }) {
 
   async function load() {
     setLoading(true);
-    const data = await adminFetch("/api/admin-users", { method: "GET" }, token);
+    const data = await adminFetch("/api/admin?resource=users", { method: "GET" }, token);
     setUsers(data.users || []);
     setLoading(false);
   }
@@ -110,7 +110,7 @@ function UsersSection({ token }) {
 
   async function doAction(userId, action, value) {
     setBusy(true); setErr(null);
-    const res = await adminFetch("/api/admin-users", { method: "PATCH", body: { userId, action, value } }, token);
+    const res = await adminFetch("/api/admin?resource=users", { method: "PATCH", body: { userId, action, value } }, token);
     if (res.error) setErr(res.error);
     setBusy(false);
     setEditing(null);
@@ -200,7 +200,7 @@ function UsageSection({ token }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminFetch("/api/admin-users", { method: "GET" }, token).then(d => {
+    adminFetch("/api/admin?resource=users", { method: "GET" }, token).then(d => {
       const sorted = [...(d.users || [])].sort((a, b) => usagePct(b.usage_current, b.usage_limit) - usagePct(a.usage_current, a.usage_limit));
       setUsers(sorted);
       setLoading(false);
@@ -262,7 +262,7 @@ function TierConfigSection({ token }) {
   const [err, setErr]         = useState(null);
 
   async function load() {
-    const data = await adminFetch("/api/admin-tier", { method: "GET" }, token);
+    const data = await adminFetch("/api/admin?resource=tier", { method: "GET" }, token);
     setTiers(data.tiers || []);
     setCounts(data.counts || {});
     const init = {};
@@ -276,7 +276,7 @@ function TierConfigSection({ token }) {
   async function save(tier) {
     setSaving(tier); setErr(null);
     const e = edits[tier];
-    const res = await adminFetch("/api/admin-tier", { method: "PATCH", body: { tier, ...e } }, token);
+    const res = await adminFetch("/api/admin?resource=tier", { method: "PATCH", body: { tier, ...e } }, token);
     if (res.error) setErr(res.error);
     setSaving(null);
     load();
@@ -330,7 +330,7 @@ function AgentsSection({ token }) {
   const [expanded, setExpanded]     = useState(null);
 
   useEffect(() => {
-    adminFetch("/api/admin-agents", { method: "GET" }, token).then(d => {
+    adminFetch("/api/admin?resource=agents", { method: "GET" }, token).then(d => {
       setBrokerages(d.brokerages || []);
       setAgents(d.agents || []);
       setLoading(false);
@@ -432,8 +432,8 @@ function RevenueSection({ token }) {
 
   useEffect(() => {
     Promise.all([
-      adminFetch("/api/admin-users", { method: "GET" }, token),
-      adminFetch("/api/admin-tier", { method: "GET" }, token),
+      adminFetch("/api/admin?resource=users", { method: "GET" }, token),
+      adminFetch("/api/admin?resource=tier", { method: "GET" }, token),
     ]).then(([u, t]) => {
       setUsers(u.users || []);
       setTiers(t.tiers || []);
@@ -562,7 +562,7 @@ function AdminLogin({ onAuth }) {
   async function submit(e) {
     e.preventDefault();
     setBusy(true); setErr(null);
-    const res = await fetch("/api/admin-auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
+    const res = await fetch("/api/admin?resource=auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
     const data = await res.json();
     if (!res.ok) { setErr(data.error || "Invalid password."); setBusy(false); return; }
     sessionStorage.setItem("vis-admin-token", data.token);

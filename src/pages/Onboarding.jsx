@@ -104,10 +104,10 @@ function HandleStep({ user, tier, onDone }) {
 
     try {
       // Provision subdomain via Vercel API (server-side)
-      await fetch("/api/claim-handle", {
+      await fetch("/api/actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ handle: cleaned, userId: user.id, tier }),
+        body: JSON.stringify({ action: "claim-handle", handle: cleaned, userId: user.id, tier }),
       });
       onDone(cleaned);
     } catch (err) {
@@ -175,10 +175,10 @@ function Onboarding({ user, onComplete }) {
 
     const tier = TIERS.find(t => t.id === selectedTier);
     try {
-      const res = await fetch("/api/create-checkout-session", {
+      const res = await fetch("/api/billing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: tier.priceId, userId: user.id, email: user.email, tier: tier.id }),
+        body: JSON.stringify({ action: "checkout", priceId: tier.priceId, userId: user.id, email: user.email, tier: tier.id }),
       });
       const data = await res.json();
       if (data.url) {

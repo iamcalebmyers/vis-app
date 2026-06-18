@@ -23,10 +23,10 @@ export function useReportActions(reportType, reportData, user, userRow) {
           .maybeSingle();
         agentProfileId = data?.id || null;
       }
-      const res = await fetch("/api/send-report", {
+      const res = await fetch("/api/actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportType, reportData, agentProfileId }),
+        body: JSON.stringify({ action: "send-report", reportType, reportData, agentProfileId }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to generate link.");
