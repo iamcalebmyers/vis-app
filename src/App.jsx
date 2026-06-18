@@ -22,6 +22,7 @@ function App() {
 
   const [session, setSession] = useState(undefined);
   const [userRow, setUserRow] = useState(undefined);
+  const [userLoading, setUserLoading] = useState(true);
   const [clientProfile, setClientProfile] = useState(undefined);
   const [checkoutState, setCheckoutState] = useState(null); // null | "verifying" | "handle" | "done"
   const [verifiedTier, setVerifiedTier] = useState(null);
@@ -91,6 +92,8 @@ function App() {
       if (data.session) {
         try { localStorage.setItem("vis-uid", data.session.user.id); } catch { /* ignore */ }
         fetchUserRow(data.session.user.id);
+      } else {
+        setUserLoading(false);
       }
     });
 
@@ -102,6 +105,7 @@ function App() {
       } else {
         try { localStorage.removeItem("vis-uid"); } catch { /* ignore */ }
         setUserRow(null);
+        setUserLoading(false);
       }
     });
 
@@ -113,11 +117,14 @@ function App() {
     if (cp) {
       setClientProfile(cp);
       setUserRow(null);
+      setUserLoading(false);
       return;
     }
     setClientProfile(null);
     const { data } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
-    setUserRow(data || null);
+    // Never let a racing/empty read overwrite an already-loaded account row.
+    setUserRow((prev) => data || (prev?.id ? prev : null));
+    setUserLoading(false);
     if (data && hasFeature(data.tier, "agent")) fetchAgentLogo(userId, data.tier);
   }
 
@@ -139,7 +146,7 @@ function App() {
   }
 
   // Loading
-  if (session === undefined || (session && userRow === undefined && !clientProfile) || checkoutState === "verifying") {
+  if (session === undefined || (session && userLoading) || checkoutState === "verifying") {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--bg)" }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
