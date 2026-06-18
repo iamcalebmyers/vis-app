@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Chat from "./pages/Chat.jsx";
-import Auth from "./pages/Auth.jsx";
+import LoginPage from "./components/LoginPage.jsx";
 import Onboarding, { HandleStep } from "./pages/Onboarding.jsx";
 import SharedReport from "./pages/SharedReport.jsx";
 import Admin from "./pages/Admin.jsx";
@@ -173,7 +173,7 @@ function App() {
     );
   }
 
-  if (!session) return <Auth />;
+  if (!session) return <LoginPage />;
 
   // Client account — skip onboarding, show stripped-down chat
   if (clientProfile) {

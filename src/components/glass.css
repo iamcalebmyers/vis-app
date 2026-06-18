@@ -1,0 +1,204 @@
+/* Liquid-glass login — the effects that inline styles can't express cleanly:
+   the masked refractive rim, the diagonal sheen, the drifting blobs, motion.
+   Colors are mapped to the app's existing tokens (see --lg-* below). */
+
+.lg-root {
+  /* ── mapped from the app palette ──────────────────────────── */
+  --lg-accent: #da6b3a;          /* --accent (brand terracotta) */
+  --lg-accent-light: #ec9159;    /* lighter accent for CTA gradient top */
+  --lg-accent-dark: #bb5226;     /* darker accent for CTA gradient bottom */
+  --lg-blob-1: #da6b3a;          /* --accent */
+  --lg-blob-2: #e0962f;          /* warm amber (≈ --rec-marginal-text #d97706) */
+  --lg-blob-3: #c0455f;          /* warm rose for vividness */
+  --lg-base: #14100c;            /* dark warm base (≈ dark-theme --card-tint family) */
+  --lg-base-2: #241a12;          /* second gradient stop */
+  --lg-danger: #f0928e;          /* error on dark (≈ --rec-pass #dc2626, lightened) */
+
+  /* ── glass material (neutral, NOT brand) ──────────────────── */
+  --glass-fill: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --radius: 28px;
+}
+
+/* ── Page shell + animated gradient backdrop ─────────────────── */
+.lg-page {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 24px 16px;
+  background: radial-gradient(130% 130% at 50% -10%, var(--lg-base-2), var(--lg-base) 62%);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.blob {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.55;
+  will-change: transform;
+  pointer-events: none;
+}
+.blob-1 { width: 52vw; height: 52vw; top: -14vw; left: -10vw;  background: var(--lg-blob-1); animation: lg-drift 20s ease-in-out infinite alternate; }
+.blob-2 { width: 46vw; height: 46vw; bottom: -16vw; right: -8vw; background: var(--lg-blob-3); animation: lg-drift 24s ease-in-out -6s infinite alternate; }
+.blob-3 { width: 40vw; height: 40vw; top: 32vh; right: 16vw;     background: var(--lg-blob-2); animation: lg-drift 18s ease-in-out -3s infinite alternate; }
+
+@keyframes lg-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(38px, -28px) scale(1.12); }
+  100% { transform: translate(-22px, 22px) scale(1.04); }
+}
+
+@keyframes lg-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── The frosted card ────────────────────────────────────────── */
+.glass-card {
+  position: relative;
+  z-index: 10;
+  width: 90%;
+  max-width: 400px;
+  padding: 40px;
+  border-radius: var(--radius);
+  background: var(--glass-fill);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  animation: lg-enter 0.5s ease-out both;
+}
+
+/* Refractive rim: 1px gradient border, bright top-left → fading. */
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.6),
+    rgba(255, 255, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glossy diagonal sheen across the surface. */
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 35%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ── Glass inputs (same material, thinner rim) ───────────────── */
+.glass-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.glass-field:focus-within {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 3px rgba(218, 107, 58, 0.35);
+}
+.glass-field.has-error {
+  border-color: var(--lg-danger);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 3px rgba(220, 38, 38, 0.28);
+}
+.glass-field > .lg-prefix { position: absolute; left: 14px; display: flex; color: rgba(255, 255, 255, 0.6); pointer-events: none; }
+.glass-field > .lg-suffix { position: absolute; right: 6px; }
+.glass-input {
+  width: 100%;
+  height: 100%;
+  padding: 0 44px 0 44px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.92);
+}
+.glass-input::placeholder { color: rgba(255, 255, 255, 0.5); }
+
+/* ── Primary CTA — the one saturated focal element ───────────── */
+.lg-cta {
+  height: 50px;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lg-accent-text, #fff);
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--lg-accent-light), var(--lg-accent-dark));
+  box-shadow: 0 8px 24px rgba(218, 107, 58, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.lg-cta:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 12px 30px rgba(218, 107, 58, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+.lg-cta:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Glass chips (social) ────────────────────────────────────── */
+.lg-chip {
+  flex: 1;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.lg-chip:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+.lg-chip:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Misc ────────────────────────────────────────────────────── */
+.lg-link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-family: inherit; color: var(--lg-accent-light); font-weight: 600;
+}
+.lg-link:hover { text-decoration: underline; }
+
+.lg-focusable:focus-visible { outline: 2px solid rgba(218, 107, 58, 0.8); outline-offset: 2px; border-radius: 8px; }
+
+/* ── Motion off ──────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .blob { animation: none !important; }
+  .glass-card { animation: none !important; }
+}
+
+/* ── No-backdrop-filter fallback: keep the card legible ──────── */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-card { background: rgba(28, 22, 17, 0.82); }
+  .glass-field { background: rgba(255, 255, 255, 0.1); }
+}
+
+/* ── Mobile padding ──────────────────────────────────────────── */
+@media (max-width: 420px) {
+  .glass-card { padding: 32px; }
+}
