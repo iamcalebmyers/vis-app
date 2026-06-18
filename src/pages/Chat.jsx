@@ -84,6 +84,7 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
   const [activeReport, setActiveReport] = useState(null);
   const [buyUsage, setBuyUsage] = useState(null); // null | "manual" | "empty"
   const [activeTab, setActiveTab] = useState("chat");
+  const [reportsResetKey, setReportsResetKey] = useState(0);
 
   // Load client sessions from Supabase
   useEffect(() => {
@@ -238,6 +239,12 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
     doSend(text);
   }
 
+  // Clicking the Reports tab always returns to the report hub (resets any open report).
+  function handleTabChange(tab) {
+    if (tab === "reports") setReportsResetKey((k) => k + 1);
+    setActiveTab(tab);
+  }
+
   return (
     <div
       style={{
@@ -255,7 +262,7 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
           onClose={() => setBuyUsage(null)}
         />
       )}
-      <Nav active={activeTab} onTabChange={setActiveTab} userEmail={user?.email} onSignOut={onSignOut} userRow={userRow} isClient={isClient} agentLogo={agentLogo} onBuyUsage={() => setBuyUsage("manual")} />
+      <Nav active={activeTab} onTabChange={handleTabChange} userEmail={user?.email} onSignOut={onSignOut} userRow={userRow} isClient={isClient} agentLogo={agentLogo} onBuyUsage={() => setBuyUsage("manual")} />
 
       {activeTab === "settings" && (
         <div style={{ display: "flex", flex: 1, overflow: "hidden", padding: 6 }}>
@@ -268,7 +275,7 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
       {activeTab === "reports" && (
         <div style={{ flex: 1, overflow: "hidden", padding: 6 }}>
           <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--card)", borderRadius: 12, boxShadow: "var(--shadow-card)" }}>
-            <Reports user={user} userRow={userRow} tier={tier} />
+            <Reports key={reportsResetKey} user={user} userRow={userRow} tier={tier} />
           </div>
         </div>
       )}
