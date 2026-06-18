@@ -121,7 +121,14 @@ function App() {
       return;
     }
     setClientProfile(null);
-    const { data } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
+    let { data } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
+    // Right after login the auth session is still settling, so the first read can
+    // come back empty for an existing user — which would briefly flash onboarding.
+    // Retry once (still showing the loading screen) before concluding there's no row.
+    if (!data) {
+      await new Promise((r) => setTimeout(r, 500));
+      ({ data } = await supabase.from("users").select("*").eq("id", userId).maybeSingle());
+    }
     // Never let a racing/empty read overwrite an already-loaded account row.
     setUserRow((prev) => data || (prev?.id ? prev : null));
     setUserLoading(false);
