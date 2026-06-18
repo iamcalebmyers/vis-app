@@ -950,7 +950,48 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: Session 30 (+ UI design refresh)
+============================================================
+USAGE WALLET — POST-DEPLOY TEST CHECKLIST (do later)
+============================================================
+The prepaid usage wallet is BUILT and DEPLOYED to production
+(https://vis-app-seven.vercel.app). Stripe is configured in SANDBOX (test mode).
+
+Prereqs before testing:
+- ANTHROPIC_API_KEY set in Vercel production env (AI calls fail without it).
+- Production Stripe env vars are the SANDBOX values: STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_TOPUP_10/25/50/100.
+- Sandbox Stripe webhook points at the production /api/stripe-webhook URL,
+  with events: checkout.session.completed, invoice.paid,
+  customer.subscription.updated, customer.subscription.deleted,
+  invoice.payment_failed.
+
+Test steps:
+1. Force the wall fast (Supabase SQL):
+   update tier_config set included_usd = 0.10 where tier = 'solo';
+2. Sign in as a Solo account; run a chat or report -> should hit "out of usage"
+   and the Buy Usage modal opens.
+3. Pay a $10 top-up with Stripe test card 4242 4242 4242 4242 (any future date/CVC).
+4. Verify: users.topup_balance increased, a 'topup' row in usage_ledger,
+   nav usage meter shows more reports.
+5. Run a few reports -> usage_ledger fills with real Sonnet token counts + $ per call.
+6. Reset the bucket: update tier_config set included_usd = 6 where tier = 'solo';
+
+If a top-up pays but the balance does NOT move -> webhook secret/keys are
+mismatched (live vs sandbox). Set STRIPE_WEBHOOK_SECRET and STRIPE_SECRET_KEY
+to the sandbox values in Vercel.
+
+Pricing model: flat tier subscription + included monthly usage bucket
+(tier_config.included_usd, in dollars) + prepaid top-ups at 2x real cost.
+Top-ups $10/$25 all tiers, $50/$100 Agent+. API model = claude-sonnet-4-6
+(VIS_MODEL env; set to claude-haiku-4-5 for cheaper). Per-report billed cost
+~$0.30 (raw ~$0.15 x2). Tune buckets/top-ups from real usage_ledger numbers.
+============================================================
+
+Last completed: Usage wallet (prepaid balance + per-call metering + Stripe
+top-ups), API model switched to Sonnet 4.6, API consolidated to 9 functions
+(Vercel free-tier limit), Compare area + unified Reports hub, Solo gets investor
+report features. Deployed to production on the usage-wallet branch.
+Previously: Session 30 (+ UI design refresh)
 Design refresh: light theme updated to clean white/neutral palette
 (#f5f6fa bg, #ffffff cards, #e5e7eb borders, neutral gray type scale).
 UI font changed from DM Sans → Inter across all components. Default
