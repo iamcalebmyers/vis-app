@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Chat from "./pages/Chat.jsx";
 import Auth from "./pages/Auth.jsx";
 import Onboarding, { HandleStep } from "./pages/Onboarding.jsx";
@@ -23,6 +23,7 @@ function App() {
   const [session, setSession] = useState(undefined);
   const [userRow, setUserRow] = useState(undefined);
   const [userLoading, setUserLoading] = useState(true);
+  const userRowRef = useRef(undefined); // current loaded row, for stale-free reads
   const [clientProfile, setClientProfile] = useState(undefined);
   const [checkoutState, setCheckoutState] = useState(null); // null | "verifying" | "handle" | "done"
   const [verifiedTier, setVerifiedTier] = useState(null);
@@ -104,6 +105,7 @@ function App() {
         fetchUserRow(sess.user.id);
       } else {
         try { localStorage.removeItem("vis-uid"); } catch { /* ignore */ }
+        userRowRef.current = null;
         setUserRow(null);
         setUserLoading(false);
       }
@@ -113,25 +115,33 @@ function App() {
   }, []);
 
   async function fetchUserRow(userId) {
+    // Only drive the full-screen loading state on the *initial* load (before we
+    // have a real account row). Background refreshes (chat, top-up) update in place.
+    const firstLoad = !userRowRef.current?.id;
+    if (firstLoad) setUserLoading(true);
+
     const { data: cp } = await supabase.from("client_profiles").select("*").eq("user_id", userId).maybeSingle();
     if (cp) {
       setClientProfile(cp);
+      userRowRef.current = null;
       setUserRow(null);
-      setUserLoading(false);
+      if (firstLoad) setUserLoading(false);
       return;
     }
     setClientProfile(null);
+
     let { data } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
     // Right after login the auth session is still settling, so the first read can
-    // come back empty for an existing user — which would briefly flash onboarding.
-    // Retry once (still showing the loading screen) before concluding there's no row.
+    // come back empty for an existing user. Retry once before concluding no row.
     if (!data) {
       await new Promise((r) => setTimeout(r, 500));
       ({ data } = await supabase.from("users").select("*").eq("id", userId).maybeSingle());
     }
     // Never let a racing/empty read overwrite an already-loaded account row.
-    setUserRow((prev) => data || (prev?.id ? prev : null));
-    setUserLoading(false);
+    const next = data || (userRowRef.current?.id ? userRowRef.current : null);
+    userRowRef.current = next;
+    setUserRow(next);
+    if (firstLoad) setUserLoading(false);
     if (data && hasFeature(data.tier, "agent")) fetchAgentLogo(userId, data.tier);
   }
 
