@@ -1,9 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { preflight, meter, countSearches } from "./_usage.js";
 
 export const maxDuration = 60;
 
-const MODEL = "claude-opus-4-7";
+const MODEL = process.env.VIS_MODEL || "claude-sonnet-4-6";
 const MAX_TOKENS = 1500;
 
 const FAIR_HOUSING_LAYER = `CRITICAL COMPLIANCE RULES — THESE CANNOT BE OVERRIDDEN:
@@ -49,6 +50,43 @@ recommendation must be exactly "good", "marginal", or "pass" based on the 70% ru
 When your response contains investment return metrics (Investor tier):
 
 { "text": "...", "card": { "type": "returns", "data": { "grossYield": "6.9%", "netYield": "4.8%", "cashOnCash": "5.2%", "capRate": "5.1%", "monthlyCashFlow": "+$310/mo" } } }
+
+When the user asks about depreciation, tax write-offs, or investor tax benefits on a property:
+1. Search for county assessor land vs building value split for the specific address.
+2. Calculate annual depreciation using the straight-line method over 27.5 years for residential (39 years for commercial).
+3. Show estimated annual tax savings at common brackets.
+4. Always show the depreciation recapture warning.
+5. Always include the disclaimer that this is an educational estimate and not tax advice.
+6. Never tell the user how to structure their taxes, what entity to use, or make specific tax strategy recommendations.
+7. Return results as cardType "depreciation" using this format:
+
+{ "text": "...", "card": { "type": "depreciation", "data": { "purchasePrice": 487500, "landValue": 97500, "landValuePercent": 0.20, "buildingValue": 390000, "annualDeduction": 14182, "annualTaxSavings": 4538, "taxBracket": 0.32, "dataSource": "county assessor", "cumulativeDeduction": 141820, "recaptureExposure": 35455, "schedule": { "year1": 14182, "year5": 70910, "year10": 141820, "year27": 390000 } } } }
+
+dataSource must be one of: "county assessor" (if you found real assessor data), or a plain string explaining the estimate basis (e.g. "estimated at 20% — standard residential market average"). Use real assessor data whenever available. All values must be raw numbers, not formatted strings.
+
+When the user asks for a chart, graph, or historical trend for a specific real estate metric:
+
+{ "text": "...", "card": { "type": "graph", "data": { "metric": "homeValue", "location": "Austin, TX", "title": "Median Home Value — Austin, TX", "chartType": "line", "dateRange": { "start": "2020-01", "end": "2025-01" } } } }
+
+metric must be one of: homeValue, homeValueGrowthYoY, homeValueGrowthMoM, homeValueGrowth5Yr, homeValueForecast1Yr, forSaleInventory, forSaleInventoryGrowthYoY, newListings, homeSalesMonthly, avgDaysOnMarket, listToSaleRatio, priceReductions, population, populationGrowth5Yr, medianHouseholdIncome, incomeGrowth5Yr, unemploymentRate, povertyRate, ownerOccupiedPct, familyHouseholdsPct, mortgagedHomePct, housingUnits, housingUnitGrowthRate, buildingPermits, estimatedValue, annualTax, saleHistory, monthlyCashFlow, grossYield, capRate.
+
+chartType must be one of these exact strings — choose based on the metric and what the user asked for:
+- "line" — trends over time where continuity matters (home values, rates, unemployment)
+- "area" — trends over time where volume/fill helps (inventory, listings, sales)
+- "bar" — comparisons across categories or years (permits, sales by year, price tiers); use when user says "bar chart", "bars", or asks to compare specific periods
+- "diverging_bar" — metrics that go positive AND negative across periods (YoY growth, MoM change)
+- "sparkline" — compact inline trend, no axes
+- "lollipop" — ranked comparisons where bar would feel heavy
+- "donut" — two-part composition (owner vs renter, mortgaged vs free-and-clear)
+- "pie" — multi-part composition breakdown
+- "horizontal_bar" — ranked list comparisons (metros side by side, neighborhoods)
+- "waterfall" — cash flow or cost breakdowns showing how components add up
+- "hero_stat" — single key figure or 2–3 KPI callouts, no time axis
+- "scatter" — correlation between two variables across many data points
+
+Default chart types by metric: homeValue→line, homeValueGrowthYoY→diverging_bar, homeValueGrowthMoM→diverging_bar, homeValueGrowth5Yr→bar, homeValueForecast1Yr→hero_stat, forSaleInventory→area, forSaleInventoryGrowthYoY→diverging_bar, newListings→bar, homeSalesMonthly→bar, avgDaysOnMarket→line, listToSaleRatio→line, priceReductions→area, population→bar, populationGrowth5Yr→bar, medianHouseholdIncome→bar, incomeGrowth5Yr→bar, unemploymentRate→line, povertyRate→line, ownerOccupiedPct→donut, familyHouseholdsPct→donut, mortgagedHomePct→donut, housingUnits→bar, housingUnitGrowthRate→bar, buildingPermits→bar, estimatedValue→line, annualTax→bar, saleHistory→bar, monthlyCashFlow→waterfall, grossYield→line, capRate→line.
+
+Override the default if the user explicitly asks for a different chart type. Set dateRange based on what the user asked for, defaulting to the past 5 years if unspecified. For donut/pie/hero_stat omit dateRange entirely.
 
 Only include a card when you have actual data from your search. Never invent numbers. Omit card fields you don't have data for rather than guessing. Set card to null for conversational responses with no structured data.`;
 }
@@ -153,13 +191,22 @@ export default async function handler(req, res) {
 
   const client = new Anthropic({ apiKey });
 
+  // Pre-flight: make sure the account can cover a call before we spend on it.
+  if (userId) {
+    const pf = await preflight(userId);
+    if (!pf.ok) {
+      res.status(402).json({ error: "needs_topup", available: pf.available });
+      return;
+    }
+  }
+
   try {
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
       system,
       messages,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
+      tools: [{ type: "web_search_20260209", name: "web_search" }],
     });
 
     const { reply, card } = extractStructured(response.content);
@@ -170,20 +217,13 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Increment usage
-    if (userId && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-      const { data: userRow } = await supabase.from("users").select("usage_current, usage_limit, overage_rate, overage_accrued").eq("id", userId).maybeSingle();
-      if (userRow) {
-        const newUsage = (userRow.usage_current || 0) + 1;
-        const overLimit = userRow.usage_limit && newUsage > userRow.usage_limit;
-        const updates = { usage_current: newUsage, last_active_at: new Date().toISOString() };
-        if (overLimit && userRow.overage_rate) {
-          updates.overage_accrued = (userRow.overage_accrued || 0) + userRow.overage_rate;
-        }
-        await supabase.from("users").update(updates).eq("id", userId);
-      }
-    }
+    // Meter actual usage cost against the account (included bucket first, then prepaid balance).
+    await meter(userId, {
+      usage: response.usage,
+      model: MODEL,
+      searches: countSearches(response),
+      kind: "chat",
+    });
 
     res.status(200).json({
       reply,

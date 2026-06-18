@@ -56,7 +56,6 @@ function PrimaryButton({ children, onClick, locked }) {
 
 function ShareExport({ onShare, onExport, onSave, onSendToClient, userRow, user, shareLoading, saved, saveError }) {
   const tier = userRow?.tier || readTier();
-  const canShare        = hasFeature(tier, "investor");
   const canSendToClient = hasFeature(tier, "agent");
 
   const [upgradeModal, setUpgradeModal] = useState(null); // "investor" | "agent" | null
@@ -66,15 +65,9 @@ function ShareExport({ onShare, onExport, onSave, onSendToClient, userRow, user,
       <section style={{ display: "flex", flexDirection: "column", gap: 8, padding: 16, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, marginBottom: 16 }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {canShare ? (
-              <SecondaryButton onClick={onShare} disabled={shareLoading}>
-                {shareLoading ? "Generating…" : "Share link"}
-              </SecondaryButton>
-            ) : (
-              <SecondaryButton locked onClick={() => setUpgradeModal("investor")}>
-                Share link
-              </SecondaryButton>
-            )}
+            <SecondaryButton onClick={onShare} disabled={shareLoading}>
+              {shareLoading ? "Generating…" : "Share link"}
+            </SecondaryButton>
             <SecondaryButton onClick={onExport}>Export PDF</SecondaryButton>
             <SecondaryButton onClick={onSave} active={saved}>
               {saved ? "Saved ✓" : "Save report"}

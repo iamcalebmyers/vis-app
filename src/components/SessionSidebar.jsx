@@ -33,12 +33,10 @@ function SessionItem({ session, isActive, onClick }) {
   const [hover, setHover] = useState(false);
 
   const background = isActive
-    ? "var(--card)"
+    ? "var(--border-soft)"
     : hover
-      ? "var(--card)"
+      ? "var(--border-soft)"
       : "transparent";
-  const border =
-    isActive || hover ? "1px solid var(--border)" : "1px solid transparent";
 
   return (
     <button
@@ -47,16 +45,16 @@ function SessionItem({ session, isActive, onClick }) {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        padding: "7px 10px",
+        padding: "8px 10px",
         background,
-        border,
-        borderRadius: 6,
+        border: "none",
+        borderRadius: 8,
         textAlign: "left",
         cursor: "pointer",
         fontFamily: "var(--font-sans)",
         fontSize: 12,
-        fontWeight: isActive ? 500 : 400,
-        color: isActive ? "var(--white)" : "var(--muted-soft)",
+        fontWeight: isActive ? 600 : 500,
+        color: isActive ? "var(--accent)" : "var(--muted-soft)",
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
@@ -75,13 +73,14 @@ function SessionSidebar({ sessions, activeId, onSelect, onNew }) {
       style={{
         width: SIDEBAR_WIDTH,
         flexShrink: 0,
-        background: "var(--border-soft)",
-        borderRight: "1px solid var(--border)",
+        background: "var(--card)",
+        borderRadius: 12,
         padding: "16px 12px",
         display: "flex",
         flexDirection: "column",
         gap: 2,
         overflowY: "auto",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div

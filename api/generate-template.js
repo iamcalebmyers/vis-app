@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { preflight, meter, countSearches } from "./_usage.js";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const TEMPLATE_MODEL = process.env.VIS_MODEL || "claude-sonnet-4-6";
 
 const SECTION_DEFS = {
   property: [
@@ -27,8 +29,13 @@ const SECTION_DEFS = {
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { description, reportType = "property" } = req.body || {};
+  const { description, reportType = "property", userId } = req.body || {};
   if (!description?.trim()) return res.status(400).json({ error: "Description is required" });
+
+  if (userId) {
+    const pf = await preflight(userId);
+    if (!pf.ok) return res.status(402).json({ error: "needs_topup", available: pf.available });
+  }
 
   const sections = SECTION_DEFS[reportType] || SECTION_DEFS.property;
   const sectionList = sections.map(s => `- ${s.id}: ${s.label}`).join("\n");
@@ -62,10 +69,12 @@ Rules:
 
   try {
     const message = await client.messages.create({
-      model: "claude-opus-4-7",
+      model: TEMPLATE_MODEL,
       max_tokens: 600,
       messages: [{ role: "user", content: prompt }],
     });
+
+    await meter(userId, { usage: message.usage, model: TEMPLATE_MODEL, searches: countSearches(message), kind: "template" });
 
     const text = message.content.find(b => b.type === "text")?.text || "";
     const match = text.match(/\{[\s\S]*\}/);

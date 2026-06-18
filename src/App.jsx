@@ -6,6 +6,8 @@ import SharedReport from "./pages/SharedReport.jsx";
 import Admin from "./pages/Admin.jsx";
 import { supabase } from "./utils/supabase.js";
 import { signOut } from "./utils/auth.js";
+import { hasFeature } from "./utils/tier.js";
+import { loadAgentInfo, saveAgentInfo } from "./utils/useAgentInfo.js";
 
 function App() {
   // Admin panel — separate auth, no Supabase session required
@@ -23,11 +25,26 @@ function App() {
   const [clientProfile, setClientProfile] = useState(undefined);
   const [checkoutState, setCheckoutState] = useState(null); // null | "verifying" | "handle" | "done"
   const [verifiedTier, setVerifiedTier] = useState(null);
+  const [agentLogo, setAgentLogo] = useState(() => loadAgentInfo().logoUrl || null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
     const sessionId = params.get("session_id");
+    const topup = params.get("topup");
+
+    // Returning from a usage top-up purchase. The Stripe webhook credits the
+    // balance; refresh the user row shortly after so the new balance shows.
+    if (topup) {
+      window.history.replaceState({}, "", "/");
+      if (topup === "success") {
+        setTimeout(() => {
+          supabase.auth.getSession().then(({ data }) => {
+            if (data.session) fetchUserRow(data.session.user.id);
+          });
+        }, 3000);
+      }
+    }
 
     if (checkout === "success" && sessionId) {
       setCheckoutState("verifying");
@@ -71,13 +88,21 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      if (data.session) fetchUserRow(data.session.user.id);
+      if (data.session) {
+        try { localStorage.setItem("vis-uid", data.session.user.id); } catch { /* ignore */ }
+        fetchUserRow(data.session.user.id);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
-      if (sess) fetchUserRow(sess.user.id);
-      else setUserRow(null);
+      if (sess) {
+        try { localStorage.setItem("vis-uid", sess.user.id); } catch { /* ignore */ }
+        fetchUserRow(sess.user.id);
+      } else {
+        try { localStorage.removeItem("vis-uid"); } catch { /* ignore */ }
+        setUserRow(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -93,10 +118,28 @@ function App() {
     setClientProfile(null);
     const { data } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
     setUserRow(data || null);
+    if (data && hasFeature(data.tier, "agent")) fetchAgentLogo(userId, data.tier);
+  }
+
+  // Pull the agent/brokerage logo from Supabase so the nav logo is consistent across devices.
+  async function fetchAgentLogo(userId, tier) {
+    try {
+      let logo = null;
+      if (tier === "brokerage") {
+        const { data: bp } = await supabase.from("brokerage_profiles").select("logo_url").eq("user_id", userId).maybeSingle();
+        logo = bp?.logo_url || null;
+      }
+      if (!logo) {
+        const { data: ap } = await supabase.from("agent_profiles").select("logo_url").eq("user_id", userId).maybeSingle();
+        logo = ap?.logo_url || null;
+      }
+      setAgentLogo(logo);
+      if (logo) saveAgentInfo({ ...loadAgentInfo(), logoUrl: logo });
+    } catch {}
   }
 
   // Loading
-  if (session === undefined || (session && userRow === undefined && clientProfile === undefined) || checkoutState === "verifying") {
+  if (session === undefined || (session && userRow === undefined && !clientProfile) || checkoutState === "verifying") {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--bg)" }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -136,7 +179,7 @@ function App() {
     return <Onboarding user={session.user} onComplete={() => fetchUserRow(session.user.id)} />;
   }
 
-  return <Chat user={session.user} userRow={userRow} onSignOut={signOut} onRefreshUser={() => fetchUserRow(session.user.id)} />;
+  return <Chat user={session.user} userRow={userRow} agentLogo={agentLogo} onSignOut={signOut} onRefreshUser={() => fetchUserRow(session.user.id)} />;
 }
 
 export default App;

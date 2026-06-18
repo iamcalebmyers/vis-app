@@ -30,6 +30,31 @@ export default async function handler(req, res) {
   const obj = event.data.object;
 
   switch (event.type) {
+    // A prepaid usage top-up was paid → credit the account's balance.
+    case "checkout.session.completed": {
+      if (obj.metadata?.type === "topup") {
+        const userId = obj.metadata.userId;
+        const credit = Number(obj.metadata.credit_usd);
+        if (userId && credit > 0) {
+          await supabase.rpc("credit_topup", { p_user_id: userId, p_amount: credit });
+        }
+      }
+      break;
+    }
+
+    // A subscription invoice was paid (signup or monthly renewal) →
+    // reset the included monthly usage bucket for the new cycle.
+    case "invoice.paid": {
+      const customerId = obj.customer;
+      if (customerId) {
+        await supabase
+          .from("users")
+          .update({ included_used: 0 })
+          .eq("stripe_customer_id", customerId);
+      }
+      break;
+    }
+
     case "customer.subscription.updated": {
       const priceId = obj.items?.data?.[0]?.price?.id;
       const tier = PRICE_TO_TIER[priceId];

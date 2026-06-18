@@ -1,26 +1,39 @@
-import { usagePct, USAGE_LABELS } from "../utils/tier.js";
+import { usageRemaining, TIER_INCLUDED_USD } from "../utils/tier.js";
 
-function UsageBar({ userRow }) {
-  if (!userRow?.usage_limit) return null;
+// Compact usage meter in the nav: shows ~reports remaining and opens the
+// Buy Usage modal on click. "Remaining" = included bucket left + prepaid balance.
+function UsageBar({ userRow, onBuyUsage }) {
+  if (!userRow?.tier) return null;
 
-  const pct = usagePct(userRow.usage_current, userRow.usage_limit);
-  const label = USAGE_LABELS[userRow.tier] || "Standard";
-  const color = pct >= 100 ? "#dc2626" : pct >= 80 ? "#f59e0b" : "var(--accent)";
+  const remaining = usageRemaining(userRow);
+  if (!remaining) return null;
+
+  const includedTotal = TIER_INCLUDED_USD[userRow.tier] || 0;
+  const usedAll = remaining.dollars <= 0;
+  // Bar reflects how much of the monthly included bucket is left (prepaid balance shown as full).
+  const includedLeft = Math.max(includedTotal - (userRow.included_used || 0), 0);
+  const pctLeft = includedTotal > 0 ? Math.round((includedLeft / includedTotal) * 100) : 100;
+  const color = usedAll ? "#dc2626" : remaining.reports <= 5 ? "#f59e0b" : "var(--accent)";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 90 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <button
+      type="button"
+      onClick={onBuyUsage}
+      title="Buy more usage"
+      style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 96, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          {label}
+          Usage
         </span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: pct >= 80 ? color : "var(--muted)" }}>
-          {pct}%
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color }}>
+          {usedAll ? "Add +" : `~${remaining.reports}`}
         </span>
       </div>
       <div style={{ height: 3, borderRadius: 2, background: "var(--border)", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 2, transition: "width 0.3s ease" }} />
+        <div style={{ height: "100%", width: `${usedAll ? 100 : pctLeft}%`, background: color, borderRadius: 2, transition: "width 0.3s ease" }} />
       </div>
-    </div>
+    </button>
   );
 }
 

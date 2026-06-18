@@ -1,4 +1,5 @@
-// Demo conversation that exercises all four DataCard types.
+// Demo conversation that exercises all DataCard types (property, loan,
+// market, rate, rental, deal, returns, graph, depreciation).
 // Not used in normal flow — Chat.jsx loads it when the URL hash is
 // "#demo" so we can preview the card system without a real AI reply.
 
@@ -89,6 +90,186 @@ export const DEMO_MESSAGES = [
     content:
       "Here are the nearest active rentals I found on Zillow and Apartments.com near 2847 Riverside Drive:",
     cardType: "rental",
+    showButton: false,
+  },
+  {
+    id: "demo-14",
+    role: "user",
+    content: "Show me how Austin home prices have trended over the last 5 years.",
+  },
+  {
+    id: "demo-15",
+    role: "ai",
+    content: "Here's the median home value trend for Austin, TX over the past 5 years:",
+    cardType: "graph",
+    cardData: {
+      metric: "homeValue", location: "Austin, TX", chartType: "line",
+      title: "Median Home Value — Austin, TX",
+      subtitle: "Austin, TX · Jan 2020 – Jan 2025",
+      source: "Zillow ZHVI · Mar 2025",
+      points: [
+        { label: "Jan 2020", value: 362000 }, { label: "Apr 2020", value: 371000 },
+        { label: "Jul 2020", value: 392000 }, { label: "Oct 2020", value: 418000 },
+        { label: "Jan 2021", value: 441000 }, { label: "Apr 2021", value: 487000 },
+        { label: "Jul 2021", value: 538000 }, { label: "Oct 2021", value: 562000 },
+        { label: "Jan 2022", value: 589000 }, { label: "Apr 2022", value: 623000 },
+        { label: "Jul 2022", value: 598000 }, { label: "Oct 2022", value: 554000 },
+        { label: "Jan 2023", value: 521000 }, { label: "Apr 2023", value: 508000 },
+        { label: "Jul 2023", value: 497000 }, { label: "Oct 2023", value: 489000 },
+        { label: "Jan 2024", value: 483000 }, { label: "Apr 2024", value: 491000 },
+        { label: "Jul 2024", value: 495000 }, { label: "Jan 2025", value: 502000 },
+      ],
+    },
+  },
+  {
+    id: "demo-16",
+    role: "user",
+    content: "What about days on market — is it getting better or worse for sellers?",
+  },
+  {
+    id: "demo-17",
+    role: "ai",
+    content: "Days on market tells the full story of how quickly the market absorbed inventory:",
+    cardType: "graph",
+    cardData: {
+      metric: "avgDaysOnMarket", location: "Austin, TX", chartType: "area",
+      title: "Days on Market — Austin, TX",
+      subtitle: "Austin, TX · Jan 2021 – Jan 2025",
+      source: "Realtor.com · Mar 2025",
+      points: [
+        { label: "Jan 2021", value: 22 }, { label: "Apr 2021", value: 11 },
+        { label: "Jul 2021", value: 8  }, { label: "Oct 2021", value: 14 },
+        { label: "Jan 2022", value: 18 }, { label: "Apr 2022", value: 16 },
+        { label: "Jul 2022", value: 34 }, { label: "Oct 2022", value: 52 },
+        { label: "Jan 2023", value: 68 }, { label: "Apr 2023", value: 57 },
+        { label: "Jul 2023", value: 48 }, { label: "Oct 2023", value: 44 },
+        { label: "Jan 2024", value: 41 }, { label: "Apr 2024", value: 38 },
+        { label: "Jul 2024", value: 42 }, { label: "Jan 2025", value: 45 },
+      ],
+    },
+  },
+  {
+    id: "demo-18",
+    role: "user",
+    content: "Show me the owner vs renter breakdown for this area.",
+  },
+  {
+    id: "demo-19",
+    role: "ai",
+    content: "Austin skews more renter-heavy than the national average, driven by its large student and tech population:",
+    cardType: "graph",
+    cardData: {
+      metric: "ownerOccupiedPct", location: "Austin, TX", chartType: "donut",
+      title: "Owner vs. Renter Occupied — Austin, TX",
+      subtitle: "Austin, TX · 2023 ACS estimates",
+      source: "US Census Bureau ACS 5-Year · 2023",
+      points: [
+        { label: "Owner Occupied", value: 46 },
+        { label: "Renter Occupied", value: 54 },
+      ],
+    },
+  },
+  {
+    id: "demo-20",
+    role: "user",
+    content: "How have year-over-year price changes looked — any years stand out as outliers?",
+  },
+  {
+    id: "demo-21",
+    role: "ai",
+    content: "2021 and 2022 were extreme outliers. The market has been correcting since:",
+    cardType: "graph",
+    cardData: {
+      metric: "homeValueGrowthYoY", location: "Austin, TX", chartType: "diverging_bar",
+      title: "Home Value Growth YoY — Austin, TX",
+      subtitle: "Austin, TX · 2018–2024",
+      source: "Zillow ZHVI · Mar 2025",
+      points: [
+        { label: "2018", value: 5.2 }, { label: "2019", value: 6.1 },
+        { label: "2020", value: 9.8 }, { label: "2021", value: 38.4 },
+        { label: "2022", value: 11.2 }, { label: "2023", value: -11.6 },
+        { label: "2024", value: -3.1 },
+      ],
+    },
+  },
+  {
+    id: "demo-22",
+    role: "user",
+    content: "Chart me building permits so I can see how much new supply is coming.",
+  },
+  {
+    id: "demo-23",
+    role: "ai",
+    content: "Permit volume peaked in 2022 and has been declining, which should help absorb the current oversupply:",
+    cardType: "graph",
+    cardData: {
+      metric: "buildingPermits", location: "Austin, TX", chartType: "bar",
+      title: "Building Permits — Austin, TX",
+      subtitle: "Austin, TX · 2019–2024",
+      source: "US Census Bureau Building Permits Survey · 2024",
+      points: [
+        { label: "2019", value: 14820 }, { label: "2020", value: 17340 },
+        { label: "2021", value: 22890 }, { label: "2022", value: 26410 },
+        { label: "2023", value: 19630 }, { label: "2024", value: 15780 },
+      ],
+    },
+  },
+  {
+    id: "demo-24",
+    role: "user",
+    content: "Show me a heat map of days on market by metro across all 12 months.",
+  },
+  {
+    id: "demo-25",
+    role: "ai",
+    content: "Here's how days on market varied across major Sun Belt metros month by month in 2024 — darker cells mean faster-moving markets:",
+    cardType: "graph",
+    cardData: {
+      metric: "avgDaysOnMarket", location: "Sun Belt Metros", chartType: "heatmap",
+      title: "Days on Market by Metro & Month — 2024",
+      subtitle: "Sun Belt Metros · Full Year 2024",
+      source: "Realtor.com Market Trends · Jan 2025",
+      scaleInvert: true,
+      unit: "days",
+      points: [
+        { row: "Austin",   col: "JAN", value: 68 }, { row: "Austin",   col: "FEB", value: 61 }, { row: "Austin",   col: "MAR", value: 52 }, { row: "Austin",   col: "APR", value: 44 }, { row: "Austin",   col: "MAY", value: 38 }, { row: "Austin",   col: "JUN", value: 35 }, { row: "Austin",   col: "JUL", value: 39 }, { row: "Austin",   col: "AUG", value: 43 }, { row: "Austin",   col: "SEP", value: 48 }, { row: "Austin",   col: "OCT", value: 54 }, { row: "Austin",   col: "NOV", value: 62 }, { row: "Austin",   col: "DEC", value: 71 },
+        { row: "Phoenix",  col: "JAN", value: 54 }, { row: "Phoenix",  col: "FEB", value: 46 }, { row: "Phoenix",  col: "MAR", value: 38 }, { row: "Phoenix",  col: "APR", value: 31 }, { row: "Phoenix",  col: "MAY", value: 27 }, { row: "Phoenix",  col: "JUN", value: 29 }, { row: "Phoenix",  col: "JUL", value: 34 }, { row: "Phoenix",  col: "AUG", value: 37 }, { row: "Phoenix",  col: "SEP", value: 41 }, { row: "Phoenix",  col: "OCT", value: 46 }, { row: "Phoenix",  col: "NOV", value: 52 }, { row: "Phoenix",  col: "DEC", value: 59 },
+        { row: "Tampa",    col: "JAN", value: 47 }, { row: "Tampa",    col: "FEB", value: 39 }, { row: "Tampa",    col: "MAR", value: 31 }, { row: "Tampa",    col: "APR", value: 26 }, { row: "Tampa",    col: "MAY", value: 24 }, { row: "Tampa",    col: "JUN", value: 27 }, { row: "Tampa",    col: "JUL", value: 30 }, { row: "Tampa",    col: "AUG", value: 33 }, { row: "Tampa",    col: "SEP", value: 36 }, { row: "Tampa",    col: "OCT", value: 41 }, { row: "Tampa",    col: "NOV", value: 48 }, { row: "Tampa",    col: "DEC", value: 53 },
+        { row: "Dallas",   col: "JAN", value: 43 }, { row: "Dallas",   col: "FEB", value: 36 }, { row: "Dallas",   col: "MAR", value: 28 }, { row: "Dallas",   col: "APR", value: 23 }, { row: "Dallas",   col: "MAY", value: 21 }, { row: "Dallas",   col: "JUN", value: 24 }, { row: "Dallas",   col: "JUL", value: 28 }, { row: "Dallas",   col: "AUG", value: 31 }, { row: "Dallas",   col: "SEP", value: 34 }, { row: "Dallas",   col: "OCT", value: 38 }, { row: "Dallas",   col: "NOV", value: 44 }, { row: "Dallas",   col: "DEC", value: 50 },
+        { row: "Nashville",col: "JAN", value: 38 }, { row: "Nashville",col: "FEB", value: 31 }, { row: "Nashville",col: "MAR", value: 24 }, { row: "Nashville",col: "APR", value: 19 }, { row: "Nashville",col: "MAY", value: 17 }, { row: "Nashville",col: "JUN", value: 20 }, { row: "Nashville",col: "JUL", value: 24 }, { row: "Nashville",col: "AUG", value: 27 }, { row: "Nashville",col: "SEP", value: 30 }, { row: "Nashville",col: "OCT", value: 35 }, { row: "Nashville",col: "NOV", value: 41 }, { row: "Nashville",col: "DEC", value: 46 },
+        { row: "Denver",   col: "JAN", value: 31 }, { row: "Denver",   col: "FEB", value: 25 }, { row: "Denver",   col: "MAR", value: 19 }, { row: "Denver",   col: "APR", value: 14 }, { row: "Denver",   col: "MAY", value: 12 }, { row: "Denver",   col: "JUN", value: 14 }, { row: "Denver",   col: "JUL", value: 18 }, { row: "Denver",   col: "AUG", value: 21 }, { row: "Denver",   col: "SEP", value: 25 }, { row: "Denver",   col: "OCT", value: 29 }, { row: "Denver",   col: "NOV", value: 35 }, { row: "Denver",   col: "DEC", value: 40 },
+      ],
+    },
+  },
+  {
+    id: "demo-26",
+    role: "user",
+    content: "What's the depreciation benefit if I buy 2847 Riverside Drive as a rental?",
+  },
+  {
+    id: "demo-27",
+    role: "ai",
+    content:
+      "Great news for investors — residential rental properties depreciate over 27.5 years using straight-line depreciation. Here's the full depreciation analysis for 2847 Riverside Drive. I found the Travis County assessor records showing a 20% land value split, giving you a solid depreciable building basis.",
+    cardType: "depreciation",
+    cardData: {
+      purchasePrice: 487500,
+      landValuePercent: 0.20,
+      landValue: 97500,
+      buildingValue: 390000,
+      annualDeduction: 14182,
+      annualTaxSavings: 4538,
+      taxBracket: 0.32,
+      dataSource: "county assessor",
+      cumulativeDeduction: 141820,
+      recaptureExposure: 35455,
+      schedule: {
+        year1:  14182,
+        year5:  70910,
+        year10: 141820,
+        year27: 390000,
+      },
+    },
     showButton: false,
   },
 ];

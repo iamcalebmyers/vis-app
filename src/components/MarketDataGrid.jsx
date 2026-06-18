@@ -1,11 +1,23 @@
 import { useState } from "react";
 import { TipBubble } from "./ReportTooltip.jsx";
 import { MARKET_GRID_TIPS } from "../utils/tooltips.js";
+import { isGraphable } from "../utils/graphData.js";
 
 const SEC = { fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", borderBottom: "2px solid var(--white)", paddingBottom: 6, marginBottom: 14 };
 const TD_L = { fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text)", padding: "10px 0", borderBottom: "1px solid var(--border)", verticalAlign: "top" };
 const TD_V = { fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "var(--text)", textAlign: "right", padding: "10px 16px 10px 16px", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" };
 const TD_T = { padding: "10px 0 10px 8px", borderBottom: "1px solid var(--border)", textAlign: "right", verticalAlign: "middle", width: 28 };
+const TD_G = { padding: "10px 4px 10px 0", borderBottom: "1px solid var(--border)", textAlign: "right", verticalAlign: "middle", width: 22 };
+
+function BarChartIcon({ color = "currentColor" }) {
+  return (
+    <svg width={13} height={13} viewBox="0 0 13 13" fill="none" aria-hidden="true">
+      <rect x="0.5" y="7" width="3" height="5.5" rx="0.5" fill={color} />
+      <rect x="5" y="4" width="3" height="8.5" rx="0.5" fill={color} />
+      <rect x="9.5" y="1" width="3" height="11.5" rx="0.5" fill={color} />
+    </svg>
+  );
+}
 
 function fmtDollars(n) {
   if (n >= 1000000) return `$${(n / 1000000).toFixed(2)}M`;
@@ -68,12 +80,14 @@ const SECTIONS = [
   },
 ];
 
-function FieldRow({ label, source, tip, enabled, onToggle, children }) {
+function FieldRow({ label, source, tip, enabled, onToggle, fieldKey, onGraph, children }) {
   const [show, setShow] = useState(false);
+  const [hoverGraph, setHoverGraph] = useState(false);
+  const graphable = fieldKey && isGraphable(fieldKey);
   return (
     <tr style={{ opacity: enabled ? 1 : 0.3, transition: "opacity 0.15s ease" }}
       onMouseEnter={() => tip && setShow(true)}
-      onMouseLeave={() => setShow(false)}
+      onMouseLeave={() => { setShow(false); }}
     >
       <td style={{ ...TD_L, position: "relative" }}>
         <div>{label}</div>
@@ -81,6 +95,15 @@ function FieldRow({ label, source, tip, enabled, onToggle, children }) {
         {tip && show && <TipBubble text={tip} />}
       </td>
       <td style={TD_V}>{children}</td>
+      {graphable ? (
+        <td style={TD_G}>
+          <button type="button" onClick={() => onGraph?.(fieldKey)} title={`Graph ${label}`}
+            onMouseEnter={() => setHoverGraph(true)} onMouseLeave={() => setHoverGraph(false)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: hoverGraph ? "var(--accent)" : "var(--muted-faint)", transition: "color 0.15s ease", display: "flex", alignItems: "center" }}>
+            <BarChartIcon color={hoverGraph ? "var(--accent)" : "var(--muted-faint)"} />
+          </button>
+        </td>
+      ) : <td style={TD_G} />}
       <td style={TD_T}><ToggleBtn enabled={enabled} onToggle={onToggle} /></td>
     </tr>
   );
@@ -95,7 +118,7 @@ function ToggleBtn({ enabled, onToggle }) {
   );
 }
 
-function DataSection({ section, market, toggles, onToggle }) {
+function DataSection({ section, market, toggles, onToggle, onGraph }) {
   const present = section.fields.filter(f => market[f.key] != null);
   if (!present.length) return null;
 
@@ -118,6 +141,8 @@ function DataSection({ section, market, toggles, onToggle }) {
                 tip={tip}
                 enabled={enabled}
                 onToggle={() => onToggle(f.key)}
+                fieldKey={f.key}
+                onGraph={onGraph}
               >
                 {change
                   ? <span style={{ color: change.color }}>{change.label}</span>
@@ -137,13 +162,13 @@ function buildInitialToggles(market) {
   return t;
 }
 
-function MarketDataGrid({ market }) {
+function MarketDataGrid({ market, onGraph }) {
   const [toggles, setToggles] = useState(() => buildInitialToggles(market));
   function handleToggle(key) { setToggles(prev => ({ ...prev, [key]: !prev[key] })); }
   return (
     <>
       {SECTIONS.map(s => (
-        <DataSection key={s.title} section={s} market={market} toggles={toggles} onToggle={handleToggle} />
+        <DataSection key={s.title} section={s} market={market} toggles={toggles} onToggle={handleToggle} onGraph={onGraph} />
       ))}
     </>
   );

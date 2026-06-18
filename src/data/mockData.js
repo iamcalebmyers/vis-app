@@ -302,3 +302,47 @@ export const MOCK_RETURNS_CARD = {
   capRate: "5.1%",
   monthlyCashFlow: "+$310/mo",
 };
+
+export const MOCK_DEPRECIATION = {
+  purchasePrice: 487500,
+  landValuePercent: 0.20,
+  landValue: 97500,
+  buildingValue: 390000,
+  annualDeduction: 14182,
+  annualTaxSavings: 4538,
+  taxBracket: 0.32,
+  dataSource: "county assessor",
+  cumulativeDeduction: 141820,
+  recaptureExposure: 35455,
+  schedule: {
+    year1:  14182,
+    year5:  70910,
+    year10: 141820,
+    year27: 390000,
+  },
+};
+
+export const MOCK_DEPRECIATION_CARD = MOCK_DEPRECIATION;
+
+// Raw web-sourced facts for the Compare area's "Load example" state.
+// Shape matches what /api/compare returns; metrics are derived client-side.
+export const MOCK_COMPARISON = [
+  {
+    address: "2847 Riverside Drive", city: "Austin", state: "TX",
+    listPrice: 495000, estimatedValue: 487500, rentEstimate: 2800,
+    annualTax: 9840, hoaMonthly: 120, sqft: 2340, beds: 4, baths: 3,
+    yearBuilt: 2019, estARV: 530000, source: "MLS · Jun 2026",
+  },
+  {
+    address: "915 Cesar Chavez St", city: "Austin", state: "TX",
+    listPrice: 432000, estimatedValue: 428000, rentEstimate: 2650,
+    annualTax: 8100, hoaMonthly: 0, sqft: 1980, beds: 3, baths: 2,
+    yearBuilt: 2008, estARV: 460000, source: "MLS · Jun 2026",
+  },
+  {
+    address: "3108 Govalle Ave", city: "Austin", state: "TX",
+    listPrice: 389000, estimatedValue: 392000, rentEstimate: 2500,
+    annualTax: 7350, hoaMonthly: 85, sqft: 1720, beds: 3, baths: 2,
+    yearBuilt: 1998, estARV: 425000, source: "MLS · Jun 2026",
+  },
+];

@@ -7,14 +7,14 @@ const TIERS = [
     label: "Solo",
     price: "$19",
     priceId: import.meta.env.VITE_STRIPE_PRICE_SOLO,
-    features: ["AI chat with web search", "Property & market reports", "Loan calculator", "5 saved reports", "PDF export"],
+    features: ["AI chat with web search", "Property, market & investor reports", "Rental, ARV, cap rate & cash-on-cash analysis", "Multi-property comparison", "Loan calculator", "Shareable links & PDF export", "5 saved reports"],
   },
   {
     id: "investor",
     label: "Investor",
     price: "$49",
     priceId: import.meta.env.VITE_STRIPE_PRICE_INVESTOR,
-    features: ["Everything in Solo", "Rental yield & rent comp cards", "ARV / deal analysis", "Cash-on-cash & cap rate calculators", "Multi-property comparison", "25 saved reports"],
+    features: ["Everything in Solo", "Much higher monthly query limit", "More usage headroom for heavy analysis", "Lower overage rate", "25 saved reports"],
   },
   {
     id: "agent",

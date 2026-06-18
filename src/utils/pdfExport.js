@@ -7,6 +7,7 @@ export async function exportReportPDF(element, filename = "vis-report.pdf") {
     useCORS: true,
     logging: false,
     backgroundColor: "#ffffff",
+    ignoreElements: (el) => el.classList?.contains("vis-no-export"),
   });
 
   const ptW = canvas.width * 0.5;

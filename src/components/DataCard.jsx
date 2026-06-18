@@ -1,4 +1,6 @@
+import { useState } from "react";
 import GenerateReportButton from "./GenerateReportButton.jsx";
+import GraphRequestCard from "./GraphRequestCard.jsx";
 import {
   MOCK_PROPERTY_CARD,
   MOCK_LOAN_CARD,
@@ -7,6 +9,7 @@ import {
   MOCK_RENTAL_CARD,
   MOCK_DEAL_CARD,
   MOCK_RETURNS_CARD,
+  MOCK_DEPRECIATION_CARD,
 } from "../data/mockData.js";
 
 const cardOuter = {
@@ -342,9 +345,9 @@ function RateCard({ data }) {
 }
 
 const REC_STYLE = {
-  good:     { bg: "rgba(5,150,105,0.12)",  text: "#059669", label: "Good Deal" },
-  marginal: { bg: "rgba(217,119,6,0.12)",  text: "#d97706", label: "Marginal"  },
-  pass:     { bg: "rgba(220,38,38,0.12)",  text: "#dc2626", label: "Pass"      },
+  good:     { bg: "var(--rec-good-bg)",     text: "var(--rec-good-text)",     label: "Good Deal" },
+  marginal: { bg: "var(--rec-marginal-bg)", text: "var(--rec-marginal-text)", label: "Marginal"  },
+  pass:     { bg: "var(--rec-pass-bg)",     text: "var(--rec-pass-text)",     label: "Pass"      },
 };
 
 function RentalCard({ data }) {
@@ -416,10 +419,87 @@ function ReturnsCard({ data }) {
           <StatBlock label="Cash-on-Cash" value={data.cashOnCash} />
           <StatBlock label="Cap Rate" value={data.capRate} />
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "2px solid var(--white)", marginTop: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "var(--returns-divider)", marginTop: 12 }}>
           <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 14, color: "var(--white)" }}>Monthly Cash Flow</span>
           <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 24, color: "var(--accent)", letterSpacing: "-0.01em" }}>{data.monthlyCashFlow}</span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+const DEPR_BRACKETS = [
+  { label: "22% — middle income", value: 0.22 },
+  { label: "24% — upper middle", value: 0.24 },
+  { label: "32% — high income (default)", value: 0.32 },
+  { label: "37% — top bracket", value: 0.37 },
+];
+
+function DepreciationCard({ data, showButton, onGenerateReport }) {
+  const [bracket, setBracket] = useState(data.taxBracket || 0.32);
+
+  const annualDeduction = data.annualDeduction || 0;
+  const buildingValue = data.buildingValue || 0;
+  const taxSavings = Math.round(annualDeduction * bracket);
+  const schedule = data.schedule || {};
+  const fmt = (n) => "$" + Math.round(n).toLocaleString();
+
+  return (
+    <div style={cardOuter}>
+      <div style={cardHeader}>
+        <span style={headerLabel}>Depreciation Analysis</span>
+      </div>
+      <div style={{ padding: "14px 14px 14px" }}>
+        <div style={statRow}>
+          <StatBlock label="Annual Deduction" value={fmt(annualDeduction)} sublabel="per year · 27.5yr schedule" accent />
+          <StatBlock label="Est. Tax Savings" value={fmt(taxSavings)} sublabel={`at ${Math.round(bracket * 100)}% federal bracket`} accent />
+          <StatBlock label="Building Value" value={fmt(buildingValue)} sublabel="depreciable basis" />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted-faint)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>Tax Bracket</div>
+          <select
+            value={bracket}
+            onChange={(e) => setBracket(parseFloat(e.target.value))}
+            style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text)", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 6, padding: "6px 10px", width: "100%", cursor: "pointer" }}
+          >
+            {DEPR_BRACKETS.map((b) => (
+              <option key={b.value} value={b.value}>{b.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted-faint)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>Depreciation Schedule</div>
+          <div style={grid2}>
+            <FactPill label="Year 1" value={fmt(schedule.year1 || annualDeduction)} />
+            <FactPill label="Year 5" value={fmt(schedule.year5 || annualDeduction * 5)} />
+            <FactPill label="Year 10" value={fmt(schedule.year10 || annualDeduction * 10)} />
+            <FactPill label="Year 27.5" value={fmt(schedule.year27 || buildingValue)} />
+          </div>
+        </div>
+
+        {data.dataSource && (
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>
+            Land value: {data.dataSource}
+          </div>
+        )}
+
+        <div style={{
+          background: "rgba(218, 107, 58, 0.12)",
+          border: "1px solid rgba(218, 107, 58, 0.3)",
+          borderRadius: 6,
+          padding: "8px 10px",
+          marginBottom: showButton ? 12 : 0,
+        }}>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)" }}>
+            ⚠ Depreciation recapture applies at sale — taxed at 25% of total depreciation taken. Consult a CPA for your specific situation.
+          </span>
+        </div>
+
+        {showButton && (
+          <GenerateReportButton onClick={() => onGenerateReport && onGenerateReport("depreciation", data)} />
+        )}
       </div>
     </div>
   );
@@ -433,9 +513,14 @@ const DEFAULT_DATA = {
   rental: MOCK_RENTAL_CARD,
   deal: MOCK_DEAL_CARD,
   returns: MOCK_RETURNS_CARD,
+  depreciation: MOCK_DEPRECIATION_CARD,
 };
 
 function DataCard({ type, data, showButton = false, onGenerateReport }) {
+  if (type === "graph") {
+    return <GraphRequestCard data={data} />;
+  }
+
   const finalData = data || DEFAULT_DATA[type];
   if (!finalData) return null;
 
@@ -472,6 +557,14 @@ function DataCard({ type, data, showButton = false, onGenerateReport }) {
       );
     case "returns":
       return <ReturnsCard data={finalData} />;
+    case "depreciation":
+      return (
+        <DepreciationCard
+          data={finalData}
+          showButton={showButton}
+          onGenerateReport={onGenerateReport}
+        />
+      );
     default:
       return null;
   }

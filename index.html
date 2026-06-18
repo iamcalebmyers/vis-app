@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/vis-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f7f6f3" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="description" content="Vis — chat-first AI real estate analysis. See the market clearly." />
     <title>Vis · See the market clearly</title>
 
@@ -12,28 +12,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700;800&family=Inter:wght@600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
     />
 
     <script>
       (function () {
         try {
           var stored = localStorage.getItem('vis-theme');
-          var theme = stored;
-          if (!theme || theme === 'system') {
-            // Fall back to tier default, then system preference
-            var tier = localStorage.getItem('vis-tier') || 'solo';
-            var tierDefault = tier === 'brokerage' ? 'black'
-              : (tier === 'investor' || tier === 'agent') ? 'charcoal'
-              : 'system';
-            theme = tierDefault === 'system'
-              ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'charcoal' : 'light')
-              : tierDefault;
-          }
+          var theme = (stored && stored !== 'system') ? stored : 'light';
           if (theme === 'charcoal' || theme === 'black') {
             document.documentElement.dataset.theme = theme;
           }
-          // light = no dataset.theme needed (default :root vars)
+          // light = no dataset.theme attribute needed (default :root vars)
         } catch (e) {}
       })();
     </script>

@@ -21,3 +21,35 @@ export function fmtUSD(n) {
 export function parseDollars(str) {
   return parseFloat(String(str).replace(/[$,]/g, "")) || 0;
 }
+
+export function calcDepreciation({
+  purchasePrice,
+  landValuePercent = 0.20,
+  taxBracket = 0.32,
+  yearsHeld = 10,
+} = {}) {
+  const landValue = purchasePrice * landValuePercent;
+  const buildingValue = purchasePrice - landValue;
+  const annualDeduction = buildingValue / 27.5;
+  const annualTaxSavings = annualDeduction * taxBracket;
+  const cumulativeDeduction = annualDeduction * yearsHeld;
+  const recaptureExposure = cumulativeDeduction * 0.25;
+
+  return {
+    purchasePrice,
+    landValue,
+    buildingValue,
+    annualDeduction,
+    annualTaxSavings,
+    cumulativeDeduction,
+    recaptureExposure,
+    taxBracket,
+    landValuePercent,
+    schedule: {
+      year1:  annualDeduction,
+      year5:  annualDeduction * 5,
+      year10: annualDeduction * 10,
+      year27: buildingValue,
+    },
+  };
+}

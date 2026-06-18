@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { exportReportPDF } from "../utils/pdfExport.js";
 import { useReportActions } from "../utils/useReportActions.js";
 import SendToClientModal from "../components/SendToClientModal.jsx";
@@ -15,6 +15,10 @@ import TemplatePicker from "../components/TemplatePicker.jsx";
 import { useAgentInfo } from "../utils/useAgentInfo.js";
 import { sectionVisible } from "../utils/useTemplates.js";
 import { MOCK_PROPERTY, MOCK_MARKET, MOCK_AI_RESPONSE } from "../data/mockData.js";
+import { calcDepreciation } from "../utils/loanMath.js";
+import { hasFeature } from "../utils/tier.js";
+import GraphModal from "../components/GraphModal.jsx";
+import GraphCard from "../components/GraphCard.jsx";
 import { PROPERTY_MARKET_TIPS } from "../utils/tooltips.js";
 
 const SEC = {
@@ -65,7 +69,13 @@ function PropertyReport({ data, onBack, user, userRow }) {
   const [includeAI, setIncludeAI] = useState(true);
   const [factOverrides, setFactOverrides] = useState({});
   const [showSendModal, setShowSendModal] = useState(false);
+  const [graphModal, setGraphModal] = useState(null);
+  const [savedGraphs, setSavedGraphs] = useState([]);
   const reportRef = useRef();
+
+  const handleAddGraph = useCallback((graphData) => {
+    setSavedGraphs(prev => [...prev, { ...graphData, id: Date.now() }]);
+  }, []);
 
   const property = MOCK_PROPERTY;
   const { shareLoading, shareUrl, showShareModal, setShowShareModal, saved, saveError, handleShare, handleSave } =
@@ -82,6 +92,11 @@ function PropertyReport({ data, onBack, user, userRow }) {
       return { ...prev, [label]: value };
     });
   }
+
+  const tier = userRow?.tier || localStorage.getItem("vis-tier") || "solo";
+  const canDepreciation = hasFeature(tier, "agent");
+  const [includeDepreciation, setIncludeDepreciation] = useState(false);
+  const [deprBracket, setDeprBracket] = useState(0.32);
 
   const market = MOCK_MARKET;
   const [ai, setAi] = useState(MOCK_AI_RESPONSE);
@@ -153,6 +168,17 @@ function PropertyReport({ data, onBack, user, userRow }) {
             />
           </div>
         </label>
+        {canDepreciation && (
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: includeDepreciation ? "var(--text)" : "var(--muted)", transition: "color 0.15s ease" }}>
+              Depreciation (Investors)
+            </span>
+            <input type="checkbox" checked={includeDepreciation} onChange={() => setIncludeDepreciation((v) => !v)} style={{ display: "none" }} />
+            <div style={{ width: 36, height: 20, borderRadius: 10, background: includeDepreciation ? "var(--accent)" : "var(--border)", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}>
+              <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#ffffff", position: "absolute", top: 3, left: includeDepreciation ? 19 : 3, transition: "left 0.2s ease", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+            </div>
+          </label>
+        )}
       </div>
 
       <main style={{ flex: 1, padding: "20px 20px 40px" }}>
@@ -192,7 +218,8 @@ function PropertyReport({ data, onBack, user, userRow }) {
           )}
 
           {sectionVisible(activeTemplate, "property_facts") && (
-            <PropertyFacts property={property} overrides={factOverrides} onOverride={handleOverride} />
+            <PropertyFacts property={property} overrides={factOverrides} onOverride={handleOverride}
+              onGraph={({ metricKey, unit }) => setGraphModal({ metricKey, location: `${property.address}, ${property.city}, ${property.state}`, unit })} />
           )}
 
           {sectionVisible(activeTemplate, "market_conditions") && (
@@ -222,6 +249,125 @@ function PropertyReport({ data, onBack, user, userRow }) {
             </div>
           )}
 
+          {canDepreciation && includeDepreciation && (() => {
+            const depr = calcDepreciation({
+              purchasePrice: property.estimatedValue || property.listPrice || 487500,
+              taxBracket: deprBracket,
+            });
+            const fmt = (n) => "$" + Math.round(n).toLocaleString();
+            const deprBrackets = [
+              { label: "22% — middle income", value: 0.22 },
+              { label: "24% — upper middle", value: 0.24 },
+              { label: "32% — high income (default)", value: 0.32 },
+              { label: "37% — top bracket", value: 0.37 },
+            ];
+            const scheduleRows = [
+              { year: "1",    value: depr.schedule.year1 },
+              { year: "2",    value: depr.annualDeduction * 2 },
+              { year: "3",    value: depr.annualDeduction * 3 },
+              { year: "4",    value: depr.annualDeduction * 4 },
+              { year: "5",    value: depr.schedule.year5 },
+              { year: "10",   value: depr.schedule.year10 },
+              { year: "15",   value: depr.annualDeduction * 15 },
+              { year: "20",   value: depr.annualDeduction * 20 },
+              { year: "27.5", value: depr.schedule.year27 },
+            ];
+            return (
+              <div style={{ marginTop: 28 }}>
+                <div style={SEC}>Depreciation Analysis</div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>For investment and rental property use</div>
+
+                {/* Key metrics */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+                  {[
+                    { label: "Annual Deduction", value: fmt(depr.annualDeduction), accent: true },
+                    { label: "Est. Tax Savings", value: fmt(depr.annualTaxSavings), accent: true },
+                    { label: "Building Value", value: fmt(depr.buildingValue), accent: false },
+                  ].map(({ label, value, accent }) => (
+                    <div key={label} style={{ background: accent ? "var(--card-tint)" : "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 12px" }}>
+                      <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--muted)", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 600, color: accent ? "var(--accent)" : "var(--white)", letterSpacing: "-0.01em" }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bracket selector */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", marginRight: 8 }}>Tax bracket:</label>
+                  <select
+                    value={deprBracket}
+                    onChange={(e) => setDeprBracket(parseFloat(e.target.value))}
+                    style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text)", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 6, padding: "5px 10px", cursor: "pointer" }}
+                  >
+                    {deprBrackets.map((b) => (
+                      <option key={b.value} value={b.value}>{b.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Assumptions box */}
+                <div style={{ background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 6, padding: "12px 14px", marginBottom: 14 }}>
+                  <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--muted)", textTransform: "uppercase", marginBottom: 8 }}>Assumptions</div>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <tbody>
+                      {[
+                        ["Purchase price", fmt(depr.purchasePrice)],
+                        ["Land value", `${fmt(depr.landValue)} (${Math.round(depr.landValuePercent * 100)}% estimated)`],
+                        ["Building value (depreciable basis)", fmt(depr.buildingValue)],
+                        ["Depreciation method", "Straight-line"],
+                        ["Recovery period", "27.5 years (residential)"],
+                        ["Tax bracket used", `${Math.round(deprBracket * 100)}%`],
+                        ["Data source", "Estimated — land value based on market averages. Consult a CPA for precise basis calculation."],
+                      ].map(([label, value]) => (
+                        <tr key={label}>
+                          <td style={{ ...TD_L, fontSize: 12 }}>{label}</td>
+                          <td style={{ ...TD_V, fontSize: 12 }}>{value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Schedule table */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--muted)", textTransform: "uppercase", marginBottom: 8 }}>Depreciation Schedule</div>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...TD_L, fontSize: 11, fontFamily: "Arial, sans-serif", fontWeight: 700 }}>Year</th>
+                        <th style={{ ...TD_V, fontSize: 11, fontFamily: "Arial, sans-serif", fontWeight: 700 }}>Cumulative Deduction</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scheduleRows.map(({ year, value }) => (
+                        <tr key={year} style={year === "1" ? { background: "var(--accent-soft)" } : {}}>
+                          <td style={{ ...TD_L, fontSize: 12, color: year === "1" ? "var(--accent)" : undefined }}>Year {year}</td>
+                          <td style={{ ...TD_V, fontSize: 12, color: year === "1" ? "var(--accent)" : undefined }}>{fmt(value)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Recapture warning */}
+                <div style={{ background: "rgba(218, 107, 58, 0.08)", border: "1px solid rgba(218, 107, 58, 0.25)", borderRadius: 6, padding: "12px 14px", marginBottom: 12 }}>
+                  <div style={{ fontFamily: "Arial, sans-serif", fontSize: 12, fontWeight: 700, color: "var(--accent)", marginBottom: 6 }}>Depreciation Recapture at Sale</div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text)", lineHeight: 1.6 }}>
+                    When this property is sold the IRS recaptures depreciation at 25%. Based on 10 years of depreciation taken, estimated recapture exposure is {fmt(depr.recaptureExposure)}. This is taxed as ordinary income up to 25% regardless of your tax bracket.
+                  </div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
+                    Actual recapture depends on total depreciation claimed. Consult a CPA.
+                  </div>
+                </div>
+
+                {/* Disclaimer — always visible */}
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)", lineHeight: 1.6, fontStyle: "italic" }}>
+                  This depreciation analysis is an estimate for educational purposes only. It does not constitute tax advice. Depreciation rules, land value splits, and recapture calculations vary by situation. Always consult a licensed CPA or tax professional before making investment decisions.
+                </div>
+              </div>
+            );
+          })()}
+
           {includeAI && sectionVisible(activeTemplate, "ai_summary") && (
             <div style={{ marginTop: 28 }}>
               <div style={SEC}>AI Analysis</div>
@@ -233,6 +379,25 @@ function PropertyReport({ data, onBack, user, userRow }) {
               ) : (
                 <AISummary summary={ai.aiSummary} strengths={ai.keyStrengths} risks={ai.keyRisks} bestSuitedFor={ai.bestSuitedFor} />
               )}
+            </div>
+          )}
+
+          {/* Saved charts */}
+          {savedGraphs.length > 0 && (
+            <div style={{ marginTop: 28 }}>
+              <div style={{ ...SEC }}>Charts</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                {savedGraphs.map((g) => (
+                  <div key={g.id} style={{ position: "relative" }}>
+                    <button type="button" onClick={() => setSavedGraphs(prev => prev.filter(x => x.id !== g.id))}
+                      title="Remove chart" style={{ position: "absolute", top: 8, right: 8, zIndex: 2, background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", color: "var(--muted)", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                    <GraphCard
+                      metricLabel={g.metricLabel} chartType={g.chartType} colorScheme={g.colorScheme}
+                      data={g.data} unit={g.unit} title={g.title} subtitle={g.subtitle} source={g.source}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -259,6 +424,14 @@ function PropertyReport({ data, onBack, user, userRow }) {
           />
         </div>
       </main>
+      {graphModal && (
+        <GraphModal
+          metricKey={graphModal.metricKey}
+          location={graphModal.location}
+          onClose={() => setGraphModal(null)}
+          onAddToReport={handleAddGraph}
+        />
+      )}
       {showSendModal && (
         <SendToClientModal reportType="property" onExportPDF={handleExportPDF} onClose={() => setShowSendModal(false)} />
       )}

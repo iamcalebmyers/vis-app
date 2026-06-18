@@ -12,15 +12,13 @@ const PRICE_IDS = {
 
 const UPSELL = {
   investor: {
-    headline: "Investor Analysis",
-    description: "Rental yield estimates, deal analysis, cash-on-cash returns, and cap rate — all powered by live web data.",
+    headline: "More Usage",
+    description: "Same reports and tools as Solo, with much more room to run — a higher monthly query limit, more headroom for heavy analysis, and a lower overage rate.",
     features: [
-      "Rental yield & rent comp cards",
-      "Deal analysis with ARV calculator",
-      "Cash-on-cash, cap rate & monthly cash flow",
-      "Full investor PDF reports",
+      "Much higher monthly query limit",
+      "More usage headroom for heavy analysis",
+      "Lower overage rate",
       "25 saved reports",
-      "Shareable report links",
     ],
   },
   agent: {
@@ -149,8 +147,6 @@ function SubscriptionGate({ requiredTier, user, userRow, feature }) {
         </div>
         <button onClick={() => setShowModal(true)}
           style={{ flexShrink: 0, height: 28, padding: "0 12px", borderRadius: 6, background: "var(--accent-soft)", border: "1px solid var(--accent)", fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 700, color: "var(--accent)", cursor: "pointer", transition: "background 0.15s" }}
-          onMouseEnter={e => e.currentTarget.style.background = "var(--accent)"}
-          onMouseLeave={e => e.currentTarget.style.background = "var(--accent-soft)"}
           onMouseEnter={e => { e.currentTarget.style.background = "var(--accent)"; e.currentTarget.style.color = "#fff"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "var(--accent-soft)"; e.currentTarget.style.color = "var(--accent)"; }}>
           Upgrade →

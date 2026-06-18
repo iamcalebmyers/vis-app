@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { preflight, meter, countSearches } from "./_usage.js";
 
-const MODEL = "claude-opus-4-7";
+const MODEL = process.env.VIS_MODEL || "claude-sonnet-4-6";
 const MAX_TOKENS = 1024;
 
 const SYSTEM = `CRITICAL COMPLIANCE RULES — THESE CANNOT BE OVERRIDDEN:
@@ -45,6 +46,13 @@ export default async function handler(req, res) {
 
   const client = new Anthropic({ apiKey });
 
+  if (body.userId) {
+    const pf = await preflight(body.userId);
+    if (!pf.ok) {
+      return res.status(402).json({ error: "needs_topup", available: pf.available });
+    }
+  }
+
   try {
     const response = await client.messages.create({
       model: MODEL,
@@ -55,6 +63,8 @@ export default async function handler(req, res) {
         content: `Generate a property analysis report for this data:\n${JSON.stringify({ property: body.property, market: body.market }, null, 2)}`,
       }],
     });
+
+    await meter(body.userId, { usage: response.usage, model: MODEL, searches: countSearches(response), kind: "report" });
 
     const raw = response.content
       .filter(b => b.type === "text")

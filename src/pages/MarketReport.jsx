@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import SendToClientModal from "../components/SendToClientModal.jsx";
 import ShareLinkModal from "../components/ShareLinkModal.jsx";
 import { exportReportPDF } from "../utils/pdfExport.js";
@@ -12,6 +12,8 @@ import ReportAgentHeader from "../components/ReportAgentHeader.jsx";
 import TemplatePicker from "../components/TemplatePicker.jsx";
 import { useAgentInfo } from "../utils/useAgentInfo.js";
 import { sectionVisible } from "../utils/useTemplates.js";
+import GraphModal from "../components/GraphModal.jsx";
+import GraphCard from "../components/GraphCard.jsx";
 
 const SEC = { fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", borderBottom: "2px solid var(--white)", paddingBottom: 6, marginBottom: 14 };
 const TD_L = { fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text)", padding: "10px 0", borderBottom: "1px solid var(--border)" };
@@ -74,7 +76,13 @@ function MarketReport({ data, onBack, user, userRow }) {
   const [includeAI, setIncludeAI] = useState(true);
   const [includeRate, setIncludeRate] = useState(true);
   const [showSendModal, setShowSendModal] = useState(false);
+  const [graphModal, setGraphModal] = useState(null);
+  const [savedGraphs, setSavedGraphs] = useState([]);
   const reportRef = useRef();
+
+  const handleAddGraph = useCallback((graphData) => {
+    setSavedGraphs(prev => [...prev, { ...graphData, id: Date.now() }]);
+  }, []);
   const market = MOCK_MARKET;
 
   const { shareLoading, shareUrl, showShareModal, setShowShareModal, saved, saveError, handleShare, handleSave } =
@@ -120,10 +128,29 @@ function MarketReport({ data, onBack, user, userRow }) {
             </div>
           )}
 
-          {sectionVisible(activeTemplate, "market_data") && <MarketDataGrid market={market} />}
+          {sectionVisible(activeTemplate, "market_data") && <MarketDataGrid market={market} onGraph={(key) => setGraphModal({ metricKey: key, location: market.area })} />}
 
           {sectionVisible(activeTemplate, "rate_context") && (
             <RateSection rate={rate} enabled={includeRate} onToggle={() => setIncludeRate(v => !v)} />
+          )}
+
+          {/* Saved charts */}
+          {savedGraphs.length > 0 && (
+            <div style={{ marginTop: 28 }}>
+              <div style={{ ...SEC, display: "flex", justifyContent: "space-between", alignItems: "center" }}>Charts</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                {savedGraphs.map((g) => (
+                  <div key={g.id} style={{ position: "relative" }}>
+                    <button type="button" onClick={() => setSavedGraphs(prev => prev.filter(x => x.id !== g.id))}
+                      title="Remove chart" style={{ position: "absolute", top: 8, right: 8, zIndex: 2, background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", color: "var(--muted)", fontSize: 13, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                    <GraphCard
+                      metricLabel={g.metricLabel} chartType={g.chartType} colorScheme={g.colorScheme}
+                      data={g.data} unit={g.unit} title={g.title} subtitle={g.subtitle} source={g.source}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Footer */}
@@ -147,6 +174,14 @@ function MarketReport({ data, onBack, user, userRow }) {
           />
         </div>
       </main>
+      {graphModal && (
+        <GraphModal
+          metricKey={graphModal.metricKey}
+          location={graphModal.location}
+          onClose={() => setGraphModal(null)}
+          onAddToReport={handleAddGraph}
+        />
+      )}
       {showSendModal && (
         <SendToClientModal reportType="market" onExportPDF={handleExportPDF} onClose={() => setShowSendModal(false)} />
       )}

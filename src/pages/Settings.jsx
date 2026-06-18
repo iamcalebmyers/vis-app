@@ -237,7 +237,7 @@ function BillingSection({ user, userRow }) {
 function SidebarItem({ label, active, onClick, children, indent }) {
   return (
     <button onClick={onClick}
-      style={{ display: "block", width: "100%", textAlign: "left", padding: indent ? "8px 20px 8px 32px" : "10px 20px", background: active ? "var(--card)" : "none", border: "none", borderLeft: `2px solid ${active ? "var(--accent)" : "transparent"}`, fontFamily: "var(--font-sans)", fontSize: indent ? 12 : 13, fontWeight: active ? 600 : 400, color: active ? "var(--white)" : "var(--muted)", cursor: "pointer", transition: "color 0.15s, background 0.15s" }}>
+      style={{ display: "block", width: "calc(100% - 16px)", margin: "2px 8px", textAlign: "left", padding: indent ? "8px 12px 8px 24px" : "10px 14px", background: active ? "var(--card)" : "none", border: active ? "1px solid var(--border)" : "1px solid transparent", borderRadius: 8, boxShadow: active ? "var(--shadow-card)" : "none", fontFamily: "var(--font-sans)", fontSize: indent ? 12 : 13, fontWeight: active ? 600 : 400, color: active ? "var(--accent)" : "var(--muted)", cursor: "pointer", transition: "color 0.15s, background 0.15s" }}>
       {children || label}
     </button>
   );
@@ -256,7 +256,7 @@ function Settings({ user, userRow, onSignOut }) {
     <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
       {/* Sidebar */}
-      <div style={{ width: 200, flexShrink: 0, background: "var(--border-soft)", borderRight: "1px solid var(--border)", padding: "24px 0", display: "flex", flexDirection: "column", overflow: "auto" }}>
+      <div style={{ width: 200, flexShrink: 0, background: "var(--card)", borderRight: "1px solid var(--border)", padding: "24px 0", display: "flex", flexDirection: "column", overflow: "auto" }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0 20px", marginBottom: 10 }}>Settings</div>
 
         <SidebarItem label="Account"    active={section === "account"}    onClick={() => setSection("account")} />

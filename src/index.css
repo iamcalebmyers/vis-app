@@ -3,26 +3,45 @@
 /* ---------- Themes (CSS variables only — never hardcode hex in components) ---------- */
 
 :root {
-  /* Light (default) — warm cream */
-  --bg: #f7f6f3;
-  --card: #ffffff;
-  --card-tint: #fff8f5;        /* warm accent-tinted surface */
-  --border: #e8e6e3;
-  --border-soft: #f0ede9;       /* sidebar bg + tertiary borders */
-  --muted: #9b8ea0;             /* labels */
-  --muted-soft: #6b6560;        /* secondary text */
-  --muted-faint: #c0b8b4;       /* timestamps, tertiary */
-  --text: #2a2825;              /* body text */
-  --white: #1a1a18;             /* strongest text (headlines / key values) */
-  --accent: #da6b3a;
+  /* Light (default) — white cards floating on a light grey page */
+  --bg: #f3f4f8;             /* page background + the gaps between cards */
+  --card: #ffffff;           /* all cards / panels */
+  --card-tint: #f7f7ff;      /* faint highlighted surface (selected row) */
+  --border: #eceef2;         /* hairline dividers between list rows */
+  --border-soft: #f3f4f8;    /* inset surfaces (matches page bg) */
+  --muted: #8a8f9a;          /* labels, timestamps */
+  --muted-soft: #5c616d;     /* secondary text, inactive nav, column labels */
+  --muted-faint: #b8bcc4;    /* tertiary */
+  --text: #2a3038;           /* body text */
+  --white: #2a3038;          /* strongest text — headings, names, key values */
+  --accent: #da6b3a;         /* brand orange (white-label override target) */
   --accent-text: #fff;
-  --accent-soft: rgba(218, 107, 58, 0.08); /* halo, focus ring tint */
-  --nav-bg: rgba(247, 246, 243, 0.92);
+  --accent-soft: rgba(218, 107, 58, 0.10);  /* active-nav pill, halo, focus ring */
+  --nav-bg: #ffffff;
 
-  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Status badge tokens (pill: rounded, ~12px text, medium weight) */
+  --table-header: #ebecf0;
+  --badge-pass-text: #317b3e;   --badge-pass-bg: #e9f5e9;
+  --badge-progress-text: #1837e0; --badge-progress-bg: #e2e6ff;
+  --badge-idle-text: #5c616d;   --badge-idle-bg: #f3f4f8;
+  --priority-critical: #d43241;
+  --priority-medium: #fb9c0e;
+  --priority-low: #5ebd61;
 
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+  /* Component styling (theme-scoped). Light keeps its current look;
+     charcoal + black override these to the polished "preview" look. */
+  --ai-bubble-bg: var(--card);
+  --ai-bubble-border: 1px solid var(--border);
+  --ai-bubble-shadow: var(--shadow-card);
+  --returns-divider: 2px solid var(--white);
+  --rec-good-bg: rgba(5, 150, 105, 0.12);   --rec-good-text: #059669;
+  --rec-marginal-bg: rgba(217, 119, 6, 0.12); --rec-marginal-text: #d97706;
+  --rec-pass-bg: rgba(220, 38, 38, 0.12);   --rec-pass-text: #dc2626;
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
 [data-theme="charcoal"] {
@@ -41,6 +60,15 @@
   --accent-soft: rgba(218, 107, 58, 0.18);
   --nav-bg: rgba(17, 17, 17, 0.92);
   --shadow-card: none;
+
+  /* Polished "preview" look */
+  --ai-bubble-bg: var(--border-soft);
+  --ai-bubble-border: none;
+  --ai-bubble-shadow: none;
+  --returns-divider: 1px solid var(--border);
+  --rec-good-bg: var(--badge-pass-bg);   --rec-good-text: var(--badge-pass-text);
+  --rec-marginal-bg: #fdf1e2;            --rec-marginal-text: #b7791f;
+  --rec-pass-bg: #fde8ea;                --rec-pass-text: var(--priority-critical);
 }
 
 [data-theme="black"] {
@@ -59,6 +87,15 @@
   --accent-soft: rgba(218, 107, 58, 0.18);
   --nav-bg: rgba(0, 0, 0, 0.92);
   --shadow-card: none;
+
+  /* Polished "preview" look */
+  --ai-bubble-bg: var(--border-soft);
+  --ai-bubble-border: none;
+  --ai-bubble-shadow: none;
+  --returns-divider: 1px solid var(--border);
+  --rec-good-bg: var(--badge-pass-bg);   --rec-good-text: var(--badge-pass-text);
+  --rec-marginal-bg: #fdf1e2;            --rec-marginal-text: #b7791f;
+  --rec-pass-bg: #fde8ea;                --rec-pass-text: var(--priority-critical);
 }
 
 /* ---------- Global reset ---------- */

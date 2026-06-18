@@ -132,7 +132,7 @@ TECH STACK
 - React with Vite
 - Tailwind CSS
 - Claude API with web search tool enabled — entire data + intelligence layer
-- Model: claude-opus-4-7 (use Opus unless told otherwise in a specific session). Max tokens 1500.
+- Model: claude-sonnet-4-6 (cost-driven default; set via VIS_MODEL env var, falls back to Sonnet 4.6). Opus is not used for the API. Max tokens 1500.
 - Google Fonts: DM Sans (text), Inter Semibold 600 (numbers)
 - Vercel with wildcard subdomain routing (*.vis.realestate)
 - Vercel API — programmatic subdomain provisioning (VERCEL_API_TOKEN
@@ -271,20 +271,20 @@ DESIGN SYSTEM — FOLLOW EXACTLY EVERY SESSION
 Colors — CSS variables only. Never hardcode hex in components.
 
 ```css
-/* Light (default) — warm cream */
---bg:           #f7f6f3   /* page background */
+/* Light (default) — clean white */
+--bg:           #ffffff   /* page background */
 --card:         #ffffff   /* cards, surfaces */
---card-tint:    #fff8f5   /* warm accent-tinted surface (headline stats) */
---border:       #e8e6e3   /* primary borders */
---border-soft:  #f0ede9   /* sidebar bg + tertiary borders + inset surfaces */
---muted:        #9b8ea0   /* labels */
---muted-soft:   #6b6560   /* secondary text */
---muted-faint:  #c0b8b4   /* timestamps, tertiary */
---text:         #2a2825   /* body text */
---white:        #1a1a18   /* strongest text — headlines, key values */
+--card-tint:    #f8f9fb   /* lightly tinted surface (highlighted areas) */
+--border:       #ebebeb   /* primary borders — very light */
+--border-soft:  #f7f8fa   /* sidebar bg + tertiary borders + inset surfaces */
+--muted:        #9ca3af   /* labels */
+--muted-soft:   #6b7280   /* secondary text */
+--muted-faint:  #d1d5db   /* timestamps, tertiary */
+--text:         #374151   /* body text */
+--white:        #111827   /* strongest text — headlines, key values */
 --accent:       #DA6B3A   /* brand orange */
 --accent-soft:  rgba(218, 107, 58, 0.08)  /* halo / focus ring tint */
---shadow-card:  0 1px 3px rgba(0, 0, 0, 0.04)
+--shadow-card:  0 1px 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04)
 
 /* Charcoal (alternate, opt-in via data-theme="charcoal") */
 --bg:           #111111
@@ -330,13 +330,14 @@ Apply before first render. Default: Charcoal.
 
 Typography — strict, no exceptions
 
-- DM Sans: ALL labels, body text, buttons, nav, chat messages, summaries
+- Inter: ALL UI text — labels, body text, buttons, nav, chat messages,
+  summaries (weights 300, 400, 500, 600, 700 loaded)
 - Inter Semibold (weight 600): ALL numbers, data values, percentages,
   dollar amounts, dates in data context, URLs, codes
-- Numbers always Inter 600. Words always DM Sans.
-- DM Sans weights used: 400, 700, 800
-- Inter weights used: 600
-- --font-mono CSS variable resolves to Inter, not a monospace font
+- Numbers always Inter 600. UI text uses Inter 400/500/700 as appropriate.
+- --font-sans and --font-mono both resolve to Inter
+- Report pages (PropertyReport, MarketReport, InvestorReport) use Georgia
+  serif for formal print headers — do not change those
 
 Visual rules
 
@@ -699,6 +700,13 @@ All tiers:
              15yr fixed, ARM, next Fed meeting, Fed expectation.
              No report button.
 
+  depreciation — Depreciation analysis: annual deduction (accent),
+               est. tax savings at selected bracket (accent),
+               building value, 27.5yr schedule, bracket dropdown
+               (22/24/32/37%), recapture warning pill.
+               Generate Full Report button: Agent + Brokerage only.
+               Card visible to all tiers.
+
 Investor tier and above only:
   rental   — Rental estimate: est. monthly rent, rent range, nearby
              rental comps (address, beds/baths, rent). Source note.
@@ -737,6 +745,55 @@ flow projection. PDF exportable. Shareable via link (Investor+).
 
 Multi-property comparison: up to 3 properties, Claude runs all calcs
 for each, renders comparison table with Generate Full Report button.
+
+DEPRECIATION ANALYSIS
+
+Available to all tiers for the inline card. Generate Full Report
+button and the PropertyReport block are Agent + Brokerage only.
+
+Calculation (calcDepreciation in loanMath.js):
+  buildingValue = purchasePrice × (1 − landValuePercent)
+  annualDeduction = buildingValue ÷ 27.5
+  annualTaxSavings = annualDeduction × taxBracket
+  Recovery period: 27.5yr residential, 39yr commercial
+
+Land value defaults (use county assessor data when available):
+  Standard residential:     20%
+  High cost coastal market: 35%
+  Rural / low cost market:  10%
+
+Tax bracket options (bracket dropdown in card and report):
+  22% — middle income
+  24% — upper middle
+  32% — high income (default)
+  37% — top bracket
+
+System prompt instructions (Layer 4 in claudeApi.js):
+  1. Search county assessor for land vs building split.
+  2. Use assessor data when found, label "county assessor".
+     Otherwise use market-based default, label with explanation.
+  3. Calculate straight-line depreciation over 27.5yr (residential).
+  4. Return cardType "depreciation" with raw numbers (not strings).
+  5. Always include recapture warning and educational disclaimer.
+  6. Never give specific tax strategy advice.
+
+DataCard type="depreciation" layout:
+  Header: "DEPRECIATION ANALYSIS"
+  Top row (3 cols): Annual Deduction (accent), Est. Tax Savings
+    (accent, recalculates on bracket change), Building Value (white)
+  Bracket dropdown: 22/24/32/37%
+  Schedule grid (2 cols): Year 1, Year 5, Year 10, Year 27.5
+  Data source note (county assessor or estimated)
+  Warning pill: rgba(218,107,58,0.12) bg, orange border, CPA note
+  Generate Full Report button: Agent + Brokerage only
+
+PropertyReport block:
+  Position: after Loan Calculator, before AI Analysis
+  Toggle: "Depreciation (Investors)" in sticky bar, default OFF
+  Visible to: Agent + Brokerage tiers only
+  Sections: header, key metrics, assumptions box, schedule table
+    (Year 1–5, 10, 15, 20, 27.5), recapture warning, disclaimer
+  Disclaimer always rendered, cannot be removed
 
 ADMIN PANEL
 
@@ -818,6 +875,16 @@ Session 15a — Investor cards + math: rental, deal, returns card types
 Session 15b — Investor report + comparison: InvestorReport.jsx (full
               PDF-ready layout matching print style); multi-property
               comparison table; InvestorCalculator.jsx component
+Session 12b — Depreciation calculator ✓
+              - calcDepreciation() added to loanMath.js
+              - type="depreciation" DataCard with bracket dropdown
+              - Depreciation block added to PropertyReport (Agent+,
+                toggle OFF by default)
+              - Depreciation card format added to claudeApi.js
+                system prompt (Layer 4)
+              - MOCK_DEPRECIATION + MOCK_DEPRECIATION_CARD added to
+                mockData.js; demo card added to demoMessages.js
+              - showButton gated to agent+ in Chat.jsx
 Session 16 — Supabase schema: create all 5 tables (users,
              agent_profiles, brokerage_profiles, handle_registry,
              tier_config) in Supabase dashboard
@@ -883,8 +950,15 @@ CURRENT SESSION STATUS
 
 Update this section at the end of every session.
 
-Last completed: Session 15b — Investor report (standalone page)
-Current status: MarketReport.jsx rebuilt in PropertyReport print style
+Last completed: Session 30 (+ UI design refresh)
+Design refresh: light theme updated to clean white/neutral palette
+(#f5f6fa bg, #ffffff cards, #e5e7eb borders, neutral gray type scale).
+UI font changed from DM Sans → Inter across all components. Default
+theme changed from charcoal to light. Report pages (PropertyReport,
+MarketReport, InvestorReport) untouched — still Georgia serif + warm
+colors. DM Sans removed from index.html font load.
+
+Previous status: MarketReport.jsx rebuilt in PropertyReport print style
 (Georgia serif header, same card container, SEC section headers, table
 rows). MarketDataGrid.jsx: 3 sections (Home Price & Affordability,
 Market Trends, Demographics), 30 fields total. Fields with no data
@@ -1060,6 +1134,6 @@ enterprise get fully white labeled AI under custom subdomains. Vis
 invisible to clients on agent URLs. Agent training injects into
 system prompt as Layer 3, always after Fair Housing guardrails in
 Layer 1. Palette #111 #3D3D3D #888 #D8D8D8 #FFF accent #DA6B3A.
-Default API model: claude-opus-4-7. Do not scope creep into a
+Default API model: claude-sonnet-4-6 (via VIS_MODEL env). Do not scope creep into a
 dashboard. AgentContext + subdomain routing land in Session 19, not
 earlier — vis.realestate is the only branding context until then.

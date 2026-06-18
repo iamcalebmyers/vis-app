@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Nav from "../components/Nav.jsx";
 import ChatThread from "../components/ChatThread.jsx";
 import ChatInput from "../components/ChatInput.jsx";
@@ -7,12 +7,12 @@ import PropertyReport from "./PropertyReport.jsx";
 import MarketReport from "./MarketReport.jsx";
 import InvestorReport from "./InvestorReport.jsx";
 import Settings from "./Settings.jsx";
-import ReportTemplates from "./ReportTemplates.jsx";
-import OverageModal from "../components/OverageModal.jsx";
+import Reports from "./Reports.jsx";
+import BuyUsageModal from "../components/BuyUsageModal.jsx";
 import { sendMessage } from "../utils/claudeApi.js";
 import { useAgent } from "../utils/AgentContext.jsx";
 import { loadAgentInfo } from "../utils/useAgentInfo.js";
-import { hasFeature, INVESTOR_CARD_TYPES, usagePct } from "../utils/tier.js";
+import { hasFeature } from "../utils/tier.js";
 import {
   loadSessions,
   saveSession,
@@ -75,16 +75,15 @@ function toApiMessages(messages) {
   return messages.map((m) => ({ role: m.role, content: m.content }));
 }
 
-function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile }) {
+function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, clientProfile }) {
   const agentCtx = useAgent();
   const [sessions, setSessions] = useState(() => isClient ? [] : loadSessions());
   const [activeSession, setActiveSession] = useState(null);
   const [messages, setMessages] = useState(loadInitialMessages);
   const [typing, setTyping] = useState(false);
   const [activeReport, setActiveReport] = useState(null);
-  const [showOverageModal, setShowOverageModal] = useState(false);
+  const [buyUsage, setBuyUsage] = useState(null); // null | "manual" | "empty"
   const [activeTab, setActiveTab] = useState("chat");
-  const pendingMessageRef = useRef(null);
 
   // Load client sessions from Supabase
   useEffect(() => {
@@ -93,8 +92,6 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
   }, [isClient, clientProfile?.id]);
 
   const tier = userRow?.tier || "solo";
-  const pct = usagePct(userRow?.usage_current, userRow?.usage_limit);
-  const atLimit = userRow?.usage_limit && (userRow?.usage_current || 0) >= userRow.usage_limit;
 
   const hasContent = messages.length > 0 || typing;
 
@@ -180,9 +177,8 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
         brokerageTraining: agentCtx.brokerageTraining,
       });
 
-      // Feature gate: investor cards require investor+ tier
-      const isInvestorCard = card?.type && INVESTOR_CARD_TYPES.has(card.type);
-      const canSeeCard = !isClient && (!isInvestorCard || hasFeature(tier, "investor"));
+      // Investor report cards are available to all signed-in tiers (clients excluded).
+      const canSeeCard = !isClient;
 
       const aiMsg = {
         id: crypto.randomUUID(),
@@ -190,8 +186,12 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
         content: reply,
         cardType: canSeeCard ? (card?.type || null) : null,
         cardData: canSeeCard ? (card?.data || null) : null,
-        showButton: canSeeCard && (card?.type === "property" || card?.type === "market" || card?.type === "deal"),
-        upgradeRequired: !canSeeCard && isInvestorCard ? "investor" : null,
+        showButton: canSeeCard && (
+          card?.type === "property" ||
+          card?.type === "market" ||
+          card?.type === "deal" ||
+          (card?.type === "depreciation" && hasFeature(tier, "agent"))
+        ),
         createdAt: Date.now(),
       };
 
@@ -207,39 +207,35 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
 
       if (onRefreshUser) onRefreshUser();
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "ai",
-          content: `Sorry — something went wrong reaching the server.\n\n${err?.message || "Unknown error"}`,
-          createdAt: Date.now(),
-        },
-      ]);
+      if (err?.code === "needs_topup") {
+        setBuyUsage("empty");
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "ai",
+            content: "You're out of usage. Add more to keep going — use the **Usage** meter in the top bar.",
+            createdAt: Date.now(),
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "ai",
+            content: `Sorry — something went wrong reaching the server.\n\n${err?.message || "Unknown error"}`,
+            createdAt: Date.now(),
+          },
+        ]);
+      }
     } finally {
       setTyping(false);
     }
   }
 
   function handleSend(text) {
-    if (atLimit) {
-      pendingMessageRef.current = text;
-      setShowOverageModal(true);
-      return;
-    }
     doSend(text);
-  }
-
-  function handleOverageConfirm() {
-    setShowOverageModal(false);
-    const text = pendingMessageRef.current;
-    pendingMessageRef.current = null;
-    if (text) doSend(text);
-  }
-
-  function handleOverageCancel() {
-    setShowOverageModal(false);
-    pendingMessageRef.current = null;
   }
 
   return (
@@ -251,39 +247,33 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
         background: "var(--bg)",
       }}
     >
-      {showOverageModal && (
-        <OverageModal
-          overageRate={userRow?.overage_rate}
-          onConfirm={handleOverageConfirm}
-          onCancel={handleOverageCancel}
+      {buyUsage && !isClient && (
+        <BuyUsageModal
+          user={user}
+          userRow={userRow}
+          reason={buyUsage}
+          onClose={() => setBuyUsage(null)}
         />
       )}
-      <Nav active={activeTab} onTabChange={setActiveTab} userEmail={user?.email} onSignOut={onSignOut} userRow={userRow} isClient={isClient} />
-      {pct >= 80 && pct < 100 && (
-        <div style={{ background: "rgba(245,158,11,0.1)", borderBottom: "1px solid rgba(245,158,11,0.3)", padding: "7px 24px", fontFamily: "var(--font-sans)", fontSize: 12, color: "#f59e0b", display: "flex", alignItems: "center", gap: 8 }}>
-          <span>You've used {pct}% of your monthly AI queries.</span>
-          <span style={{ color: "var(--muted)" }}>Upgrade your plan for a higher limit.</span>
-        </div>
-      )}
-      {pct >= 100 && (
-        <div style={{ background: "rgba(220,38,38,0.1)", borderBottom: "1px solid rgba(220,38,38,0.3)", padding: "7px 24px", fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
-          <span>Monthly query limit reached. Additional queries will be billed as overage.</span>
-        </div>
-      )}
+      <Nav active={activeTab} onTabChange={setActiveTab} userEmail={user?.email} onSignOut={onSignOut} userRow={userRow} isClient={isClient} agentLogo={agentLogo} onBuyUsage={() => setBuyUsage("manual")} />
 
       {activeTab === "settings" && (
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-          <Settings user={user} userRow={userRow} onSignOut={onSignOut} />
+        <div style={{ display: "flex", flex: 1, overflow: "hidden", padding: 6 }}>
+          <div style={{ display: "flex", flex: 1, overflow: "hidden", background: "var(--card)", borderRadius: 12, boxShadow: "var(--shadow-card)" }}>
+            <Settings user={user} userRow={userRow} onSignOut={onSignOut} />
+          </div>
         </div>
       )}
 
       {activeTab === "reports" && (
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          <ReportTemplates user={user} userRow={userRow} />
+        <div style={{ flex: 1, overflow: "hidden", padding: 6 }}>
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--card)", borderRadius: 12, boxShadow: "var(--shadow-card)" }}>
+            <Reports user={user} userRow={userRow} tier={tier} />
+          </div>
         </div>
       )}
 
-      {activeTab === "chat" && <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      {activeTab === "chat" && <div style={{ display: "flex", flex: 1, overflow: "hidden", gap: 6, padding: "6px 6px 6px 6px" }}>
         <SessionSidebar
           sessions={sessions}
           activeId={activeSession?.id || null}
@@ -298,6 +288,9 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
+            background: "var(--card)",
+            borderRadius: 12,
+            boxShadow: "var(--shadow-card)",
           }}
         >
           {activeReport ? (
@@ -336,8 +329,7 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
               <div
                 style={{
                   padding: "12px 32px 20px",
-                  background: "var(--bg)",
-                  borderTop: "1px solid var(--border)",
+                  background: "var(--card)",
                 }}
               >
                 <ChatInput
@@ -365,7 +357,7 @@ function Chat({ user, userRow, onSignOut, onRefreshUser, isClient, clientProfile
                   aiName={agentCtx.aiName}
                   logoUrl={agentCtx.logoUrl}
                   greeting={ai.greeting}
-                  localLogoUrl={ai.logoUrl}
+                  localLogoUrl={agentLogo || ai.logoUrl}
                 />
               ); })()}
               <div style={{ width: "100%", maxWidth: 760 }}>

@@ -3,6 +3,8 @@ import TierBadge from "./TierBadge.jsx";
 import ThemeSwitcher from "./ThemeSwitcher.jsx";
 import UsageBar from "./UsageBar.jsx";
 import { useAgent } from "../utils/AgentContext.jsx";
+import { loadAgentInfo } from "../utils/useAgentInfo.js";
+import { hasFeature } from "../utils/tier.js";
 
 const TABS = [
   { id: "chat", label: "Chat" },
@@ -55,22 +57,20 @@ function Tab({ tab, isActive, onClick }) {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: "transparent",
+        background: isActive ? "var(--accent-soft)" : "transparent",
         border: "none",
         padding: "6px 14px",
+        borderRadius: 8,
         fontFamily: "var(--font-sans)",
         fontSize: 13,
-        fontWeight: isActive ? 600 : 400,
+        fontWeight: isActive ? 600 : 500,
         color: isActive
-          ? "var(--white)"
+          ? "var(--accent)"
           : hover
             ? "var(--white)"
-            : "var(--muted)",
-        borderBottom: isActive
-          ? "2px solid var(--accent)"
-          : "2px solid transparent",
+            : "var(--muted-soft)",
         cursor: isActive ? "default" : "pointer",
-        transition: "color 0.15s ease",
+        transition: "color 0.15s ease, background 0.15s ease",
       }}
     >
       {tab.label}
@@ -92,14 +92,24 @@ function SignOutButton({ email, onSignOut }) {
   );
 }
 
-function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow, isClient }) {
+function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow, isClient, agentLogo, onBuyUsage }) {
   const { isAgentDomain, aiName, logoUrl } = useAgent();
-  const visibleTabs = isClient ? TABS.filter(t => t.id === "chat") : TABS;
+  const visibleTabs = isClient
+    ? TABS.filter(t => t.id === "chat")
+    : TABS.filter(t => !t.minTier || hasFeature(userRow?.tier, t.minTier));
+
+  // On the main domain, agent/brokerage tiers see their own uploaded logo.
+  // Prefer the Supabase-sourced logo (consistent across devices); fall back to local cache.
+  const localLogo = (!isAgentDomain && hasFeature(userRow?.tier, "agent"))
+    ? (agentLogo || loadAgentInfo().logoUrl)
+    : null;
 
   const logoMark = isAgentDomain ? (
     logoUrl
       ? <img src={logoUrl} alt={aiName} style={{ width: 26, height: 26, borderRadius: 6, objectFit: "cover" }} />
       : <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: 6, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, lineHeight: 1 }}>{aiName[0]?.toUpperCase() || "A"}</span>
+  ) : localLogo ? (
+    <img src={localLogo} alt="Logo" style={{ width: 26, height: 26, borderRadius: 6, objectFit: "cover" }} />
   ) : (
     <img src="/vis-logo.png" alt="Vis" style={{ width: 26, height: 26, borderRadius: 6, objectFit: "cover" }} />
   );
@@ -119,16 +129,14 @@ function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow, isCl
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        height: 48,
-        padding: "0 24px",
+        height: 52,
+        padding: "0 20px",
         background: "var(--nav-bg)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        borderBottom: "1px solid var(--border)",
         fontFamily: "var(--font-sans)",
         position: "sticky",
         top: 0,
         zIndex: 10,
+        flexShrink: 0,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -148,7 +156,7 @@ function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow, isCl
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {!isAgentDomain && !isClient && <UsageBar userRow={userRow} />}
+        {!isAgentDomain && !isClient && <UsageBar userRow={userRow} onBuyUsage={onBuyUsage} />}
         <ThemeSwitcher />
         {!isAgentDomain && !isClient && <TierBadge tier={userRow?.tier} />}
         <LiveIndicator />

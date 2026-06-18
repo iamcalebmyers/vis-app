@@ -6,10 +6,8 @@ export function getSystemTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "charcoal" : "light";
 }
 
-export function getDefaultTheme(tier) {
-  if (tier === "brokerage") return "black";
-  if (tier === "investor" || tier === "agent") return "charcoal";
-  return "system"; // solo follows OS
+export function getDefaultTheme(_tier) {
+  return "light";
 }
 
 export function resolveTheme(stored) {

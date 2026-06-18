@@ -36,7 +36,7 @@ function AgentMark({ agent }) {
       <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--accent)", display: "grid", placeItems: "center", flexShrink: 0 }}>
         <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 700, fontSize: 14, color: "#fff" }}>{name[0].toUpperCase()}</span>
       </div>
-      <span style={{ fontFamily: "DM Sans, sans-serif", fontWeight: 800, fontSize: 18, color: "#1a1a18" }}>{name}</span>
+      <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 18, color: "#1a1a18" }}>{name}</span>
     </div>
   );
 }
@@ -45,7 +45,7 @@ function VisMark() {
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
       <img src="/vis-logo.png" alt="Vis" style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover" }} />
-      <span style={{ fontFamily: "DM Sans, sans-serif", fontWeight: 800, fontSize: 18, color: "#1a1a18" }}>vis<span style={{ fontFamily: "Inter, sans-serif", fontWeight: 400, fontSize: 10, color: "#9b8ea0" }}>.realestate</span></span>
+      <span style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, fontSize: 18, color: "#1a1a18" }}>vis<span style={{ fontFamily: "Inter, sans-serif", fontWeight: 400, fontSize: 10, color: "#9b8ea0" }}>.realestate</span></span>
     </div>
   );
 }

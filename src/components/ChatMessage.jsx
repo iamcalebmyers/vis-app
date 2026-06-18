@@ -63,14 +63,14 @@ function ChatMessage({
         style={{
           maxWidth: isUser ? "72%" : (hasCard || hasGate) ? "92%" : "88%",
           padding: isUser ? "9px 14px" : "12px 14px",
-          background: isUser ? "var(--accent)" : "var(--card)",
-          border: isUser ? "none" : "1px solid var(--border)",
+          background: isUser ? "var(--accent)" : "var(--ai-bubble-bg)",
+          border: isUser ? "none" : "var(--ai-bubble-border)",
           borderRadius: isUser ? "14px 14px 4px 14px" : "4px 14px 14px 14px",
           color: isUser ? "#ffffff" : "var(--text)",
           fontFamily: "var(--font-sans)",
           fontSize: 14,
           lineHeight: 1.65,
-          boxShadow: isUser ? "none" : "var(--shadow-card)",
+          boxShadow: isUser ? "none" : "var(--ai-bubble-shadow)",
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
         }}

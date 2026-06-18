@@ -2,6 +2,17 @@ import { useState } from "react";
 
 const LABEL = { fontFamily: "Arial, sans-serif", fontSize: 12, color: "var(--muted-soft)", padding: "6px 10px", borderBottom: "0.5px solid var(--border)", width: "25%" };
 const VALUE = { fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--text)", padding: "6px 10px", borderBottom: "0.5px solid var(--border)", width: "25%" };
+
+function GraphBtn({ onClick }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button type="button" onClick={onClick} title="Graph this metric"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ background: "none", border: "none", cursor: "pointer", padding: "0 4px", marginLeft: 4, color: hover ? "var(--accent)" : "var(--muted-faint)", transition: "color 0.15s ease", verticalAlign: "middle", display: "inline-flex", alignItems: "center" }}>
+      <svg width={11} height={11} viewBox="0 0 13 13" fill="none"><rect x="0.5" y="7" width="3" height="5.5" rx="0.5" fill="currentColor" /><rect x="5" y="4" width="3" height="8.5" rx="0.5" fill="currentColor" /><rect x="9.5" y="1" width="3" height="11.5" rx="0.5" fill="currentColor" /></svg>
+    </button>
+  );
+}
 const TH = { background: "var(--white)", color: "var(--card)", padding: "6px 10px", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "left", fontFamily: "Arial, sans-serif" };
 
 function SectionHeader({ title, attribution }) {
@@ -13,7 +24,7 @@ function SectionHeader({ title, attribution }) {
   );
 }
 
-function EditablePair({ label, value, overrides, onOverride }) {
+function EditablePair({ label, value, overrides, onOverride, graphHints, onGraph }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [hover, setHover] = useState(false);
@@ -45,7 +56,10 @@ function EditablePair({ label, value, overrides, onOverride }) {
         ) : (
           <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 }}>
             <span style={{ color: isEdited ? "var(--white)" : "var(--text)" }}>{displayed}</span>
-            {hover && onOverride && <button type="button" onClick={startEdit} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11, padding: 0, lineHeight: 1, flexShrink: 0 }}>✎</button>}
+            <span style={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {graphHints?.[label] && onGraph && <GraphBtn onClick={() => onGraph(graphHints[label])} />}
+              {hover && onOverride && <button type="button" onClick={startEdit} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11, padding: 0, lineHeight: 1, flexShrink: 0 }}>✎</button>}
+            </span>
           </span>
         )}
       </td>
@@ -53,11 +67,12 @@ function EditablePair({ label, value, overrides, onOverride }) {
   );
 }
 
-function FactSection({ title, pairs, attribution, overrides, onOverride }) {
+function FactSection({ title, pairs, attribution, overrides, onOverride, graphHints, onGraph }) {
   const valid = pairs.filter(([, v]) => v != null && v !== "");
   if (!valid.length) return null;
   const rows = [];
   for (let i = 0; i < valid.length; i += 2) rows.push([valid[i], valid[i + 1] || null]);
+  const shared = { overrides, onOverride, graphHints, onGraph };
   return (
     <>
       <SectionHeader title={title} attribution={attribution} />
@@ -65,9 +80,9 @@ function FactSection({ title, pairs, attribution, overrides, onOverride }) {
         <tbody>
           {rows.map(([a, b], i) => (
             <tr key={i}>
-              <EditablePair label={a[0]} value={a[1]} overrides={overrides} onOverride={onOverride} />
+              <EditablePair label={a[0]} value={a[1]} {...shared} />
               {b
-                ? <EditablePair label={b[0]} value={b[1]} overrides={overrides} onOverride={onOverride} />
+                ? <EditablePair label={b[0]} value={b[1]} {...shared} />
                 : <><td style={{ ...LABEL, borderBottom: "0.5px solid var(--border)" }} /><td style={{ ...VALUE, borderBottom: "0.5px solid var(--border)" }} /></>}
             </tr>
           ))}
@@ -77,11 +92,14 @@ function FactSection({ title, pairs, attribution, overrides, onOverride }) {
   );
 }
 
-function SaleHistorySection({ history }) {
+function SaleHistorySection({ history, onGraph }) {
   if (!history?.length) return null;
   return (
     <>
-      <SectionHeader title="Sale History" />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 24, borderBottom: "2px solid var(--white)", paddingBottom: 6 }}>
+        <div style={{ fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", flex: 1 }}>Sale History</div>
+        {onGraph && <GraphBtn onClick={() => onGraph({ metricKey: "saleHistory", unit: "dollars" })} />}
+      </div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead><tr>{["Date", "Event", "Price", "$/sq ft", "Source"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
         <tbody>
@@ -100,7 +118,12 @@ function SaleHistorySection({ history }) {
   );
 }
 
-function PropertyFacts({ property, overrides = {}, onOverride }) {
+const FINANCIAL_GRAPH_HINTS = {
+  "Est. value": { metricKey: "estimatedValue", unit: "dollars" },
+  "Annual tax": { metricKey: "annualTax", unit: "dollars" },
+};
+
+function PropertyFacts({ property, overrides = {}, onOverride, onGraph }) {
   if (!property) return null;
   const $ = (n) => typeof n === "number" ? "$" + n.toLocaleString() : null;
   const score = (n, lbl) => n != null ? `${n} — ${lbl}` : null;
@@ -116,7 +139,7 @@ function PropertyFacts({ property, overrides = {}, onOverride }) {
         ["Year built", property.yearBuilt?.toString()], ["Year renovated", property.yearRenovated?.toString()],
         ["County", property.county], ["APN", property.apn],
       ]} />
-      <SaleHistorySection history={property.saleHistory} />
+      <SaleHistorySection history={property.saleHistory} onGraph={onGraph} />
       <FactSection title="Parking & Garage" {...shared} pairs={[
         ["Garage spaces", property.garageSpaces > 0 ? property.garageSpaces.toString() : null],
         ["Attached", bool(property.garageAttached)],
@@ -134,7 +157,7 @@ function PropertyFacts({ property, overrides = {}, onOverride }) {
         ["Patio / porch", property.patioFeatures], ["Exterior features", property.exteriorFeatures],
         ["Green features", property.greenFeatures],
       ]} />
-      <FactSection title="Financial" {...shared} pairs={[
+      <FactSection title="Financial" {...shared} graphHints={FINANCIAL_GRAPH_HINTS} onGraph={onGraph} pairs={[
         ["Est. value", $(property.estimatedValue)], ["List price", $(property.listPrice)],
         ["Price / sq ft", property.pricePerSqft ? `$${property.pricePerSqft}` : null],
         ["Previous sale", property.prevSalePrice ? `${$(property.prevSalePrice)} · ${property.prevSaleDate}` : null],
