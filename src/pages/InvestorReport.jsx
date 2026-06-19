@@ -66,7 +66,7 @@ function InvestorReport({ data, onBack, user, userRow }) {
   const [termYears, setTermYears] = useState(30);
   const [arvStr, setArvStr] = useState(() => String(pNum(data?.estARV) || 530000));
   const [repairStr, setRepairStr] = useState(() => String(pNum(data?.repairEstimate) || 25000));
-  const [refiOn, setRefiOn] = useState(false);
+  const [brrrMode, setBrrrMode] = useState(false);
   const [refiLtvStr, setRefiLtvStr] = useState("75");
   const [refiRateStr, setRefiRateStr] = useState("6.84");
   const [refiTermYears, setRefiTermYears] = useState(30);
@@ -125,17 +125,17 @@ function InvestorReport({ data, onBack, user, userRow }) {
   const postRefiCoC = cashLeft > 0 ? ((postRefiCF * 12) / cashLeft) * 100 : null;
 
   // Active numbers = post-refinance when the refi is enabled, else acquisition (unchanged).
-  const monthlyCF = refiOn ? postRefiCF : (m.monthlyCashFlow ?? 0);
-  const cfStr = (refiOn ? postRefiCF : m.monthlyCashFlow) == null ? "—" : `${monthlyCF < 0 ? "−" : ""}$${Math.abs(monthlyCF).toLocaleString()}`;
+  const monthlyCF = brrrMode ? postRefiCF : (m.monthlyCashFlow ?? 0);
+  const cfStr = (brrrMode ? postRefiCF : m.monthlyCashFlow) == null ? "—" : `${monthlyCF < 0 ? "−" : ""}$${Math.abs(monthlyCF).toLocaleString()}`;
   const monthlyExp = Math.round(monthlyRent - monthlyCF);
-  const cocStr = refiOn
+  const cocStr = brrrMode
     ? (cashLeft <= 0 ? "∞ — capital fully recycled" : `${postRefiCoC.toFixed(1)}%`)
     : fmtPct(m.cashOnCash);
 
   const summaryStats = [
     { label: "Purchase Price", value: fmtUSD0(purchasePrice) },
     { label: "Est. Monthly Rent", value: `${fmtUSD0(monthlyRent)}/mo` },
-    { label: refiOn ? "Monthly Cash Flow · post-refi" : "Monthly Cash Flow", value: `${cfStr}/mo`, accent: true },
+    { label: brrrMode ? "Monthly Cash Flow · post-refi" : "Monthly Cash Flow", value: `${cfStr}/mo`, accent: true },
     { label: "Gross Yield", value: fmtPct(m.grossYield) },
   ];
 
@@ -144,10 +144,19 @@ function InvestorReport({ data, onBack, user, userRow }) {
     ["Potential Equity", deal.potentialEquity],
   ].filter(([, v]) => v);
 
+  // Original (pre-BRRR) Deal Analysis table — shown when BRRR Mode is off.
+  const dealRowsFull = [
+    ["Purchase Price", deal.purchasePrice],
+    ["Estimated ARV", deal.estARV],
+    ["Repair Estimate", deal.repairEstimate],
+    ["Max Offer (70% Rule)", deal.maxOffer],
+    ["Potential Equity", deal.potentialEquity],
+  ].filter(([, v]) => v);
+
   const returnsRows = [
     ["Gross Rental Yield", fmtPct(m.grossYield)],
     ["Net Rental Yield", fmtPct(m.netYield)],
-    [refiOn ? "Cash-on-Cash Return · post-refinance" : "Cash-on-Cash Return", cocStr],
+    [brrrMode ? "Cash-on-Cash Return · post-refinance" : "Cash-on-Cash Return", cocStr],
     ["Cap Rate", fmtPct(m.capRate)],
   ];
 
@@ -157,13 +166,22 @@ function InvestorReport({ data, onBack, user, userRow }) {
         <BackButton onClick={onBack} />
         <span className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Investor Report</span>
         <TemplatePicker reportType="investor" selected={activeTemplate} onSelect={setActiveTemplate} />
-        <label style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: includeAI ? "var(--text)" : "var(--muted)", transition: "color 0.15s ease" }}>AI Analysis</span>
-          <input type="checkbox" checked={includeAI} onChange={() => setIncludeAI(v => !v)} style={{ display: "none" }} />
-          <div style={{ width: 36, height: 20, borderRadius: 10, background: includeAI ? "var(--accent)" : "var(--border)", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}>
-            <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: includeAI ? 19 : 3, transition: "left 0.2s ease", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
-          </div>
-        </label>
+        <div style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 16 }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: brrrMode ? "var(--text)" : "var(--muted)", transition: "color 0.15s ease" }}>BRRR Mode</span>
+            <input type="checkbox" checked={brrrMode} onChange={() => setBrrrMode(v => !v)} style={{ display: "none" }} />
+            <div style={{ width: 36, height: 20, borderRadius: 10, background: brrrMode ? "var(--accent)" : "var(--border)", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}>
+              <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: brrrMode ? 19 : 3, transition: "left 0.2s ease", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+            </div>
+          </label>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: includeAI ? "var(--text)" : "var(--muted)", transition: "color 0.15s ease" }}>AI Analysis</span>
+            <input type="checkbox" checked={includeAI} onChange={() => setIncludeAI(v => !v)} style={{ display: "none" }} />
+            <div style={{ width: 36, height: 20, borderRadius: 10, background: includeAI ? "var(--accent)" : "var(--border)", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}>
+              <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: includeAI ? 19 : 3, transition: "left 0.2s ease", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+            </div>
+          </label>
+        </div>
       </div>
 
       <main style={{ flex: 1, padding: "20px 20px 40px" }}>
@@ -241,6 +259,8 @@ function InvestorReport({ data, onBack, user, userRow }) {
                 <span>Deal Analysis</span>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 700, color: rec.color, background: `${rec.color}20`, padding: "2px 10px", borderRadius: 20, textTransform: "none", letterSpacing: 0 }}>{rec.label}</span>
               </div>
+              {brrrMode ? (
+                <>
               {/* Step 1 — Rehab: editable ARV + repair drive the BRRR math below. */}
               <div style={STEP}>Step 1 · Rehab</div>
               <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10 }}>
@@ -267,20 +287,9 @@ function InvestorReport({ data, onBack, user, userRow }) {
                 </tbody>
               </table>
 
-              {/* Step 2 — Refinance (BRRR cash-out). Optional; off by default. */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 22 }}>
-                <div style={{ ...STEP, marginBottom: 0 }}>Step 2 · Refinance</div>
-                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: refiOn ? "var(--text)" : "var(--muted)" }}>Model a refinance (BRRR)</span>
-                  <input type="checkbox" checked={refiOn} onChange={() => setRefiOn(v => !v)} style={{ display: "none" }} />
-                  <div style={{ width: 36, height: 20, borderRadius: 10, background: refiOn ? "var(--accent)" : "var(--border)", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: refiOn ? 19 : 3, transition: "left 0.2s ease", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
-                  </div>
-                </label>
-              </div>
-
-              {refiOn && (
-                <div style={{ marginTop: 12, padding: "14px 16px", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8 }}>
+              {/* Step 2 — Refinance (BRRR cash-out). */}
+              <div style={{ ...STEP, marginTop: 22 }}>Step 2 · Refinance</div>
+                <div style={{ padding: "14px 16px", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8 }}>
                   <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 14 }}>
                     <label style={F_WRAP}>
                       <span style={F_LABEL}>Refi LTV</span>
@@ -339,6 +348,15 @@ function InvestorReport({ data, onBack, user, userRow }) {
                     Assumes the lender will refinance based on ARV after a seasoning period (commonly 6–12 months).
                   </div>
                 </div>
+                </>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <tbody>
+                    {dealRowsFull.map(([label, value]) => (
+                      <TipRow key={label} label={label} value={value} tip={DEAL_TIPS[label]} labelStyle={TD_L} valueStyle={TD_V} />
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           )}
@@ -383,7 +401,7 @@ function InvestorReport({ data, onBack, user, userRow }) {
                 </tbody>
               </table>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "2px solid var(--white)", marginTop: 2 }}>
-                <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, color: "var(--white)" }}>Net Cash Flow{refiOn ? " · post-refinance" : ""}</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, color: "var(--white)" }}>Net Cash Flow{brrrMode ? " · post-refinance" : ""}</span>
                 <div style={{ textAlign: "right" }}>
                   <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.01em" }}>{`${cfStr}/mo`}</span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--muted)", marginLeft: 14 }}>${(monthlyCF * 12).toLocaleString()}/yr</span>
