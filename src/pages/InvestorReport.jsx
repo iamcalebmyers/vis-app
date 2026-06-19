@@ -8,6 +8,7 @@ import ShareExport from "../components/ShareExport.jsx";
 import { TipRow } from "../components/ReportTooltip.jsx";
 import { DEAL_TIPS, RETURNS_TIPS, PROJECTION_TIPS } from "../utils/tooltips.js";
 import { computePropertyMetrics } from "../utils/investorMath.js";
+import { calcMonthlyPI } from "../utils/loanMath.js";
 import {
   MOCK_PROPERTY,
   MOCK_RENTAL_CARD,
@@ -37,6 +38,8 @@ const F_BOX = { display: "inline-flex", alignItems: "center", gap: 2, height: 32
 const F_INPUT = { border: "none", background: "transparent", color: "var(--white)", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 14, outline: "none", boxShadow: "none" };
 const F_FIX = { fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--muted)" };
 const F_HINT = { fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted-faint)" };
+const STEP = { fontFamily: "Arial, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 10 };
+const pNum = (s) => { const n = parseFloat(String(s ?? "").replace(/[^0-9.]/g, "")); return Number.isFinite(n) ? n : 0; };
 
 function BackButton({ onClick }) {
   return (
@@ -61,6 +64,13 @@ function InvestorReport({ data, onBack, user, userRow }) {
   });
   const [downStr, setDownStr] = useState("20");
   const [termYears, setTermYears] = useState(30);
+  const [arvStr, setArvStr] = useState(() => String(pNum(data?.estARV) || 530000));
+  const [repairStr, setRepairStr] = useState(() => String(pNum(data?.repairEstimate) || 25000));
+  const [refiOn, setRefiOn] = useState(false);
+  const [refiLtvStr, setRefiLtvStr] = useState("75");
+  const [refiRateStr, setRefiRateStr] = useState("6.84");
+  const [refiTermYears, setRefiTermYears] = useState(30);
+  const [refiClosingStr, setRefiClosingStr] = useState("3");
   const [showSendModal, setShowSendModal] = useState(false);
   const reportRef = useRef();
   const property = MOCK_PROPERTY;
@@ -99,6 +109,23 @@ function InvestorReport({ data, onBack, user, userRow }) {
   const cfStr = m.monthlyCashFlow == null ? "—" : `${m.monthlyCashFlow < 0 ? "−" : ""}$${Math.abs(m.monthlyCashFlow).toLocaleString()}`;
   const monthlyExp = Math.round(monthlyRent - monthlyCF);
 
+  // BRRR refinance (Step 2) — recover capital after rehab via a cash-out refi.
+  const arv = pNum(arvStr);
+  const repair = pNum(repairStr);
+  const acqLoan = Math.round(purchasePrice * (1 - downPct));
+  const refiLtv = Math.min(Math.max((parseFloat(refiLtvStr) || 0) / 100, 0), 1.25);
+  const refiRate = Number.isFinite(parseFloat(refiRateStr)) ? parseFloat(refiRateStr) : 6.84;
+  const refiClosingPct = Math.max((parseFloat(refiClosingStr) || 0) / 100, 0);
+  const newLoan = Math.round(arv * refiLtv);
+  const payoff = acqLoan;
+  const refiClosing = Math.round(newLoan * refiClosingPct);
+  const cashOut = newLoan - payoff - refiClosing;
+  const totalCashInvested = downDollars + repair;
+  const cashLeft = totalCashInvested - cashOut;
+  const postRefiPayment = Math.round(calcMonthlyPI(newLoan, refiRate, refiTermYears));
+  const cashOutStr = cashOut >= 0 ? fmtUSD0(cashOut) : `${fmtUSD0(Math.abs(cashOut))} needed at refinance closing`;
+  const cashLeftStr = cashLeft <= 0 ? "$0 — fully recycled" : fmtUSD0(cashLeft);
+
   const summaryStats = [
     { label: "Purchase Price", value: fmtUSD0(purchasePrice) },
     { label: "Est. Monthly Rent", value: `${fmtUSD0(monthlyRent)}/mo` },
@@ -107,9 +134,6 @@ function InvestorReport({ data, onBack, user, userRow }) {
   ];
 
   const dealRows = [
-    ["Purchase Price", deal.purchasePrice],
-    ["Estimated ARV", deal.estARV],
-    ["Repair Estimate", deal.repairEstimate],
     ["Max Offer (70% Rule)", deal.maxOffer],
     ["Potential Equity", deal.potentialEquity],
   ].filter(([, v]) => v);
@@ -211,6 +235,24 @@ function InvestorReport({ data, onBack, user, userRow }) {
                 <span>Deal Analysis</span>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 700, color: rec.color, background: `${rec.color}20`, padding: "2px 10px", borderRadius: 20, textTransform: "none", letterSpacing: 0 }}>{rec.label}</span>
               </div>
+              {/* Step 1 — Rehab: editable ARV + repair drive the BRRR math below. */}
+              <div style={STEP}>Step 1 · Rehab</div>
+              <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10 }}>
+                <label style={F_WRAP}>
+                  <span style={F_LABEL}>Estimated ARV</span>
+                  <span style={F_BOX}>
+                    <span style={F_FIX}>$</span>
+                    <input value={arvStr} onChange={(e) => setArvStr(e.target.value)} inputMode="numeric" aria-label="Estimated ARV" style={{ ...F_INPUT, width: 92 }} />
+                  </span>
+                </label>
+                <label style={F_WRAP}>
+                  <span style={F_LABEL}>Repair Estimate</span>
+                  <span style={F_BOX}>
+                    <span style={F_FIX}>$</span>
+                    <input value={repairStr} onChange={(e) => setRepairStr(e.target.value)} inputMode="numeric" aria-label="Repair estimate" style={{ ...F_INPUT, width: 80 }} />
+                  </span>
+                </label>
+              </div>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
                   {dealRows.map(([label, value]) => (
@@ -218,6 +260,80 @@ function InvestorReport({ data, onBack, user, userRow }) {
                   ))}
                 </tbody>
               </table>
+
+              {/* Step 2 — Refinance (BRRR cash-out). Optional; off by default. */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 22 }}>
+                <div style={{ ...STEP, marginBottom: 0 }}>Step 2 · Refinance</div>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: refiOn ? "var(--text)" : "var(--muted)" }}>Model a refinance (BRRR)</span>
+                  <input type="checkbox" checked={refiOn} onChange={() => setRefiOn(v => !v)} style={{ display: "none" }} />
+                  <div style={{ width: 36, height: 20, borderRadius: 10, background: refiOn ? "var(--accent)" : "var(--border)", position: "relative", transition: "background 0.2s ease", flexShrink: 0 }}>
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: refiOn ? 19 : 3, transition: "left 0.2s ease", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                  </div>
+                </label>
+              </div>
+
+              {refiOn && (
+                <div style={{ marginTop: 12, padding: "14px 16px", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8 }}>
+                  <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 14 }}>
+                    <label style={F_WRAP}>
+                      <span style={F_LABEL}>Refi LTV</span>
+                      <span style={F_BOX}>
+                        <input value={refiLtvStr} onChange={(e) => setRefiLtvStr(e.target.value)} inputMode="decimal" aria-label="Refinance LTV percent" style={{ ...F_INPUT, width: 40, textAlign: "right" }} />
+                        <span style={F_FIX}>%</span>
+                      </span>
+                    </label>
+                    <label style={F_WRAP}>
+                      <span style={F_LABEL}>Refi Rate</span>
+                      <span style={F_BOX}>
+                        <input value={refiRateStr} onChange={(e) => setRefiRateStr(e.target.value)} inputMode="decimal" aria-label="Refinance rate" style={{ ...F_INPUT, width: 48, textAlign: "right" }} />
+                        <span style={F_FIX}>%</span>
+                      </span>
+                    </label>
+                    <label style={F_WRAP}>
+                      <span style={F_LABEL}>Refi Term</span>
+                      <span style={{ display: "inline-flex", border: "1px solid var(--border)", borderRadius: 7, overflow: "hidden", height: 32 }}>
+                        {[30, 15].map((t) => (
+                          <button key={t} type="button" onClick={() => setRefiTermYears(t)}
+                            style={{ padding: "0 12px", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, background: refiTermYears === t ? "var(--accent)" : "var(--card)", color: refiTermYears === t ? "var(--accent-text)" : "var(--muted-soft)" }}>
+                            {t}yr
+                          </button>
+                        ))}
+                      </span>
+                    </label>
+                    <label style={F_WRAP}>
+                      <span style={F_LABEL}>Closing Costs</span>
+                      <span style={F_BOX}>
+                        <input value={refiClosingStr} onChange={(e) => setRefiClosingStr(e.target.value)} inputMode="decimal" aria-label="Refinance closing costs percent" style={{ ...F_INPUT, width: 36, textAlign: "right" }} />
+                        <span style={F_FIX}>%</span>
+                      </span>
+                    </label>
+                  </div>
+
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <tbody>
+                      {[
+                        ["New Loan Amount", fmtUSD0(newLoan)],
+                        ["Original Loan Payoff", fmtUSD0(payoff)],
+                        ["Refi Closing Costs", fmtUSD0(refiClosing)],
+                        ["Cash-Out Amount", cashOutStr],
+                        ["Total Cash Invested", fmtUSD0(totalCashInvested)],
+                        ["Cash Left in Deal", cashLeftStr],
+                        ["Post-Refi Monthly Payment", `${fmtUSD0(postRefiPayment)}/mo`],
+                      ].map(([label, value]) => (
+                        <tr key={label}>
+                          <td style={TD_L}>{label}</td>
+                          <td style={TD_V}>{value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div style={{ marginTop: 10, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
+                    Assumes the lender will refinance based on ARV after a seasoning period (commonly 6–12 months).
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
