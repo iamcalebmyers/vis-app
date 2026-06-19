@@ -987,10 +987,19 @@ Top-ups $10/$25 all tiers, $50/$100 Agent+. API model = claude-sonnet-4-6
 ~$0.30 (raw ~$0.15 x2). Tune buckets/top-ups from real usage_ledger numbers.
 ============================================================
 
-Last completed: Usage wallet (prepaid balance + per-call metering + Stripe
+Last completed: Investor Report — editable Loan Estimate (purchase price / down
+payment / term / rate) + BRRR refinance calculator (Step 1 Rehab: editable ARV +
+repair; Step 2 Refinance: LTV / rate / term / closing → new loan, cash-out, cash
+left in deal, post-refi payment). Post-refi monthly cash flow + cash-on-cash
+wired downstream, toggle-gated ("Model a refinance (BRRR)"), with edge cases
+(cash left ≤ 0 → "∞ capital fully recycled"; cash-out < 0 → "$X needed at
+refinance closing"). Verified against the 2847 Riverside deal. Compare also
+gained an editable mortgage rate. Liquid-glass UI restyle (warm rounded
+dashboard) shipped earlier. Current work on branch brrr-refi (off main).
+Prior: Usage wallet (prepaid balance + per-call metering + Stripe
 top-ups), API model switched to Sonnet 4.6, API consolidated to 9 functions
 (Vercel free-tier limit), Compare area + unified Reports hub, Solo gets investor
-report features. Deployed to production on the usage-wallet branch.
+report features. Deployed to production.
 Previously: Session 30 (+ UI design refresh)
 Design refresh: light theme updated to clean white/neutral palette
 (#f5f6fa bg, #ffffff cards, #e5e7eb borders, neutral gray type scale).
