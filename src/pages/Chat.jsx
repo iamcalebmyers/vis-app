@@ -242,6 +242,7 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
   // Clicking the Reports tab always returns to the report hub (resets any open report).
   function handleTabChange(tab) {
     if (tab === "reports") setReportsResetKey((k) => k + 1);
+    if (tab === "chat") handleNewChat();
     setActiveTab(tab);
   }
 
