@@ -57,15 +57,15 @@ function Tab({ tab, isActive, onClick }) {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: isActive ? "var(--accent-soft)" : "transparent",
+        background: isActive ? "var(--accent)" : "var(--card)",
         border: "none",
-        padding: "6px 14px",
-        borderRadius: 8,
+        padding: "6px 16px",
+        borderRadius: 999,
         fontFamily: "var(--font-sans)",
         fontSize: 13,
         fontWeight: isActive ? 600 : 500,
         color: isActive
-          ? "var(--accent)"
+          ? "var(--accent-text)"
           : hover
             ? "var(--white)"
             : "var(--muted-soft)",
@@ -131,13 +131,13 @@ function Nav({ active = "chat", onTabChange, userEmail, onSignOut, userRow, isCl
         justifyContent: "space-between",
         height: 52,
         padding: "0 20px",
-        background: "var(--nav-bg)",
         fontFamily: "var(--font-sans)",
         position: "sticky",
         top: 0,
         zIndex: 10,
         flexShrink: 0,
       }}
+      className="glass-surface"
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {logoMark}

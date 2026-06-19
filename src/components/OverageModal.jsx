@@ -1,7 +1,7 @@
 function OverageModal({ onConfirm, onCancel, overageRate }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }}>
-      <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, padding: 28, maxWidth: 400, width: "100%" }}>
+    <div className="glass-scrim">
+      <div className="glass-overlay" style={{ padding: 28, maxWidth: 400, width: "100%" }}>
         <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 16, color: "var(--white)", marginBottom: 10 }}>
           Usage limit reached
         </div>

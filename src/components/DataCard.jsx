@@ -15,9 +15,10 @@ import {
 const cardOuter = {
   background: "var(--card)",
   border: "1px solid var(--border)",
-  borderRadius: 8,
+  borderRadius: 12,
   overflow: "hidden",
   marginTop: 10,
+  boxShadow: "var(--shadow-card), inset 0 1px 0 var(--glass-sheen)",
 };
 
 const cardHeader = {

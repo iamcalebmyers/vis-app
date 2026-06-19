@@ -74,13 +74,12 @@ function SessionSidebar({ sessions, activeId, onSelect, onNew }) {
         width: SIDEBAR_WIDTH,
         flexShrink: 0,
         background: "var(--card)",
-        borderRadius: 12,
+        borderRight: "1px solid var(--border)",
         padding: "16px 12px",
         display: "flex",
         flexDirection: "column",
         gap: 2,
         overflowY: "auto",
-        boxShadow: "var(--shadow-card)",
       }}
     >
       <div

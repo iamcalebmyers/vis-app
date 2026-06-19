@@ -48,7 +48,7 @@ const PROFILE_ITEMS = [
 function SectionHead({ title, sub }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 18, color: "var(--white)" }}>{title}</div>
+      <div className="display" style={{ fontWeight: 700, fontSize: 18, color: "var(--white)" }}>{title}</div>
       {sub && <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", marginTop: 4 }}>{sub}</div>}
     </div>
   );

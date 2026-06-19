@@ -247,11 +247,12 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
 
   return (
     <div
+      className="lg-enter-shell"
       style={{
         display: "flex",
         flexDirection: "column",
         height: "100vh",
-        background: "var(--bg)",
+        background: "transparent",
       }}
     >
       {buyUsage && !isClient && (
@@ -266,7 +267,7 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
 
       {activeTab === "settings" && (
         <div style={{ display: "flex", flex: 1, overflow: "hidden", padding: 6 }}>
-          <div style={{ display: "flex", flex: 1, overflow: "hidden", background: "var(--card)", borderRadius: 12, boxShadow: "var(--shadow-card)" }}>
+          <div className="glass-surface" style={{ display: "flex", flex: 1, overflow: "hidden", borderRadius: 12 }}>
             <Settings user={user} userRow={userRow} onSignOut={onSignOut} />
           </div>
         </div>
@@ -274,13 +275,14 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
 
       {activeTab === "reports" && (
         <div style={{ flex: 1, overflow: "hidden", padding: 6 }}>
-          <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--card)", borderRadius: 12, boxShadow: "var(--shadow-card)" }}>
+          <div className="glass-surface" style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: 12 }}>
             <Reports key={reportsResetKey} user={user} userRow={userRow} tier={tier} />
           </div>
         </div>
       )}
 
-      {activeTab === "chat" && <div style={{ display: "flex", flex: 1, overflow: "hidden", gap: 6, padding: "6px 6px 6px 6px" }}>
+      {activeTab === "chat" && <div style={{ flex: 1, overflow: "hidden", padding: 6 }}>
+        <div className="glass-surface" style={{ height: "100%", display: "flex", overflow: "hidden", borderRadius: 12 }}>
         <SessionSidebar
           sessions={sessions}
           activeId={activeSession?.id || null}
@@ -295,9 +297,6 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            background: "var(--card)",
-            borderRadius: 12,
-            boxShadow: "var(--shadow-card)",
           }}
         >
           {activeReport ? (
@@ -336,13 +335,14 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
               <div
                 style={{
                   padding: "12px 32px 20px",
-                  background: "var(--card)",
+                  background: "transparent",
                 }}
               >
                 <ChatInput
                   onSend={handleSend}
                   disabled={typing}
                   autoFocus={false}
+                  bare
                 />
               </div>
             </>
@@ -378,6 +378,7 @@ function Chat({ user, userRow, agentLogo, onSignOut, onRefreshUser, isClient, cl
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>}
     </div>

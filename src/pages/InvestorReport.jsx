@@ -108,7 +108,7 @@ function InvestorReport({ data, onBack, user, userRow }) {
       </div>
 
       <main style={{ flex: 1, padding: "20px 20px 40px" }}>
-        <div ref={reportRef} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
+        <div ref={reportRef} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, padding: "28px 32px", maxWidth: 900, margin: "0 auto", boxShadow: "var(--shadow-card), inset 0 1px 0 var(--glass-sheen)" }}>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 16, borderBottom: "3px solid var(--white)", marginBottom: 20 }}>
             <div>

@@ -39,10 +39,10 @@ function SendToClientModal({ onExportPDF, reportType, onClose }) {
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      className="glass-scrim"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, width: 400, maxWidth: "100%", overflow: "hidden" }}>
+      <div className="glass-overlay" style={{ width: 400, maxWidth: "100%", overflow: "hidden" }}>
 
         <div style={{ padding: "22px 24px 18px", borderBottom: "1px solid var(--border)" }}>
           <div style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 16, color: "var(--white)" }}>

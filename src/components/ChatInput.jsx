@@ -3,7 +3,7 @@ import { useState } from "react";
 const DISCLAIMER =
   "Vis uses AI and publicly available data · Not financial or legal advice";
 
-function ChatInput({ onSend, disabled = false, autoFocus = true, showDisclaimer = true }) {
+function ChatInput({ onSend, disabled = false, autoFocus = true, showDisclaimer = true, bare = false }) {
   const [value, setValue] = useState("");
 
   function handleSubmit(e) {
@@ -28,11 +28,13 @@ function ChatInput({ onSend, disabled = false, autoFocus = true, showDisclaimer 
           display: "flex",
           gap: 8,
           alignItems: "stretch",
-          background: "var(--card)",
-          border: "1px solid var(--border)",
-          borderRadius: 10,
+          borderRadius: 14,
           padding: "8px 8px 8px 14px",
-          boxShadow: "var(--shadow-card)",
+          background: "rgba(255, 255, 255, 0.06)",
+          border: bare ? "none" : "1px solid var(--composer-border)",
+          boxShadow: bare ? "none" : "inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+          backdropFilter: "var(--glass-blur)",
+          WebkitBackdropFilter: "var(--glass-blur)",
         }}
       >
         <input
@@ -43,14 +45,14 @@ function ChatInput({ onSend, disabled = false, autoFocus = true, showDisclaimer 
           disabled={disabled}
           autoFocus={autoFocus}
           aria-label="Chat message"
+          className="composer-input"
           style={{
             flex: 1,
             border: "none",
             background: "transparent",
-            color: "var(--white)",
             fontFamily: "var(--font-sans)",
-            fontSize: 14,
             outline: "none",
+            boxShadow: "none",
             minHeight: 36,
           }}
         />

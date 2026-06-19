@@ -65,7 +65,7 @@ export default function Compare() {
       <div style={{ maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div>
-            <h1 style={{ fontFamily: "var(--font-sans)", fontSize: 22, fontWeight: 800, color: "var(--white)", margin: 0 }}>
+            <h1 className="display" style={{ fontSize: 22, fontWeight: 700, color: "var(--white)", margin: 0 }}>
               Compare properties
             </h1>
             <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", margin: "6px 0 0" }}>

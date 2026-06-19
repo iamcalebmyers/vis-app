@@ -33,9 +33,8 @@ export default function BuyUsageModal({ user, userRow, onClose, reason }) {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: "28px 30px", width: "100%", maxWidth: 460, position: "relative" }}>
+    <div className="glass-scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="glass-overlay" style={{ padding: "28px 30px", width: "100%", maxWidth: 460 }}>
         <button onClick={onClose} style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", fontSize: 20, color: "var(--muted)", cursor: "pointer", lineHeight: 1 }}>×</button>
 
         <div style={{ fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: 19, color: "var(--white)", marginBottom: 6 }}>

@@ -182,7 +182,7 @@ function PropertyReport({ data, onBack, user, userRow }) {
       </div>
 
       <main style={{ flex: 1, padding: "20px 20px 40px" }}>
-        <div ref={reportRef} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
+        <div ref={reportRef} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, padding: "28px 32px", maxWidth: 900, margin: "0 auto", boxShadow: "var(--shadow-card), inset 0 1px 0 var(--glass-sheen)" }}>
 
           {property.photoUrl && (
             <img src={property.photoUrl} alt="Property exterior" style={{ width: "100%", height: 260, objectFit: "cover", display: "block", marginBottom: 24 }} />

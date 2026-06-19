@@ -46,9 +46,9 @@ export default function GraphModal({ metricKey, location, onClose, onAddToReport
   const chipSt = (active) => ({ height: 30, padding: "0 12px", borderRadius: 6, fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, cursor: "pointer", border: active ? "1px solid var(--accent)" : "1px solid var(--border)", background: active ? "var(--accent-soft)" : "var(--border-soft)", color: active ? "var(--accent)" : "var(--muted-soft)", transition: "all 0.15s ease" });
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+    <div className="glass-scrim"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", padding: 24 }}>
+      <div className="glass-overlay" style={{ width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Generate Graph</div>

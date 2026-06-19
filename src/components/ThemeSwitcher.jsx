@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { THEMES, getStoredTheme, setTheme } from "../theme.js";
+import { getStoredTheme, setTheme } from "../theme.js";
+
+// Cycle only the three real modes — no "system" (it resolves to charcoal and
+// made the toggle land on charcoal twice).
+const CYCLE = ["light", "charcoal", "black"];
 
 const ICONS = {
   light: "☀",
@@ -18,17 +22,18 @@ function ThemeSwitcher() {
   const [hover, setHover] = useState(false);
 
   useEffect(() => {
-    setLocal(getStoredTheme());
+    const stored = getStoredTheme();
+    setLocal(CYCLE.includes(stored) ? stored : "light");
   }, []);
 
   function cycle() {
-    const idx = THEMES.indexOf(theme);
-    const next = THEMES[(idx + 1) % THEMES.length];
+    const idx = CYCLE.indexOf(theme);
+    const next = CYCLE[(idx + 1) % CYCLE.length];
     setTheme(next);
     setLocal(next);
   }
 
-  const nextLabel = LABELS[THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]];
+  const nextLabel = LABELS[CYCLE[(CYCLE.indexOf(theme) + 1) % CYCLE.length]];
 
   return (
     <button
@@ -39,12 +44,12 @@ function ThemeSwitcher() {
       aria-label={`Theme: ${LABELS[theme]}. Click to switch to ${nextLabel}.`}
       title={`Theme: ${LABELS[theme]} · click for ${nextLabel}`}
       style={{
-        width: 24,
-        height: 24,
-        borderRadius: 6,
-        background: hover ? "var(--border-soft)" : "transparent",
+        width: 26,
+        height: 26,
+        borderRadius: "50%",
+        background: hover ? "var(--border-soft)" : "var(--card)",
         border: "1px solid var(--border)",
-        color: "var(--muted-soft)",
+        color: "var(--muted)",
         display: "grid",
         placeItems: "center",
         cursor: "pointer",

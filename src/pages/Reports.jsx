@@ -67,19 +67,18 @@ function ReportCard({ card, locked, onOpen }) {
       onClick={onOpen}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      className="glass-surface"
       style={{
         textAlign: "left",
         display: "flex",
         flexDirection: "column",
         gap: 10,
-        padding: "20px 22px",
-        background: "var(--card)",
-        border: `1px solid ${hover && !locked ? "var(--accent)" : "var(--border)"}`,
-        borderRadius: 12,
+        padding: "24px 26px",
+        border: `1px solid ${hover && !locked ? "var(--accent)" : "var(--glass-rim)"}`,
+        borderRadius: 20,
         cursor: "pointer",
-        transition: "border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease",
+        transition: "border-color 0.15s ease, transform 0.15s ease",
         transform: hover && !locked ? "translateY(-2px)" : "none",
-        boxShadow: hover && !locked ? "var(--shadow-card)" : "none",
         minHeight: 150,
       }}
     >
@@ -96,7 +95,7 @@ function ReportCard({ card, locked, onOpen }) {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-        <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 800, color: "var(--white)" }}>
+        <span className="display" style={{ fontSize: 15, fontWeight: 700, color: "var(--white)" }}>
           {card.title}
         </span>
         <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", lineHeight: 1.45 }}>
@@ -119,7 +118,7 @@ function Hub({ tier, onSelect }) {
   return (
     <div style={{ height: "100%", overflowY: "auto", padding: "32px 32px 48px" }}>
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <h1 style={{ fontFamily: "var(--font-sans)", fontSize: 22, fontWeight: 800, color: "var(--white)", margin: 0 }}>
+        <h1 className="display" style={{ fontSize: 22, fontWeight: 700, color: "var(--white)", margin: 0 }}>
           Reports
         </h1>
         <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)", margin: "6px 0 28px" }}>
