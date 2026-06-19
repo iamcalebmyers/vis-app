@@ -105,10 +105,6 @@ function InvestorReport({ data, onBack, user, userRow }) {
   );
   const fmtUSD0 = (n) => (n == null ? "—" : `$${Math.round(n).toLocaleString()}`);
   const fmtPct = (n) => (n == null ? "—" : `${n}%`);
-  const monthlyCF = m.monthlyCashFlow ?? 0;
-  const cfStr = m.monthlyCashFlow == null ? "—" : `${m.monthlyCashFlow < 0 ? "−" : ""}$${Math.abs(m.monthlyCashFlow).toLocaleString()}`;
-  const monthlyExp = Math.round(monthlyRent - monthlyCF);
-
   // BRRR refinance (Step 2) — recover capital after rehab via a cash-out refi.
   const arv = pNum(arvStr);
   const repair = pNum(repairStr);
@@ -125,11 +121,21 @@ function InvestorReport({ data, onBack, user, userRow }) {
   const postRefiPayment = Math.round(calcMonthlyPI(newLoan, refiRate, refiTermYears));
   const cashOutStr = cashOut >= 0 ? fmtUSD0(cashOut) : `${fmtUSD0(Math.abs(cashOut))} needed at refinance closing`;
   const cashLeftStr = cashLeft <= 0 ? "$0 — fully recycled" : fmtUSD0(cashLeft);
+  const postRefiCF = Math.round(monthlyRent - postRefiPayment - (m.taxMonthly ?? 0) - m.insurance - m.hoa);
+  const postRefiCoC = cashLeft > 0 ? ((postRefiCF * 12) / cashLeft) * 100 : null;
+
+  // Active numbers = post-refinance when the refi is enabled, else acquisition (unchanged).
+  const monthlyCF = refiOn ? postRefiCF : (m.monthlyCashFlow ?? 0);
+  const cfStr = (refiOn ? postRefiCF : m.monthlyCashFlow) == null ? "—" : `${monthlyCF < 0 ? "−" : ""}$${Math.abs(monthlyCF).toLocaleString()}`;
+  const monthlyExp = Math.round(monthlyRent - monthlyCF);
+  const cocStr = refiOn
+    ? (cashLeft <= 0 ? "∞ — capital fully recycled" : `${postRefiCoC.toFixed(1)}%`)
+    : fmtPct(m.cashOnCash);
 
   const summaryStats = [
     { label: "Purchase Price", value: fmtUSD0(purchasePrice) },
     { label: "Est. Monthly Rent", value: `${fmtUSD0(monthlyRent)}/mo` },
-    { label: "Monthly Cash Flow", value: `${cfStr}/mo`, accent: true },
+    { label: refiOn ? "Monthly Cash Flow · post-refi" : "Monthly Cash Flow", value: `${cfStr}/mo`, accent: true },
     { label: "Gross Yield", value: fmtPct(m.grossYield) },
   ];
 
@@ -141,7 +147,7 @@ function InvestorReport({ data, onBack, user, userRow }) {
   const returnsRows = [
     ["Gross Rental Yield", fmtPct(m.grossYield)],
     ["Net Rental Yield", fmtPct(m.netYield)],
-    ["Cash-on-Cash Return", fmtPct(m.cashOnCash)],
+    [refiOn ? "Cash-on-Cash Return · post-refinance" : "Cash-on-Cash Return", cocStr],
     ["Cap Rate", fmtPct(m.capRate)],
   ];
 
@@ -377,7 +383,7 @@ function InvestorReport({ data, onBack, user, userRow }) {
                 </tbody>
               </table>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "2px solid var(--white)", marginTop: 2 }}>
-                <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, color: "var(--white)" }}>Net Cash Flow</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, color: "var(--white)" }}>Net Cash Flow{refiOn ? " · post-refinance" : ""}</span>
                 <div style={{ textAlign: "right" }}>
                   <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.01em" }}>{`${cfStr}/mo`}</span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--muted)", marginLeft: 14 }}>${(monthlyCF * 12).toLocaleString()}/yr</span>
