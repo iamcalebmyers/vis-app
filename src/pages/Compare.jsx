@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import ComparisonCard from "../components/ComparisonCard.jsx";
 import { fetchComparisonProperty } from "../utils/claudeApi.js";
 import { computePropertyMetrics } from "../utils/investorMath.js";
@@ -9,13 +9,20 @@ const MAX_PROPERTIES = 4;
 
 export default function Compare() {
   const [address, setAddress] = useState("");
-  const [properties, setProperties] = useState([]); // computed metric objects
+  const [rawProps, setRawProps] = useState([]); // raw facts; metrics computed below
+  const [rateStr, setRateStr] = useState("6.84");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [exporting, setExporting] = useState(false);
   const cardRef = useRef(null);
 
-  const atCap = properties.length >= MAX_PROPERTIES;
+  // Recompute every property's metrics whenever the mortgage rate changes.
+  const ratePct = Number.isFinite(parseFloat(rateStr)) ? parseFloat(rateStr) : 6.84;
+  const properties = useMemo(
+    () => rawProps.map((r) => computePropertyMetrics(r, { ratePct })),
+    [rawProps, ratePct]
+  );
+  const atCap = rawProps.length >= MAX_PROPERTIES;
 
   async function handleAdd() {
     const query = address.trim();
@@ -24,7 +31,7 @@ export default function Compare() {
     setError(null);
     try {
       const raw = await fetchComparisonProperty(query);
-      setProperties((prev) => [...prev, computePropertyMetrics(raw)]);
+      setRawProps((prev) => [...prev, raw]);
       setAddress("");
     } catch (err) {
       setError(err.message || "Couldn't add that property.");
@@ -34,12 +41,12 @@ export default function Compare() {
   }
 
   function handleRemove(i) {
-    setProperties((prev) => prev.filter((_, idx) => idx !== i));
+    setRawProps((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   function loadExample() {
     setError(null);
-    setProperties(MOCK_COMPARISON.slice(0, MAX_PROPERTIES).map((r) => computePropertyMetrics(r)));
+    setRawProps(MOCK_COMPARISON.slice(0, MAX_PROPERTIES));
   }
 
   async function handleExport() {
@@ -94,6 +101,18 @@ export default function Compare() {
             {loading ? "Adding…" : "Add"}
           </button>
         </div>
+
+        {properties.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--muted)" }}>Mortgage rate</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 2, height: 34, padding: "0 10px", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8 }}>
+              <input type="text" inputMode="decimal" value={rateStr} onChange={(e) => setRateStr(e.target.value)} aria-label="Mortgage rate"
+                style={{ width: 48, border: "none", background: "transparent", color: "var(--white)", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 14, outline: "none", textAlign: "right" }} />
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--muted)" }}>%</span>
+            </span>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted-faint)" }}>applied to all · 20% down · 30-yr fixed</span>
+          </div>
+        )}
 
         {error && (
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "#dc2626", background: "rgba(220,38,38,0.08)", borderRadius: 6, padding: "8px 12px" }}>

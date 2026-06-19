@@ -7,6 +7,7 @@ import AISummary from "../components/AISummary.jsx";
 import ShareExport from "../components/ShareExport.jsx";
 import { TipRow } from "../components/ReportTooltip.jsx";
 import { DEAL_TIPS, RETURNS_TIPS, PROJECTION_TIPS } from "../utils/tooltips.js";
+import { computePropertyMetrics } from "../utils/investorMath.js";
 import {
   MOCK_PROPERTY,
   MOCK_RENTAL_CARD,
@@ -29,6 +30,14 @@ const REC = {
   pass:     { color: "#dc2626", label: "Pass"      },
 };
 
+// Loan-estimate field styling (mirrors the Property Report's calculator).
+const F_WRAP = { display: "inline-flex", flexDirection: "column", gap: 4 };
+const F_LABEL = { fontFamily: "Arial, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--muted)", textTransform: "uppercase" };
+const F_BOX = { display: "inline-flex", alignItems: "center", gap: 2, height: 32, padding: "0 9px", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 7 };
+const F_INPUT = { border: "none", background: "transparent", color: "var(--white)", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 14, outline: "none", boxShadow: "none" };
+const F_FIX = { fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--muted)" };
+const F_HINT = { fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--muted-faint)" };
+
 function BackButton({ onClick }) {
   return (
     <button type="button" onClick={onClick}
@@ -45,6 +54,13 @@ function InvestorReport({ data, onBack, user, userRow }) {
   const [agentInfo, setAgentInfo] = useAgentInfo();
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [includeAI, setIncludeAI] = useState(true);
+  const [rateStr, setRateStr] = useState("6.84");
+  const [priceStr, setPriceStr] = useState(() => {
+    const p = parseFloat(String(data?.purchasePrice ?? "").replace(/[^0-9.]/g, ""));
+    return String(Number.isFinite(p) && p > 0 ? p : MOCK_PROPERTY.estimatedValue);
+  });
+  const [downStr, setDownStr] = useState("20");
+  const [termYears, setTermYears] = useState(30);
   const [showSendModal, setShowSendModal] = useState(false);
   const reportRef = useRef();
   const property = MOCK_PROPERTY;
@@ -67,14 +83,27 @@ function InvestorReport({ data, onBack, user, userRow }) {
 
   const parseDollar = (str) => parseFloat(String(str).replace(/[^0-9.-]/g, "")) || 0;
   const monthlyRent = parseDollar(rental.estMonthlyRent);
-  const monthlyCF = parseDollar(returns.monthlyCashFlow);
+
+  // Live metrics driven by the editable loan estimate (price / down / term / rate).
+  const purchasePrice = parseDollar(priceStr) || property.estimatedValue;
+  const downPct = Math.min(Math.max((parseFloat(downStr) || 0) / 100, 0), 0.95);
+  const downDollars = Math.round(purchasePrice * downPct);
+  const ratePct = Number.isFinite(parseFloat(rateStr)) ? parseFloat(rateStr) : 6.84;
+  const m = computePropertyMetrics(
+    { listPrice: purchasePrice, rentEstimate: monthlyRent, annualTax: property.annualTax, hoaMonthly: property.hoa ?? 0, sqft: property.sqft, estARV: parseDollar(deal.estARV) || undefined },
+    { ratePct, downPct, termYears }
+  );
+  const fmtUSD0 = (n) => (n == null ? "—" : `$${Math.round(n).toLocaleString()}`);
+  const fmtPct = (n) => (n == null ? "—" : `${n}%`);
+  const monthlyCF = m.monthlyCashFlow ?? 0;
+  const cfStr = m.monthlyCashFlow == null ? "—" : `${m.monthlyCashFlow < 0 ? "−" : ""}$${Math.abs(m.monthlyCashFlow).toLocaleString()}`;
   const monthlyExp = Math.round(monthlyRent - monthlyCF);
 
   const summaryStats = [
-    { label: "Purchase Price", value: deal.purchasePrice || "$487,500" },
-    { label: "Est. Monthly Rent", value: rental.estMonthlyRent },
-    { label: "Monthly Cash Flow", value: returns.monthlyCashFlow, accent: true },
-    { label: "Gross Yield", value: returns.grossYield },
+    { label: "Purchase Price", value: fmtUSD0(purchasePrice) },
+    { label: "Est. Monthly Rent", value: `${fmtUSD0(monthlyRent)}/mo` },
+    { label: "Monthly Cash Flow", value: `${cfStr}/mo`, accent: true },
+    { label: "Gross Yield", value: fmtPct(m.grossYield) },
   ];
 
   const dealRows = [
@@ -86,10 +115,10 @@ function InvestorReport({ data, onBack, user, userRow }) {
   ].filter(([, v]) => v);
 
   const returnsRows = [
-    ["Gross Rental Yield", returns.grossYield],
-    ["Net Rental Yield", returns.netYield],
-    ["Cash-on-Cash Return", returns.cashOnCash],
-    ["Cap Rate", returns.capRate],
+    ["Gross Rental Yield", fmtPct(m.grossYield)],
+    ["Net Rental Yield", fmtPct(m.netYield)],
+    ["Cash-on-Cash Return", fmtPct(m.cashOnCash)],
+    ["Cap Rate", fmtPct(m.capRate)],
   ];
 
   return (
@@ -126,6 +155,54 @@ function InvestorReport({ data, onBack, user, userRow }) {
                 <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: accent ? 22 : 18, color: accent ? "var(--accent)" : "var(--white)", letterSpacing: "-0.01em", lineHeight: 1 }}>{value}</div>
               </div>
             ))}
+          </div>
+
+          {/* Loan estimate — editable inputs drive cash flow + returns throughout. */}
+          <div style={{ marginTop: 12, padding: "14px 16px", background: "var(--border-soft)", border: "1px solid var(--border)", borderRadius: 8 }}>
+            <div style={{ ...F_LABEL, marginBottom: 12 }}>Loan Estimate</div>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-end" }}>
+              <label style={F_WRAP}>
+                <span style={F_LABEL}>Purchase Price</span>
+                <span style={F_BOX}>
+                  <span style={F_FIX}>$</span>
+                  <input value={priceStr} onChange={(e) => setPriceStr(e.target.value)} inputMode="numeric" aria-label="Purchase price" style={{ ...F_INPUT, width: 92 }} />
+                </span>
+              </label>
+
+              <label style={F_WRAP}>
+                <span style={F_LABEL}>Down Payment</span>
+                <span style={F_BOX}>
+                  <input value={downStr} onChange={(e) => setDownStr(e.target.value)} inputMode="decimal" aria-label="Down payment percent" style={{ ...F_INPUT, width: 36, textAlign: "right" }} />
+                  <span style={F_FIX}>%</span>
+                </span>
+                <span style={F_HINT}>= {fmtUSD0(downDollars)}</span>
+              </label>
+
+              <label style={F_WRAP}>
+                <span style={F_LABEL}>Term</span>
+                <span style={{ display: "inline-flex", border: "1px solid var(--border)", borderRadius: 7, overflow: "hidden", height: 32 }}>
+                  {[30, 15].map((t) => (
+                    <button key={t} type="button" onClick={() => setTermYears(t)}
+                      style={{ padding: "0 12px", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, background: termYears === t ? "var(--accent)" : "var(--card)", color: termYears === t ? "var(--accent-text)" : "var(--muted-soft)" }}>
+                      {t}yr
+                    </button>
+                  ))}
+                </span>
+              </label>
+
+              <label style={F_WRAP}>
+                <span style={F_LABEL}>Rate</span>
+                <span style={F_BOX}>
+                  <input value={rateStr} onChange={(e) => setRateStr(e.target.value)} inputMode="decimal" aria-label="Mortgage rate" style={{ ...F_INPUT, width: 48, textAlign: "right" }} />
+                  <span style={F_FIX}>%</span>
+                </span>
+              </label>
+
+              <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                <span style={{ ...F_LABEL, display: "block" }}>Est. Monthly Payment</span>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 18, color: "var(--accent)", marginTop: 4 }}>{fmtUSD0(m.mortgage)}/mo</div>
+              </div>
+            </div>
           </div>
 
           {sectionVisible(activeTemplate, "deal_analysis") && (
@@ -186,7 +263,7 @@ function InvestorReport({ data, onBack, user, userRow }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: "2px solid var(--white)", marginTop: 2 }}>
                 <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 15, color: "var(--white)" }}>Net Cash Flow</span>
                 <div style={{ textAlign: "right" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.01em" }}>{returns.monthlyCashFlow}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.01em" }}>{`${cfStr}/mo`}</span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--muted)", marginLeft: 14 }}>${(monthlyCF * 12).toLocaleString()}/yr</span>
                 </div>
               </div>
