@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!--
+    POST TEMPLATE — copy this file to a new-slug.html in this folder and fill it in.
+    Replace every {{PLACEHOLDER}} below. See ../README.md for the full checklist
+    (including adding the post to blog/index.html and sitemap.xml).
+    Delete this comment block once the post is written.
+  -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{TITLE}} — Clicknectar</title>
+  <meta name="description" content="{{ONE_SENTENCE_SUMMARY}}" />
+  <link rel="canonical" href="https://clicknectar.com/blog/posts/{{SLUG}}.html" />
+  <meta property="og:title" content="{{TITLE}}" />
+  <meta property="og:description" content="{{ONE_SENTENCE_SUMMARY}}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://clicknectar.com/blog/posts/{{SLUG}}.html" />
+  <meta property="og:image" content="https://clicknectar.com/assets/clicknectar-wordmark.png" />
+  <meta property="article:published_time" content="{{YYYY-MM-DD}}" />
+  <link rel="stylesheet" href="../../styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "{{TITLE}}",
+    "description": "{{ONE_SENTENCE_SUMMARY}}",
+    "datePublished": "{{YYYY-MM-DD}}",
+    "author": { "@type": "Organization", "name": "Clicknectar" },
+    "publisher": { "@type": "Organization", "name": "Clicknectar" }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ---------- Nav ---------- -->
+  <header class="nav">
+    <div class="wrap">
+      <a class="nav-logo" href="../../index.html" aria-label="Clicknectar home">
+        <img src="../../assets/clicknectar-wordmark.png" alt="Clicknectar" />
+      </a>
+      <nav class="nav-links">
+        <a href="../../index.html#work">Approach</a>
+        <a href="../../index.html#pricing">Partnerships</a>
+        <a href="../index.html">Journal</a>
+        <a href="../../index.html#custom">Custom</a>
+      </nav>
+      <a class="nav-cta" href="../../index.html#close">Get in touch</a>
+    </div>
+  </header>
+
+  <!-- ---------- Post header ---------- -->
+  <section class="post-hero">
+    <div class="wrap">
+      <a class="back-link" href="../index.html">&larr; Journal</a>
+      <p class="post-category">{{CATEGORY}}</p>
+      <h1>{{TITLE}}</h1>
+      <p class="post-meta">{{MONTH YEAR}} &nbsp;·&nbsp; {{N}} minute read</p>
+    </div>
+  </section>
+
+  <!-- ---------- Post body ---------- -->
+  <article class="post-body">
+    <div class="wrap">
+      <p>{{Opening paragraph. State the idea plainly — calm, no hype, no exclamation points.}}</p>
+
+      <h2>{{Subheading}}</h2>
+
+      <p>{{Body paragraph.}}</p>
+
+      <ul>
+        <li><strong>{{Point}}</strong> — {{explanation}}</li>
+        <li><strong>{{Point}}</strong> — {{explanation}}</li>
+      </ul>
+
+      <p>{{Closing paragraph.}}</p>
+    </div>
+  </article>
+
+  <!-- ---------- Post footer ---------- -->
+  <section class="post-foot">
+    <div class="wrap">
+      <p>{{One low-pressure closing line.}}</p>
+      <p><a href="mailto:hello@clicknectar.com">hello@clicknectar.com</a></p>
+    </div>
+  </section>
+
+  <!-- ---------- Footer ---------- -->
+  <footer class="footer">
+    <div class="wrap">
+      <a class="footer-logo" href="../../index.html" aria-label="Clicknectar home">
+        <img src="../../assets/clicknectar-wordmark.png" alt="Clicknectar" />
+      </a>
+      <p class="footer-meta">&copy; 2026 Clicknectar. A digital marketing studio.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
